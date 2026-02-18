@@ -36,7 +36,7 @@ describe('TradingApiClient', () => {
       .post('/ws/api.dll')
       .matchHeader('X-EBAY-API-CALL-NAME', 'GetMyeBaySelling')
       .matchHeader('X-EBAY-API-SITEID', '0')
-      .matchHeader('X-EBAY-API-COMPATIBILITY-LEVEL', '967')
+      .matchHeader('X-EBAY-API-COMPATIBILITY-LEVEL', '1451')
       .matchHeader('X-EBAY-API-IAF-TOKEN', 'mock_token')
       .matchHeader('Content-Type', 'text/xml')
       .reply(

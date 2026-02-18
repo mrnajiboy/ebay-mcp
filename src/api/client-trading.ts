@@ -3,7 +3,7 @@ import { XMLBuilder, XMLParser } from 'fast-xml-parser';
 import type { EbayApiClient } from '@/api/client.js';
 import { apiLogger } from '@/utils/logger.js';
 
-const COMPAT_LEVEL = '967';
+const COMPAT_LEVEL = '1451';
 const SITE_ID = '0';
 
 export class TradingApiClient {
@@ -36,6 +36,7 @@ export class TradingApiClient {
           'PaymentMethods',
           'PictureURL',
           'CompatibilityList',
+          'Variation',
         ];
         return arrayTags.includes(_name);
       },
@@ -71,16 +72,23 @@ export class TradingApiClient {
 
     apiLogger.debug(`Trading API ${callName}`, { xmlBody });
 
-    const response = await axios.post(`${this.baseUrl}/ws/api.dll`, xmlBody, {
-      headers: {
-        'X-EBAY-API-SITEID': SITE_ID,
-        'X-EBAY-API-COMPATIBILITY-LEVEL': COMPAT_LEVEL,
-        'X-EBAY-API-CALL-NAME': callName,
-        'X-EBAY-API-IAF-TOKEN': token,
-        'Content-Type': 'text/xml',
-      },
-      timeout: 30000,
-    });
+    let response;
+    try {
+      response = await axios.post(`${this.baseUrl}/ws/api.dll`, xmlBody, {
+        headers: {
+          'X-EBAY-API-SITEID': SITE_ID,
+          'X-EBAY-API-COMPATIBILITY-LEVEL': COMPAT_LEVEL,
+          'X-EBAY-API-CALL-NAME': callName,
+          'X-EBAY-API-IAF-TOKEN': token,
+          'Content-Type': 'text/xml',
+        },
+        timeout: 30000,
+      });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Unknown HTTP error';
+      throw new Error(`Trading API ${callName} request failed: ${message}`);
+    }
 
     const parsed = this.parser.parse(response.data);
     const result = parsed[responseTag] || parsed;

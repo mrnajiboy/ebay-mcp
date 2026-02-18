@@ -109,6 +109,20 @@ const createResult = await step('create_listing', () => api.createListing(testIt
 const createdItemId = createResult.ItemID;
 console.log(`    Created item: ${createdItemId}`);
 
+// Ensure cleanup on unexpected exit
+const cleanup = async () => {
+  console.log(`\n    Cleaning up test listing ${createdItemId}...`);
+  try {
+    await api.endListing(String(createdItemId), 'NotAvailable');
+    console.log('    Cleaned up.');
+  } catch (e) {
+    console.error(`    Cleanup failed: ${e.message}`);
+  }
+  process.exit(1);
+};
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);
+
 // Step 6: Verify it's live
 const created = await step('get_listing (verify created)', () => api.getListing(String(createdItemId)));
 console.log(`    Status: ${created.SellingStatus?.ListingStatus || 'unknown'}, Title: ${created.Title}`);
@@ -119,6 +133,7 @@ console.log('    >>> Press Enter when ready to end the listing...');
 await new Promise(resolve => {
   process.stdin.once('data', resolve);
 });
+process.stdin.destroy();
 await step('end_listing (cleanup)', () => api.endListing(String(createdItemId), 'NotAvailable'));
 console.log(`    Cleaned up test listing ${createdItemId}`);
 
