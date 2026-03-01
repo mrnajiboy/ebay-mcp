@@ -7,12 +7,14 @@ import type { Implementation } from '@modelcontextprotocol/sdk/types.js';
 import { LocaleEnum } from '@/types/ebay-enums.js';
 import { getVersion } from '@/utils/version.js';
 
-// Load .env silently - suppress dotenv output to keep stdout clean for MCP JSON-RPC
-config({ quiet: true });
-
-// Get the current directory for loading scope files
+// Get the current directory for loading scope files and .env
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Load .env from the package root (two levels up from src/config/), not process.cwd().
+// MCP servers inherit cwd from the host (e.g. Claude Code's project dir), so
+// process.cwd() may point to an unrelated project with a different .env.
+config({ path: join(__dirname, '../../.env'), quiet: true });
 
 // Type for scope JSON structure
 interface ScopeDefinition {
