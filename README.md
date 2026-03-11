@@ -398,24 +398,20 @@ It will:
 
 Run it intentionally when you want to refresh generated artifacts.
 
-### Monthly GitHub Actions sync
+### Manual sync workflow
 
-This fork also includes a scheduled GitHub Actions workflow that runs once per month and can also be triggered manually.
+This fork treats sync as a repo-side maintenance workflow, not a live server feature.
 
-Workflow file:
+Recommended manual flow:
 
-```text
-.github/workflows/monthly-sync.yml
+```bash
+npm install
+npm run sync
+npm run typecheck
+npm run build
 ```
 
-It performs:
-
-- `npm install`
-- `npm run sync`
-- `npm run typecheck`
-- `npm run build`
-
-If changes are detected, it opens a PR automatically for review instead of pushing directly to `main`.
+Then review the diff, commit the generated changes you want to keep, and deploy from Git.
 
 ## Dependency policy
 

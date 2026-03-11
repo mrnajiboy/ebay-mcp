@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Admin session inspection and revocation endpoints
 - `GET /whoami` endpoint for session-bound user introspection
 - Improved hosted callback page with copy-friendly session token output for Make and TypingMind connection setup
-- Monthly GitHub Actions sync workflow that runs `npm run sync`, validates the repo, and opens a PR when changes are detected
+- Manual repo-side sync workflow guidance for running `npm run sync`, validating changes, and reviewing the resulting diff before deploy
 
 ### Changed
 
