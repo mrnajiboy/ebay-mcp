@@ -125,6 +125,7 @@ async function createApp(): Promise<express.Application> {
     try {
       const code = typeof req.query.code === 'string' ? req.query.code : undefined;
       const state = typeof req.query.state === 'string' ? req.query.state : undefined;
+      const envFromQuery = typeof req.query.env === 'string' ? req.query.env : undefined;
       const oauthError = typeof req.query.error === 'string' ? req.query.error : undefined;
       const errorDescription = typeof req.query.error_description === 'string' ? req.query.error_description : undefined;
 
@@ -132,18 +133,28 @@ async function createApp(): Promise<express.Application> {
         res.status(400).send(`<h1>OAuth failed</h1><p>${htmlEscape(errorDescription || oauthError)}</p>`);
         return;
       }
-      if (!code || !state) {
-        res.status(400).send('<h1>Missing code or state</h1>');
+      if (!code) {
+        res.status(400).send('<h1>Missing authorization code</h1>');
         return;
       }
 
-      const stateRecord = await authStore.consumeOAuthState(state);
-      if (!stateRecord) {
-        res.status(400).send('<h1>Invalid or expired OAuth state</h1>');
-        return;
+      let environment: EbayEnvironment;
+      if (state) {
+        const stateRecord = await authStore.consumeOAuthState(state);
+        if (!stateRecord) {
+          res.status(400).send('<h1>Invalid or expired OAuth state</h1>');
+          return;
+        }
+        environment = stateRecord.environment;
+      } else {
+        environment = (envFromQuery === 'sandbox' || envFromQuery === 'production'
+          ? envFromQuery
+          : getConfiguredEnvironment()) as EbayEnvironment;
+        serverLogger.warn('OAuth callback received without state; falling back to configured/query environment', {
+          environment,
+        });
       }
 
-      const environment = stateRecord.environment;
       const userId = randomUUID();
       const api = await createUserScopedApi(userId, environment);
       const oauthClient = api.getAuthClient().getOAuthClient();
