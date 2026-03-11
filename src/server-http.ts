@@ -111,7 +111,7 @@ async function createApp(): Promise<express.Application> {
         ebayConfig.clientId,
         ebayConfig.redirectUri,
         environment,
-        getDefaultScopes(environment),
+        ['https://api.ebay.com/oauth/api_scope'],
         undefined,
         stateRecord.state
       );
