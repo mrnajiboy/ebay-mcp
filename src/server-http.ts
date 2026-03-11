@@ -188,9 +188,39 @@ async function createApp(): Promise<express.Application> {
       body { font-family: Inter, Arial, sans-serif; max-width: 760px; margin: 40px auto; line-height: 1.5; padding: 0 16px; }
       .card { background: #f7f7f8; padding: 16px; border-radius: 10px; margin: 16px 0; }
       pre { white-space: pre-wrap; word-break: break-all; background: #fff; padding: 14px; border-radius: 8px; border: 1px solid #e5e7eb; }
-      button { background: #111827; color: white; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; }
+      .copy-btn { background: #111827; color: white; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; transition: transform 120ms ease, opacity 120ms ease, background 120ms ease; }
+      .copy-btn:hover { background: #1f2937; }
+      .copy-btn:active { transform: scale(0.97); opacity: 0.92; }
+      .copy-status { margin-left: 12px; color: #065f46; font-weight: 600; }
       .muted { color: #6b7280; }
+      a { color: #2563eb; }
     </style>
+    <script>
+      async function copySessionToken() {
+        const token = document.getElementById('session-token').innerText;
+        const status = document.getElementById('copy-status');
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(token);
+          } else {
+            const temp = document.createElement('textarea');
+            temp.value = token;
+            temp.setAttribute('readonly', '');
+            temp.style.position = 'absolute';
+            temp.style.left = '-9999px';
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+          }
+          status.textContent = 'Copied!';
+          setTimeout(() => { status.textContent = ''; }, 1800);
+        } catch (err) {
+          status.textContent = 'Copy failed — select manually';
+          setTimeout(() => { status.textContent = ''; }, 2500);
+        }
+      }
+    </script>
   </head>
   <body>
     <h1>eBay account connected</h1>
@@ -199,13 +229,13 @@ async function createApp(): Promise<express.Application> {
       <p><strong>User ID:</strong> <code>${htmlEscape(userId)}</code></p>
       <p><strong>Paste this session token into Make or TypingMind as your API Key / Access token.</strong></p>
       <pre id="session-token">${htmlEscape(session.sessionToken)}</pre>
-      <button onclick="navigator.clipboard.writeText(document.getElementById('session-token').innerText)">Copy session token</button>
+      <button class="copy-btn" onclick="copySessionToken()">Copy session token</button><span id="copy-status" class="copy-status"></span>
     </div>
     <div class="card">
       <p><strong>Authorization header format</strong></p>
       <pre>Authorization: Bearer ${htmlEscape(session.sessionToken)}</pre>
     </div>
-    <p><strong>Scopes granted:</strong> ${htmlEscape(tokenData.scope || 'Not returned by eBay in token response')}</p>
+    <p><strong>Scopes granted:</strong> ${htmlEscape(tokenData.scope || 'Not returned by eBay in token response')} — <a href="https://developer.ebay.com/my/keys" target="_blank" rel="noopener noreferrer">See full account scope list on the developer platform</a>.</p>
     <p class="muted">Keep this token private. If it is exposed, revoke it using the admin session endpoints and create a new one.</p>
   </body>
 </html>`);
