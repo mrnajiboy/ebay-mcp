@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Hosted multi-user MCP deployment mode for Render
+- Server-side eBay OAuth callback flow for both production and sandbox
+- Cloudflare KV-backed storage for OAuth state, user tokens, and session records
+- Render Secret File support for environment-specific eBay credentials
+- Session-token based hosted MCP auth using `Authorization: Bearer <session-token>`
+- Admin session inspection and revocation endpoints
+- `GET /whoami` endpoint for session-bound user introspection
+
+### Changed
+
+- Extended this fork beyond upstream local/STDIO usage with a hosted HTTP deployment model
+- MCP HTTP flow now supports per-user eBay credentials and session-based routing
+- Callback flow now tolerates missing OAuth state when eBay omits it and falls back safely to configured/query environment
+- Hosted OAuth now supports both production and sandbox keysets in the same deployment
+
+### Security
+
+- Removed Express `X-Powered-By` header from hosted server responses
+- Added admin-key protection for session management endpoints
+- Added guidance for keeping `/oauth/callback` reachable while protecting other hosted paths
+- Added guidance for using Cloudflare Access to protect browser/admin routes while leaving hosted MCP and OAuth callback flows compatible
+
+### Notes
+
+- This fork intentionally diverges from upstream by prioritizing Render-hosted, multi-user operation while keeping original local workflows available.
+- Dependency policy has been updated so fresh installs pull newer compatible package versions automatically instead of requiring a post-install update step.
+
 ## [1.7.2] - 2026-02-07
 
 ### Added

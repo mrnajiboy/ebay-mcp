@@ -25,6 +25,7 @@ const CONFIG = {
   port: Number(process.env.PORT || process.env.MCP_PORT || 3000),
   publicBaseUrl: (process.env.PUBLIC_BASE_URL || '').replace(/\/$/, ''),
   adminApiKey: process.env.ADMIN_API_KEY || '',
+  oauthStartKey: process.env.OAUTH_START_KEY || '',
 };
 
 const authStore = new MultiUserAuthStore();
@@ -55,6 +56,20 @@ function requireAdmin(req: express.Request, res: express.Response, next: express
   next();
 }
 
+function requireOauthStartKey(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  if (!CONFIG.oauthStartKey) {
+    next();
+    return;
+  }
+  const header = req.headers['x-oauth-start-key'];
+  const queryKey = typeof req.query.key === 'string' ? req.query.key : '';
+  if (header !== CONFIG.oauthStartKey && queryKey !== CONFIG.oauthStartKey) {
+    res.status(401).json({ error: 'unauthorized_oauth_start' });
+    return;
+  }
+  next();
+}
+
 async function createUserScopedApi(userId: string, environment: EbayEnvironment): Promise<EbaySellerApi> {
   const api = new EbaySellerApi(getEbayConfig(environment), { userId, environment });
   await api.initialize();
@@ -63,6 +78,7 @@ async function createUserScopedApi(userId: string, environment: EbayEnvironment)
 
 async function createApp(): Promise<express.Application> {
   const app = express();
+  app.disable('x-powered-by');
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
   const projectRoot = join(__dirname, '..');
@@ -97,7 +113,7 @@ async function createApp(): Promise<express.Application> {
     res.json({ status: 'healthy', timestamp: new Date().toISOString(), version: getVersion() });
   });
 
-  app.get('/oauth/start', async (req, res) => {
+  app.get('/oauth/start', requireOauthStartKey, async (req, res) => {
     try {
       const environment = ((typeof req.query.env === 'string' ? req.query.env : undefined) || getConfiguredEnvironment()) as EbayEnvironment;
       const returnTo = typeof req.query.returnTo === 'string' ? req.query.returnTo : undefined;
@@ -187,6 +203,27 @@ async function createApp(): Promise<express.Application> {
       return;
     }
     res.json(session);
+  });
+
+  app.get('/whoami', async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'missing_session_token' });
+      return;
+    }
+    const sessionToken = authHeader.slice('Bearer '.length).trim();
+    const session = await authStore.getSession(sessionToken);
+    if (!session || session.revokedAt) {
+      res.status(401).json({ error: 'invalid_session_token' });
+      return;
+    }
+    res.json({
+      userId: session.userId,
+      environment: session.environment,
+      createdAt: session.createdAt,
+      lastUsedAt: session.lastUsedAt,
+      revokedAt: session.revokedAt ?? null,
+    });
   });
 
   app.post('/admin/session/:sessionToken/revoke', requireAdmin, async (req, res) => {
