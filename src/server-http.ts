@@ -1,12 +1,11 @@
 /**
- * eBay API MCP Server with HTTP Transport and OAuth 2.1 Authorization
+ * eBay API MCP Server with HTTP Transport.
  *
- *
- * This server implements:
- * - HTTP transport using Express
- * - OAuth 2.1 authorization (RFC 8414, RFC 9728)
- * - Bearer token authentication (RFC 6750)
- * - Token verification via introspection (RFC 7662) or JWT validation
+ * Hosted mode for single-user private deployments on Render:
+ * - Streamable HTTP MCP transport
+ * - Health and status endpoints
+ * - Server-side eBay OAuth start/callback flow
+ * - Bearer-token auth can still be enabled for MCP endpoints via OAUTH_ENABLED
  */
 
 import express from 'express';
@@ -23,105 +22,82 @@ import {
   getEbayConfig,
   getDefaultScopes,
   validateEnvironmentConfig,
+  getOAuthAuthorizationUrl,
 } from '@/config/environment.js';
 import { getToolDefinitions, executeTool } from '@/tools/index.js';
 import { TokenVerifier } from '@/auth/token-verifier.js';
 import { createBearerAuthMiddleware } from '@/auth/oauth-middleware.js';
 import { createMetadataRouter, getProtectedResourceMetadataUrl } from '@/auth/oauth-metadata.js';
 import { getVersion } from '@/utils/version.js';
+import { serverLogger } from '@/utils/logger.js';
 
-// Configuration from environment
 const CONFIG = {
-  // Server settings
-  host: process.env.MCP_HOST || 'localhost',
-  port: Number(process.env.MCP_PORT) || 3000,
-
-  // OAuth settings
+  host: process.env.MCP_HOST || '0.0.0.0',
+  port: Number(process.env.PORT || process.env.MCP_PORT || 3000),
+  publicBaseUrl: (process.env.PUBLIC_BASE_URL || '').replace(/\/$/, ''),
+  authEnabled: process.env.OAUTH_ENABLED === 'true',
   oauth: {
-    // Authorization server metadata URL or custom metadata
     authServerUrl: process.env.OAUTH_AUTH_SERVER_URL ?? 'http://localhost:8080/realms/master',
-
-    // Client credentials for token introspection
     clientId: process.env.OAUTH_CLIENT_ID,
     clientSecret: process.env.OAUTH_CLIENT_SECRET,
-
-    // Scopes required for this server
     requiredScopes: (process.env.OAUTH_REQUIRED_SCOPES || 'mcp:tools')
       .split(',')
-      .map((s) => s.trim()),
-
-    // Whether to use token introspection (true) or JWT validation (false)
+      .map((s) => s.trim())
+      .filter(Boolean),
     useIntrospection: process.env.OAUTH_USE_INTROSPECTION !== 'false',
   },
-
-  // Whether OAuth is enabled (disable for local development)
-  authEnabled: process.env.OAUTH_ENABLED !== 'false',
 };
 
-/**
- * Create OAuth server metadata URL
- */
-function getAuthServerMetadataUrl(): string {
-  // Support both OIDC Discovery and OAuth Server Metadata
-  const baseUrl = CONFIG.oauth.authServerUrl;
+function getServerBaseUrl(): string {
+  if (CONFIG.publicBaseUrl) {
+    return CONFIG.publicBaseUrl;
+  }
+  return `http://localhost:${CONFIG.port}`;
+}
 
-  // Try OIDC Discovery first
+function getAuthServerMetadataUrl(): string {
+  const baseUrl = CONFIG.oauth.authServerUrl;
   if (baseUrl.includes('/realms/')) {
-    // Keycloak-style URL
     return `${baseUrl}/.well-known/openid-configuration`;
   }
-
-  // Fall back to OAuth 2.0 Authorization Server Metadata
   return `${baseUrl}/.well-known/oauth-authorization-server`;
 }
 
-/**
- * Create Express app with OAuth support
- */
+async function createHostedApi(): Promise<EbaySellerApi> {
+  const api = new EbaySellerApi(getEbayConfig());
+  await api.initialize();
+  return api;
+}
+
 async function createApp(): Promise<express.Application> {
   const app = express();
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
   const projectRoot = join(__dirname, '..');
 
-  // Enable CORS
   app.use(
     cors({
-      // TODO: Restrict origin to known clients in production
-      // For development, allow all origins
-
       origin: '*',
       exposedHeaders: ['Mcp-Session-Id'],
     })
   );
-
-  // Parse JSON bodies
   app.use(express.json());
-
-  // Add security best practices (disable X-Powered-By header)
   app.use(helmet({ xPoweredBy: false }));
 
-  // Request logging
   app.use((req, res, next) => {
     const start = Date.now();
     res.on('finish', () => {
       const duration = Date.now() - start;
-      console.log(`${req.method} ${req.path} -> ${res.statusCode} (${duration}ms)`);
+      serverLogger.info(`${req.method} ${req.path} -> ${res.statusCode}`, { durationMs: duration });
     });
     next();
   });
 
-  // Server URL
-  const serverUrl = `http://${CONFIG.host}:${CONFIG.port}`;
+  const serverUrl = getServerBaseUrl();
   const iconBaseUrl = `${serverUrl}/icons`;
-
-  // Static assets (icons)
   app.use('/icons', express.static(join(projectRoot, 'public', 'icons')));
 
-  // Get eBay configuration for metadata
   const ebayConfig = getEbayConfig();
-
-  // Add OAuth metadata endpoints
   const metadataRouter = createMetadataRouter({
     resourceServerUrl: serverUrl,
     authServerMetadata: getAuthServerMetadataUrl(),
@@ -131,26 +107,140 @@ async function createApp(): Promise<express.Application> {
     ebayEnvironment: ebayConfig.environment,
     ebayScopes: getDefaultScopes(ebayConfig.environment),
   });
-
   app.use(metadataRouter);
 
-  // Health check endpoint (no auth required)
-  app.get('/health', (req, res) => {
+  app.get('/', (_req, res) => {
     res.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      oauth_enabled: CONFIG.authEnabled,
+      name: 'ebay-mcp',
+      version: getVersion(),
+      mode: 'single-user-private-hosted',
+      mcp_endpoint: `${serverUrl}/mcp`,
+      oauth_start_url: `${serverUrl}/oauth/start`,
+      health_url: `${serverUrl}/health`,
     });
   });
 
-  // Initialize token verifier if OAuth is enabled
-  let tokenVerifier: TokenVerifier | undefined;
+  app.get('/health', async (_req, res) => {
+    try {
+      const api = await createHostedApi();
+      const tokenInfo = api.getTokenInfo();
+      res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        version: getVersion(),
+        mode: 'single-user-hosted',
+        oauth_enabled: CONFIG.authEnabled,
+        has_user_token: tokenInfo.hasUserToken,
+        has_app_token: tokenInfo.hasAppAccessToken,
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  app.get('/status', async (_req, res) => {
+    try {
+      const api = await createHostedApi();
+      const tokenInfo = api.getTokenInfo();
+      res.json({
+        name: 'ebay-mcp',
+        version: getVersion(),
+        mode: 'single-user-private-hosted',
+        environment: ebayConfig.environment,
+        token_store_path: process.env.EBAY_TOKEN_STORE_PATH || '.ebay-user-tokens.json',
+        has_user_token: tokenInfo.hasUserToken,
+        has_app_token: tokenInfo.hasAppAccessToken,
+        oauth_start_url: `${serverUrl}/oauth/start`,
+        callback_url: `${serverUrl}/oauth/callback`,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  app.get('/oauth/start', (_req, res) => {
+    try {
+      if (!ebayConfig.clientId || !ebayConfig.clientSecret) {
+        res.status(500).json({ error: 'Missing EBAY_CLIENT_ID or EBAY_CLIENT_SECRET' });
+        return;
+      }
+      if (!ebayConfig.redirectUri) {
+        res.status(500).json({
+          error:
+            'Missing EBAY_REDIRECT_URI. Set this to your eBay RuName configured for your hosted callback.',
+        });
+        return;
+      }
+
+      const state = randomUUID();
+      const oauthUrl = getOAuthAuthorizationUrl(
+        ebayConfig.clientId,
+        ebayConfig.redirectUri,
+        ebayConfig.environment,
+        getDefaultScopes(ebayConfig.environment),
+        ebayConfig.locale,
+        state
+      );
+
+      res.redirect(oauthUrl);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  app.get('/oauth/callback', async (req, res) => {
+    try {
+      const code = typeof req.query.code === 'string' ? req.query.code : undefined;
+      const error = typeof req.query.error === 'string' ? req.query.error : undefined;
+      const errorDescription =
+        typeof req.query.error_description === 'string' ? req.query.error_description : undefined;
+
+      if (error) {
+        res.status(400).json({
+          error,
+          error_description: errorDescription || 'Authorization declined or failed',
+        });
+        return;
+      }
+
+      if (!code) {
+        res.status(400).json({
+          error: 'missing_code',
+          error_description: 'No authorization code was returned by eBay.',
+        });
+        return;
+      }
+
+      const api = await createHostedApi();
+      const oauthClient = api.getAuthClient().getOAuthClient();
+      const tokenData = await oauthClient.exchangeCodeForToken(code);
+
+      res.status(200).json({
+        status: 'ok',
+        message: 'eBay authorization completed and tokens were stored server-side.',
+        expires_in: tokenData.expires_in,
+        refresh_token_expires_in: tokenData.refresh_token_expires_in,
+        scope: tokenData.scope,
+      });
+    } catch (callbackError) {
+      res.status(500).json({
+        error: 'token_exchange_failed',
+        error_description:
+          callbackError instanceof Error ? callbackError.message : String(callbackError),
+      });
+    }
+  });
+
   let authMiddleware: express.RequestHandler | undefined;
 
   if (CONFIG.authEnabled) {
-    console.log('Initializing OAuth token verifier...');
-
-    tokenVerifier = new TokenVerifier({
+    const tokenVerifier = new TokenVerifier({
       authServerMetadata: getAuthServerMetadataUrl(),
       clientId: CONFIG.oauth.clientId,
       clientSecret: CONFIG.oauth.clientSecret,
@@ -159,115 +249,53 @@ async function createApp(): Promise<express.Application> {
       useIntrospection: CONFIG.oauth.useIntrospection,
     });
 
-    try {
-      await tokenVerifier.initialize();
-      console.log('Token verifier initialized');
-
-      authMiddleware = createBearerAuthMiddleware({
-        verifier: tokenVerifier,
-        resourceMetadataUrl: getProtectedResourceMetadataUrl(serverUrl),
-        realm: 'ebay-mcp',
-      });
-    } catch (error) {
-      console.error('Failed to initialize token verifier:', error);
-      throw error;
-    }
-  } else {
-    console.error('OAuth is disabled. Server running in unauthenticated mode.');
+    await tokenVerifier.initialize();
+    authMiddleware = createBearerAuthMiddleware({
+      verifier: tokenVerifier,
+      resourceMetadataUrl: getProtectedResourceMetadataUrl(serverUrl),
+      realm: 'ebay-mcp',
+    });
   }
 
-  // MCP session storage
   const transports = new Map<string, StreamableHTTPServerTransport>();
 
-  /**
-   * Create a new MCP server instance
-   */
   async function createMcpServer(): Promise<McpServer> {
-    const ebayConfig = getEbayConfig();
-    const api = new EbaySellerApi(ebayConfig);
-    try {
-      await api.initialize();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(`Failed to initialize eBay API client: ${message}`);
-      throw error;
-    }
-
+    const api = await createHostedApi();
     const server = new McpServer({
       name: 'ebay-mcp',
       version: getVersion(),
       title: 'eBay API MCP Server',
       websiteUrl: 'https://github.com/YosefHayim/ebay-mcp',
       icons: [
-        {
-          src: `${iconBaseUrl}/16x16.png`,
-          mimeType: 'image/png',
-          sizes: ['16x16'],
-        },
-        {
-          src: `${iconBaseUrl}/32x32.png`,
-          mimeType: 'image/png',
-          sizes: ['32x32'],
-        },
-        {
-          src: `${iconBaseUrl}/48x48.png`,
-          mimeType: 'image/png',
-          sizes: ['48x48'],
-        },
-        {
-          src: `${iconBaseUrl}/128x128.png`,
-          mimeType: 'image/png',
-          sizes: ['128x128'],
-        },
-        {
-          src: `${iconBaseUrl}/256x256.png`,
-          mimeType: 'image/png',
-          sizes: ['256x256'],
-        },
-        {
-          src: `${iconBaseUrl}/512x512.png`,
-          mimeType: 'image/png',
-          sizes: ['512x512'],
-        },
-        {
-          src: `${iconBaseUrl}/1024x1024.png`,
-          mimeType: 'image/png',
-          sizes: ['1024x1024'],
-        },
+        { src: `${iconBaseUrl}/16x16.png`, mimeType: 'image/png', sizes: ['16x16'] },
+        { src: `${iconBaseUrl}/32x32.png`, mimeType: 'image/png', sizes: ['32x32'] },
+        { src: `${iconBaseUrl}/48x48.png`, mimeType: 'image/png', sizes: ['48x48'] },
+        { src: `${iconBaseUrl}/128x128.png`, mimeType: 'image/png', sizes: ['128x128'] },
+        { src: `${iconBaseUrl}/256x256.png`, mimeType: 'image/png', sizes: ['256x256'] },
+        { src: `${iconBaseUrl}/512x512.png`, mimeType: 'image/png', sizes: ['512x512'] },
+        { src: `${iconBaseUrl}/1024x1024.png`, mimeType: 'image/png', sizes: ['1024x1024'] },
       ],
     });
 
-    // Register tools
     const tools = getToolDefinitions();
     for (const toolDef of tools) {
       server.registerTool(
         toolDef.name,
         {
           description: toolDef.description,
-          // ToolDefinition uses Zod schemas internally, but MCP SDK expects Zod schemas
-          // This is a safe cast since both are Zod-based schema types
           inputSchema: toolDef.inputSchema,
         },
         async (args: Record<string, unknown>) => {
           try {
             const result = await executeTool(api, toolDef.name, args);
             return {
-              content: [
-                {
-                  type: 'text' as const,
-                  text: JSON.stringify(result, null, 2),
-                },
-              ],
+              content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
             };
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
             return {
               content: [
-                {
-                  type: 'text' as const,
-                  text: JSON.stringify({ error: errorMessage }, null, 2),
-                },
+                { type: 'text' as const, text: JSON.stringify({ error: errorMessage }, null, 2) },
               ],
               isError: true,
             };
@@ -279,9 +307,6 @@ async function createApp(): Promise<express.Application> {
     return server;
   }
 
-  /**
-   * MCP POST handler
-   */
   const mcpPostHandler = async (req: express.Request, res: express.Response): Promise<void> => {
     const sessionId = req.headers['mcp-session-id'] as string | undefined;
     let transport: StreamableHTTPServerTransport;
@@ -289,19 +314,18 @@ async function createApp(): Promise<express.Application> {
     if (sessionId && transports.has(sessionId)) {
       transport = transports.get(sessionId)!;
     } else if (!sessionId && isInitializeRequest(req.body)) {
-      // Create new session
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
-        onsessioninitialized: (sessionId) => {
-          transports.set(sessionId, transport);
-          console.log(`New MCP session initialized: ${sessionId}`);
+        onsessioninitialized: (newSessionId) => {
+          transports.set(newSessionId, transport);
+          serverLogger.info('New MCP session initialized', { sessionId: newSessionId });
         },
       });
 
       transport.onclose = () => {
         if (transport.sessionId) {
           transports.delete(transport.sessionId);
-          console.log(`MCP session closed: ${transport.sessionId}`);
+          serverLogger.info('MCP session closed', { sessionId: transport.sessionId });
         }
       };
 
@@ -322,9 +346,6 @@ async function createApp(): Promise<express.Application> {
     await transport.handleRequest(req, res, req.body);
   };
 
-  /**
-   * MCP session request handler (GET/DELETE)
-   */
   const handleSessionRequest = async (
     req: express.Request,
     res: express.Response
@@ -342,47 +363,28 @@ async function createApp(): Promise<express.Application> {
     await transport.handleRequest(req, res);
   };
 
-  // Apply auth middleware to MCP endpoints if enabled
-  const mcpMiddleware = authMiddleware ? [authMiddleware, mcpPostHandler] : [mcpPostHandler];
-
-  const sessionMiddleware = authMiddleware
-    ? [authMiddleware, handleSessionRequest]
-    : [handleSessionRequest];
-
-  // MCP endpoints
-  app.post('/', ...mcpMiddleware);
-  app.get('/', ...sessionMiddleware);
-  app.delete('/', ...sessionMiddleware);
+  app.post('/mcp', ...(authMiddleware ? [authMiddleware, mcpPostHandler] : [mcpPostHandler]));
+  app.get('/mcp', ...(authMiddleware ? [authMiddleware, handleSessionRequest] : [handleSessionRequest]));
+  app.delete('/mcp', ...(authMiddleware ? [authMiddleware, handleSessionRequest] : [handleSessionRequest]));
 
   return app;
 }
 
-/**
- * Start the server
- */
 async function main() {
   try {
-    console.log('Starting eBay API MCP Server (HTTP + OAuth)...');
+    console.log('Starting eBay API MCP Server (hosted HTTP mode)...');
     console.log();
 
-    // Validate environment configuration
     const validation = validateEnvironmentConfig();
-
-    // Display warnings
     if (validation.warnings.length > 0) {
       console.log('Environment Configuration Warnings:');
-      validation.warnings.forEach((warning) => {
-        console.log(`  • ${warning}`);
-      });
+      validation.warnings.forEach((warning) => console.log(`  • ${warning}`));
       console.log();
     }
 
-    // Display errors and exit if configuration is invalid
     if (!validation.isValid) {
       console.error('Environment Configuration Errors:');
-      validation.errors.forEach((error) => {
-        console.error(`  • ${error}`);
-      });
+      validation.errors.forEach((error) => console.error(`  • ${error}`));
       console.error('\nPlease fix the configuration errors and restart the server.\n');
       process.exit(1);
     }
@@ -390,40 +392,25 @@ async function main() {
     console.log('Configuration:');
     console.log(`Host: ${CONFIG.host}`);
     console.log(`Port: ${CONFIG.port}`);
+    console.log(`Public Base URL: ${getServerBaseUrl()}`);
     console.log(`OAuth Enabled: ${CONFIG.authEnabled}`);
 
-    if (CONFIG.authEnabled) {
-      console.log(`Auth Server: ${CONFIG.oauth.authServerUrl}`);
-      console.log(`Required Scopes: ${CONFIG.oauth.requiredScopes.join(', ')}`);
-      console.log(
-        `Verification Method: ${CONFIG.oauth.useIntrospection ? 'Introspection' : 'JWT'}`
-      );
-    }
-
     const app = await createApp();
-
     const server = app.listen(CONFIG.port, CONFIG.host, () => {
-      const serverUrl = `http://${CONFIG.host}:${CONFIG.port}`;
-
+      const serverUrl = getServerBaseUrl();
       console.log('Server is running!');
       console.log();
-      console.log(`MCP endpoint: ${serverUrl}/`);
-      console.log(`Protected Resource Metadata: ${serverUrl}/.well-known/oauth-protected-resource`);
-      console.log(`Health check: ${serverUrl}/health`);
+      console.log(`Root: ${serverUrl}/`);
+      console.log(`Status: ${serverUrl}/status`);
+      console.log(`Health: ${serverUrl}/health`);
+      console.log(`OAuth Start: ${serverUrl}/oauth/start`);
+      console.log(`OAuth Callback: ${serverUrl}/oauth/callback`);
+      console.log(`MCP endpoint: ${serverUrl}/mcp`);
       console.log();
-
-      if (CONFIG.authEnabled) {
-        console.log('Authorization is ENABLED');
-        console.log('Clients must provide valid Bearer tokens to access MCP endpoints');
-      } else {
-        console.log('Authorization is DISABLED');
-        console.log('Set OAUTH_ENABLED=true (or remove OAUTH_ENABLED=false) to enable OAuth protection');
-      }
     });
 
-    // Graceful shutdown
     process.on('SIGINT', () => {
-      console.log('\n Shutting down...');
+      console.log('\nShutting down...');
       server.close(() => {
         console.log('✓ Server closed');
         process.exit(0);
@@ -435,7 +422,6 @@ async function main() {
   }
 }
 
-// Start server if run directly
 const entryPath = process.argv[1] ? resolve(process.argv[1]) : undefined;
 const modulePath = resolve(fileURLToPath(import.meta.url));
 if (entryPath && modulePath === entryPath) {
