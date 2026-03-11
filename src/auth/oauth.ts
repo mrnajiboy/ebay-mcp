@@ -201,11 +201,35 @@ export class EbayOAuthClient {
     this.userTokens = null;
   }
 
-  getTokenInfo() {
-    return {
+  getTokenInfo(): {
+    hasUserToken: boolean;
+    hasAppAccessToken: boolean;
+    scopeInfo?: { tokenScopes: string[]; environmentScopes: string[]; missingScopes: string[] };
+  } {
+    const info: {
+      hasUserToken: boolean;
+      hasAppAccessToken: boolean;
+      scopeInfo?: { tokenScopes: string[]; environmentScopes: string[]; missingScopes: string[] };
+    } = {
       hasUserToken: this.userTokens !== null && !this.isUserAccessTokenExpired(this.userTokens),
       hasAppAccessToken: this.appAccessToken !== null && Date.now() < this.appAccessTokenExpiry,
     };
+
+    if (this.userTokens?.scope) {
+      const tokenScopes = this.userTokens.scope.split(' ');
+      const environmentScopes = this.config.environment === 'production'
+        ? [
+            'https://api.ebay.com/oauth/api_scope'
+          ]
+        : [
+            'https://api.ebay.com/oauth/api_scope'
+          ];
+      const tokenScopeSet = new Set(tokenScopes);
+      const missingScopes = environmentScopes.filter((scope) => !tokenScopeSet.has(scope));
+      info.scopeInfo = { tokenScopes, environmentScopes, missingScopes };
+    }
+
+    return info;
   }
 
   getUserTokens(): StoredTokenData | null {

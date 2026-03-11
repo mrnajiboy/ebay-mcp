@@ -421,12 +421,7 @@ export class AccountApi {
     const params = programTypes ? { program_types: programTypes } : undefined;
     return await this.client.get<SellerEligibilityMultiProgramResponse>(
       `${this.basePath}/advertising_eligibility`,
-      params,
-      {
-        headers: {
-          'X-EBAY-C-MARKETPLACE-ID': marketplaceId,
-        },
-      }
+      params
     );
   }
 
