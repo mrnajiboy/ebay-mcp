@@ -398,6 +398,25 @@ It will:
 
 Run it intentionally when you want to refresh generated artifacts.
 
+### Monthly GitHub Actions sync
+
+This fork also includes a scheduled GitHub Actions workflow that runs once per month and can also be triggered manually.
+
+Workflow file:
+
+```text
+.github/workflows/monthly-sync.yml
+```
+
+It performs:
+
+- `npm install`
+- `npm run sync`
+- `npm run typecheck`
+- `npm run build`
+
+If changes are detected, it opens a PR automatically for review instead of pushing directly to `main`.
+
 ## Dependency policy
 
 This fork uses normal semver-compatible dependency ranges so fresh installs can pick up newer compatible versions automatically. The MCP SDK dependency has been bumped to a newer range so patched transitive dependencies can be resolved during install rather than requiring users to perform a manual update after cloning.

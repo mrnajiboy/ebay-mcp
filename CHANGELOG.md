@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Admin session inspection and revocation endpoints
 - `GET /whoami` endpoint for session-bound user introspection
 - Improved hosted callback page with copy-friendly session token output for Make and TypingMind connection setup
+- Monthly GitHub Actions sync workflow that runs `npm run sync`, validates the repo, and opens a PR when changes are detected
 
 ### Changed
 
@@ -26,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hosted OAuth now supports both production and sandbox keysets in the same deployment
 - `GET /mcp` without a valid Bearer token now redirects into browser OAuth by default (production first, optional sandbox override)
 - Simplified hosted auth model to use server-managed credentials and browser-issued session tokens instead of dynamic client-supplied eBay credentials
+- Hosted callback page now includes improved token copy behavior, click feedback, and a direct link to the eBay developer scope settings page
 
 ### Security
 
