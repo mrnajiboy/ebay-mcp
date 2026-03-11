@@ -244,14 +244,40 @@ async function createApp(): Promise<express.Application> {
     next: express.NextFunction
   ): Promise<void> => {
     const authHeader = req.headers.authorization;
+    const requestedEnv = ((typeof req.query.env === 'string' ? req.query.env : undefined) ||
+      (typeof req.headers['x-ebay-env'] === 'string' ? req.headers['x-ebay-env'] : undefined) ||
+      getConfiguredEnvironment()) as EbayEnvironment;
+
+    const sendAuthorizationRequired = async (reason: 'missing_session_token' | 'invalid_session_token') => {
+      const oauthUrl = new URL(`${getServerBaseUrl()}/oauth/start`);
+      oauthUrl.searchParams.set('env', requestedEnv);
+      if (CONFIG.oauthStartKey) {
+        oauthUrl.searchParams.set('key', CONFIG.oauthStartKey);
+      }
+
+      if (req.method === 'GET') {
+        res.redirect(oauthUrl.toString());
+        return;
+      }
+
+      res.status(401).json({
+        error: reason,
+        authorization_required: true,
+        environment: requestedEnv,
+        authorization_url: oauthUrl.toString(),
+        message:
+          'No valid hosted session token was provided. Complete the browser OAuth flow using authorization_url, then retry with Authorization: Bearer <session-token>.',
+      });
+    };
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({ error: 'missing_session_token' });
+      await sendAuthorizationRequired('missing_session_token');
       return;
     }
     const sessionToken = authHeader.slice('Bearer '.length).trim();
     const session = await authStore.getSession(sessionToken);
     if (!session || session.revokedAt) {
-      res.status(401).json({ error: 'invalid_session_token' });
+      await sendAuthorizationRequired('invalid_session_token');
       return;
     }
     await authStore.touchSession(sessionToken);
