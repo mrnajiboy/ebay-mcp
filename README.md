@@ -183,7 +183,7 @@ CLOUDFLARE_API_TOKEN=your-cloudflare-api-token
 ADMIN_API_KEY=your-admin-api-key
 OAUTH_START_KEY=optional-shared-secret-for-oauth-start
 EBAY_MARKETPLACE_ID=EBAY_COUNTRY
-EBAY_CONTENT_LANGUAGE=en-COUNTRY
+EBAY_CONTENT_LANGUAGE=lang-COUNTRY
 EBAY_LOG_LEVEL=info
 ```
 
@@ -443,7 +443,7 @@ If you want browser/admin surfaces to be private to only you:
 - protect `/oauth/start`
 - protect `/admin/*`
 - keep `/oauth/callback` reachable by eBay
-- keep `/mcp` outside Access unless your MCP client is verified to work through Access
+- keep `/mcp` outside Cloudflare Access unless your MCP client is verified to work through Cloudflare Access
 - keep `/health` reachable if Render uses it for health checks
 
 This is the recommended way to make the hosted URL effectively private without breaking OAuth callback or MCP compatibility.
