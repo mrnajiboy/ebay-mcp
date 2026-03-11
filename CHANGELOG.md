@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session-token based hosted MCP auth using `Authorization: Bearer <session-token>`
 - Admin session inspection and revocation endpoints
 - `GET /whoami` endpoint for session-bound user introspection
+- Improved hosted callback page with copy-friendly session token output for Make and TypingMind connection setup
 
 ### Changed
 
@@ -23,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MCP HTTP flow now supports per-user eBay credentials and session-based routing
 - Callback flow now tolerates missing OAuth state when eBay omits it and falls back safely to configured/query environment
 - Hosted OAuth now supports both production and sandbox keysets in the same deployment
+- `GET /mcp` without a valid Bearer token now redirects into browser OAuth by default (production first, optional sandbox override)
+- Simplified hosted auth model to use server-managed credentials and browser-issued session tokens instead of dynamic client-supplied eBay credentials
 
 ### Security
 
@@ -35,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - This fork intentionally diverges from upstream by prioritizing Render-hosted, multi-user operation while keeping original local workflows available.
 - Dependency policy has been updated so fresh installs pull newer compatible package versions automatically instead of requiring a post-install update step.
+- Make and TypingMind are supported today via the browser OAuth + pasted session-token flow rather than automatic in-client OAuth handoff.
 
 ## [1.7.2] - 2026-02-07
 

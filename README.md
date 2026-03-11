@@ -246,13 +246,19 @@ X-OAuth-Start-Key: YOUR_OAUTH_START_KEY
 
 ### Hosted session token usage
 
-After successful callback, the app issues a session token.
+After successful callback, the app issues a session token and displays it in a copy-friendly callback page.
 
 Use it in your MCP client:
 
 ```text
 Authorization: Bearer <session-token>
 ```
+
+For Make and TypingMind, the practical supported flow is:
+
+1. complete browser OAuth via the hosted server
+2. copy the returned session token from the callback page
+3. paste it into the platform's API Key / Access token field
 
 Normal MCP usage should not open a browser window once a valid hosted session token already exists.
 
@@ -284,6 +290,15 @@ POST /mcp
 GET /mcp
 DELETE /mcp
 ```
+
+#### Initial auth behavior
+
+- `GET /mcp` without a valid Bearer token redirects into browser OAuth
+- default environment is production
+- sandbox can be requested with `?env=sandbox`
+- `POST /mcp` without a valid Bearer token returns an auth-required JSON response
+
+This means browser-driven onboarding works cleanly, while protocol clients can still receive a structured auth response.
 
 ### Privacy recommendations
 
@@ -422,10 +437,12 @@ Accept: application/json, text/event-stream
 
 ### OAuth browser flow
 
-In hosted mode, browser OAuth is only needed for:
+In hosted mode, browser OAuth is needed for:
 
 - first-time account connection
 - re-authorization after token expiry/revocation
+
+For Make and TypingMind, the server currently expects users to complete browser OAuth first and then paste the issued session token into the platform's token field. The server then takes over token refresh and ongoing eBay access.
 
 Normal MCP usage should rely on the issued session token.
 

@@ -11,6 +11,7 @@ import { EbaySellerApi } from '@/api/index.js';
 import {
   getConfiguredEnvironment,
   getDefaultScopes,
+  getHostedOauthScopes,
   getEbayConfig,
   getOAuthAuthorizationUrl,
   type EbayEnvironment,
@@ -128,7 +129,7 @@ async function createApp(): Promise<express.Application> {
         ebayConfig.clientId,
         ebayConfig.redirectUri,
         environment,
-        getDefaultScopes(environment),
+        getHostedOauthScopes(environment),
         undefined,
         stateRecord.state
       );
