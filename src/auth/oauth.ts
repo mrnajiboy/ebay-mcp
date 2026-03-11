@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getBaseUrl } from '@/config/environment.js';
 import type { EbayAppAccessTokenResponse, EbayConfig, EbayUserToken, StoredTokenData } from '@/types/ebay.js';
-import { MultiUserAuthStore, type OAuthConfigRecord } from '@/auth/multi-user-store.js';
+import { MultiUserAuthStore } from '@/auth/multi-user-store.js';
 
 export class EbayOAuthClient {
   private appAccessToken: string | null = null;
@@ -11,33 +11,14 @@ export class EbayOAuthClient {
 
   constructor(
     private config: EbayConfig,
-    private context?: {
-      userId?: string;
-      environment?: 'production' | 'sandbox';
-      oauthConfig?: OAuthConfigRecord;
-    }
+    private context?: { userId?: string; environment?: 'production' | 'sandbox' }
   ) {}
-
-  private getResolvedOauthConfig(): OAuthConfigRecord {
-    if (this.context?.oauthConfig) {
-      return this.context.oauthConfig;
-    }
-    return {
-      source: 'server-default',
-    };
-  }
 
   async initialize(): Promise<void> {
     if (this.context?.userId && this.context.environment) {
       const stored = await this.authStore.getUserTokens(this.context.userId, this.context.environment);
       if (stored?.tokenData) {
         this.userTokens = stored.tokenData;
-        if (!this.context.oauthConfig) {
-          this.context = {
-            ...this.context,
-            oauthConfig: stored.oauthConfig,
-          };
-        }
       }
     }
   }
@@ -56,12 +37,7 @@ export class EbayOAuthClient {
 
   private async persistUserTokens(): Promise<void> {
     if (this.context?.userId && this.context.environment && this.userTokens) {
-      await this.authStore.saveUserTokens(
-        this.context.userId,
-        this.context.environment,
-        this.userTokens,
-        this.getResolvedOauthConfig()
-      );
+      await this.authStore.saveUserTokens(this.context.userId, this.context.environment, this.userTokens);
     }
   }
 
@@ -74,7 +50,7 @@ export class EbayOAuthClient {
         await this.refreshUserToken();
         return this.userTokens.userAccessToken;
       }
-      throw new Error('User authorization expired. Re-authorize through /oauth/start.');
+      throw new Error('User authorization expired. Re-authorize through browser OAuth and update your MCP connection token.');
     }
 
     if (this.appAccessToken && Date.now() < this.appAccessTokenExpiry) {
