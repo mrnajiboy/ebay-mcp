@@ -768,6 +768,6 @@ git push -u origin feat/trading-api
 
 ### Task 7: Create PR to Upstream
 
-Create PR from `longrackslabs/ebay-mcp:feat/trading-api` to `YosefHayim/ebay-mcp:main`.
+Create PR from `longrackslabs/ebay-mcp:feat/trading-api` to `mrnajiboy/ebay-mcp:main`.
 
 Include the .env quoting fix from the earlier branch too, or note it as a dependency.

@@ -636,8 +636,8 @@ Exports a detailed diagnostic report that you can share when seeking help.
 If you're still experiencing issues:
 
 1. **Check Existing Resources:**
-   - Review [GitHub Issues](https://github.com/YosefHayim/ebay-mcp/issues)
-   - Search [GitHub Discussions](https://github.com/YosefHayim/ebay-mcp/discussions)
+   - Review [GitHub Issues](https://github.com/mrnajiboy/ebay-mcp/issues)
+   - Search [GitHub Discussions](https://github.com/mrnajiboy/ebay-mcp/discussions)
 
 2. **Create a New Issue:**
    - Include your diagnostic report (`npm run diagnose:export`)
@@ -658,4 +658,4 @@ If you're still experiencing issues:
 
 ---
 
-**Need Help?** If you encounter issues not covered in this guide, please [open a GitHub issue](https://github.com/YosefHayim/ebay-mcp/issues) or [start a discussion](https://github.com/YosefHayim/ebay-mcp/discussions).
+**Need Help?** If you encounter issues not covered in this guide, please [open a GitHub issue](https://github.com/mrnajiboy/ebay-mcp/issues) or [start a discussion](https://github.com/mrnajiboy/ebay-mcp/discussions).

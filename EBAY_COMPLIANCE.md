@@ -102,7 +102,7 @@ From [SECURITY.md](SECURITY.md):
 
 1. **Vulnerability Reporting**
    - GitHub Security Advisory: https://github.com/YosefHayim/ebay-mcp/security/advisories/new
-   - Email contact: yosefhayim.sabag@gmail.com
+   - Email contact: k.naji.ja@gmail.com
    - Responsible disclosure process
 
 2. **Security Best Practices**

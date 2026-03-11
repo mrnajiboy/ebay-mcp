@@ -111,7 +111,7 @@ async function createApp(): Promise<express.Application> {
         ebayConfig.clientId,
         ebayConfig.redirectUri,
         environment,
-        ['https://api.ebay.com/oauth/api_scope'],
+        getDefaultScopes(environment),
         undefined,
         stateRecord.state
       );
@@ -232,7 +232,7 @@ async function createApp(): Promise<express.Application> {
       name: 'ebay-mcp',
       version: getVersion(),
       title: 'eBay API MCP Server',
-      websiteUrl: 'https://github.com/YosefHayim/ebay-mcp',
+      websiteUrl: 'https://github.com/mrnajiboy/ebay-mcp',
       icons: [
         { src: `${iconBaseUrl}/16x16.png`, mimeType: 'image/png', sizes: ['16x16'] },
         { src: `${iconBaseUrl}/32x32.png`, mimeType: 'image/png', sizes: ['32x32'] },

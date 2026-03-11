@@ -52,11 +52,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/YosefHayim/ebay-mcp.git"
+    "url": "https://github.com/mrnajiboy/ebay-mcp.git"
   },
-  "homepage": "https://github.com/YosefHayim/ebay-mcp#readme",
+  "homepage": "https://github.com/mrnajiboy/ebay-mcp#readme",
   "bugs": {
-    "url": "https://github.com/YosefHayim/ebay-mcp/issues"
+    "url": "https://github.com/mrnajiboy/ebay-mcp/issues"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.26.0",

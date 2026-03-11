@@ -693,8 +693,8 @@ When contributing to this project, please:
 
 ## Links
 
-- [GitHub Repository](https://github.com/YosefHayim/ebay-mcp)
+- [GitHub Repository](https://github.com/mrnajiboy/ebay-mcp)
 - [npm Package](https://www.npmjs.com/package/ebay-mcp)
-- [Issue Tracker](https://github.com/YosefHayim/ebay-mcp/issues)
+- [Issue Tracker](https://github.com/mrnajiboy/ebay-mcp/issues)
 - [eBay Developer Portal](https://developer.ebay.com)
 - [MCP Documentation](https://modelcontextprotocol.io)

@@ -277,7 +277,7 @@ export const mcpConfig: Implementation = {
   name: 'eBay API Model Context Protocol Server',
   version: getVersion(),
   title: 'eBay API Model Context Protocol Server',
-  websiteUrl: 'https://github.com/YosefHayim/ebay-mcp',
+  websiteUrl: 'https://github.com/mrnajiboy/ebay-mcp',
   icons: [
     { src: iconUrl('16x16'), mimeType: 'image/png', sizes: ['16x16'] },
     { src: iconUrl('32x32'), mimeType: 'image/png', sizes: ['32x32'] },

@@ -42,7 +42,7 @@ There are many ways to contribute to the eBay API MCP Server:
 
 ### Reporting Bugs
 
-Before creating bug reports, please check the [existing issues](https://github.com/YosefHayim/ebay-mcp/issues) to avoid duplicates.
+Before creating bug reports, please check the [existing issues](https://github.com/mrnajiboy/ebay-mcp/issues) to avoid duplicates.
 
 When you create a bug report, please include as many details as possible:
 

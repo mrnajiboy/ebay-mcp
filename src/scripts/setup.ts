@@ -1744,9 +1744,9 @@ async function stepComplete(state: SetupState): Promise<void> {
   console.log('  2. The eBay server should appear in available tools');
   console.log('  3. Try: "Show my eBay seller information"\n');
 
-  console.log(ui.dim('  Documentation: ') + ui.info('https://github.com/YosefHayim/ebay-mcp'));
+  console.log(ui.dim('  Documentation: ') + ui.info('https://github.com/mrnajiboy/ebay-mcp'));
   console.log(
-    ui.dim('  Get Help:      ') + ui.info('https://github.com/YosefHayim/ebay-mcp/issues\n')
+    ui.dim('  Get Help:      ') + ui.info('https://github.com/mrnajiboy/ebay-mcp/issues\n')
   );
 }
 

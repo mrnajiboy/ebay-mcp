@@ -469,7 +469,7 @@ async function main(): Promise<void> {
     print('  2. Run: npm run auto-setup');
   }
 
-  print('\n📚 Documentation: https://github.com/YosefHayim/ebay-mcp#readme\n');
+  print('\n📚 Documentation: https://github.com/mrnajiboy/ebay-mcp#readme\n');
 }
 
 // Run the script

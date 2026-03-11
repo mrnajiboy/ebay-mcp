@@ -115,7 +115,7 @@ function showHelp() {
   console.log(chalk.gray('  npx ebay-mcp --diagnose          # Run diagnostics'));
   console.log(chalk.gray('  npx ebay-mcp --env=production    # Setup for production\n'));
   console.log(chalk.white('Learn more:'));
-  console.log(chalk.blue('  https://github.com/YosefHayim/ebay-mcp#readme\n'));
+  console.log(chalk.blue('  https://github.com/mrnajiboy/ebay-mcp#readme\n'));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -138,7 +138,7 @@ const EBAY_LOGO = `
 `;
 
 const CREATOR_CREDIT = `
-   Creator: ${chalk.bold('YosefHayim')}
+   Creator: ${chalk.bold('mrnajiboy')}
    ${createClickableLink(chalk.underline('linkedin.com/in/yosef-hayim-sabag'), 'https://www.linkedin.com/in/yosef-hayim-sabag/')}
 `;
 
@@ -395,7 +395,7 @@ async function detectAndConfigureLLMClients(): Promise<void> {
     console.log(chalk.gray('  • Cline             (VSCode extension)'));
     console.log(chalk.gray('  • Continue.dev      (VSCode/JetBrains extension)\n'));
     console.log(chalk.cyan('💡 You can manually configure your MCP client later.'));
-    console.log(chalk.gray('   See: https://github.com/YosefHayim/ebay-mcp#setup\n'));
+    console.log(chalk.gray('   See: https://github.com/mrnajiboy/ebay-mcp#setup\n'));
     return;
   }
 
@@ -623,15 +623,15 @@ function displayQuickStart(): void {
   console.log(chalk.bold.white('Resources:\n'));
   console.log(
     chalk.gray('  📖 Documentation: ') +
-      chalk.blue.underline('https://github.com/YosefHayim/ebay-mcp#readme')
+      chalk.blue.underline('https://github.com/mrnajiboy/ebay-mcp#readme')
   );
   console.log(
     chalk.gray('  🐛 Report Issues:  ') +
-      chalk.blue.underline('https://github.com/YosefHayim/ebay-mcp/issues')
+      chalk.blue.underline('https://github.com/mrnajiboy/ebay-mcp/issues')
   );
   console.log(
     chalk.gray('  💬 Get Support:    ') +
-      chalk.blue.underline('https://github.com/YosefHayim/ebay-mcp/discussions\n')
+      chalk.blue.underline('https://github.com/mrnajiboy/ebay-mcp/discussions\n')
   );
 }
 

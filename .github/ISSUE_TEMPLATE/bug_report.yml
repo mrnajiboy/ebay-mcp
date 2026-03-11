@@ -17,7 +17,7 @@ body:
       options:
         - label: I have searched existing issues to avoid duplicates
           required: true
-        - label: I have reviewed the [documentation](https://github.com/YosefHayim/ebay-mcp#readme)
+        - label: I have reviewed the [documentation](https://github.com/mrnajiboy/ebay-mcp#readme)
           required: true
         - label: I am using the latest version of the package
           required: false
