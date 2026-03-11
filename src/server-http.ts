@@ -18,7 +18,7 @@ import {
 import { getToolDefinitions, executeTool } from '@/tools/index.js';
 import { getVersion } from '@/utils/version.js';
 import { serverLogger } from '@/utils/logger.js';
-import { MultiUserAuthStore } from '@/auth/multi-user-store.js';
+import { MultiUserAuthStore, type OAuthConfigRecord } from '@/auth/multi-user-store.js';
 
 const CONFIG = {
   host: process.env.MCP_HOST || '0.0.0.0',
@@ -70,8 +70,83 @@ function requireOauthStartKey(req: express.Request, res: express.Response, next:
   next();
 }
 
-async function createUserScopedApi(userId: string, environment: EbayEnvironment): Promise<EbaySellerApi> {
-  const api = new EbaySellerApi(getEbayConfig(environment), { userId, environment });
+function getDynamicOauthConfig(req: express.Request): {
+  environment: EbayEnvironment;
+  oauthConfig: OAuthConfigRecord;
+} | null {
+  const clientId = typeof req.headers['x-ebay-client-id'] === 'string' ? req.headers['x-ebay-client-id'] : '';
+  const clientSecret = typeof req.headers['x-ebay-client-secret'] === 'string' ? req.headers['x-ebay-client-secret'] : '';
+  const redirectUri = typeof req.headers['x-ebay-redirect-uri'] === 'string' ? req.headers['x-ebay-redirect-uri'] : '';
+  const envHeader = typeof req.headers['x-ebay-env'] === 'string' ? req.headers['x-ebay-env'] : undefined;
+  const environment = (envHeader === 'sandbox' || envHeader === 'production' ? envHeader : getConfiguredEnvironment()) as EbayEnvironment;
+
+  const anyProvided = Boolean(clientId || clientSecret || redirectUri);
+  if (!anyProvided) {
+    return null;
+  }
+
+  if (!(clientId && clientSecret && redirectUri)) {
+    throw new Error(
+      'Incomplete dynamic OAuth config. X-EBAY-CLIENT-ID, X-EBAY-CLIENT-SECRET, and X-EBAY-REDIRECT-URI must all be provided.'
+    );
+  }
+
+  return {
+    environment,
+    oauthConfig: {
+      source: 'dynamic-client',
+      clientId,
+      clientSecret,
+      redirectUri,
+    },
+  };
+}
+
+function resolveOauthConfig(req: express.Request): {
+  environment: EbayEnvironment;
+  oauthConfig: OAuthConfigRecord;
+} {
+  const dynamic = getDynamicOauthConfig(req);
+  if (dynamic) {
+    return dynamic;
+  }
+
+  const requestedEnv = ((typeof req.query.env === 'string' ? req.query.env : undefined) ||
+    (typeof req.headers['x-ebay-env'] === 'string' ? req.headers['x-ebay-env'] : undefined) ||
+    getConfiguredEnvironment()) as EbayEnvironment;
+
+  return {
+    environment: requestedEnv,
+    oauthConfig: { source: 'server-default' },
+  };
+}
+
+function getEffectiveEbayConfig(
+  environment: EbayEnvironment,
+  oauthConfig: OAuthConfigRecord
+): ReturnType<typeof getEbayConfig> {
+  const baseConfig = getEbayConfig(environment);
+  if (oauthConfig.source === 'dynamic-client') {
+    return {
+      ...baseConfig,
+      clientId: oauthConfig.clientId || baseConfig.clientId,
+      clientSecret: oauthConfig.clientSecret || baseConfig.clientSecret,
+      redirectUri: oauthConfig.redirectUri || baseConfig.redirectUri,
+    };
+  }
+  return baseConfig;
+}
+
+async function createUserScopedApi(
+  userId: string,
+  environment: EbayEnvironment,
+  oauthConfig: OAuthConfigRecord = { source: 'server-default' }
+): Promise<EbaySellerApi> {
+  const api = new EbaySellerApi(getEffectiveEbayConfig(environment, oauthConfig), {
+    userId,
+    environment,
+    oauthConfig,
+  });
   await api.initialize();
   return api;
 }
@@ -115,14 +190,14 @@ async function createApp(): Promise<express.Application> {
 
   app.get('/oauth/start', requireOauthStartKey, async (req, res) => {
     try {
-      const environment = ((typeof req.query.env === 'string' ? req.query.env : undefined) || getConfiguredEnvironment()) as EbayEnvironment;
+      const { environment, oauthConfig } = resolveOauthConfig(req);
       const returnTo = typeof req.query.returnTo === 'string' ? req.query.returnTo : undefined;
-      const ebayConfig = getEbayConfig(environment);
+      const ebayConfig = getEffectiveEbayConfig(environment, oauthConfig);
       if (!ebayConfig.clientId || !ebayConfig.clientSecret || !ebayConfig.redirectUri) {
         res.status(500).json({ error: `Missing eBay configuration for ${environment}` });
         return;
       }
-      const stateRecord = await authStore.createOAuthState(environment, returnTo);
+      const stateRecord = await authStore.createOAuthState(environment, oauthConfig, returnTo);
       const oauthUrl = getOAuthAuthorizationUrl(
         ebayConfig.clientId,
         ebayConfig.redirectUri,
@@ -133,7 +208,7 @@ async function createApp(): Promise<express.Application> {
       );
       res.redirect(oauthUrl);
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
+      res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -155,6 +230,7 @@ async function createApp(): Promise<express.Application> {
       }
 
       let environment: EbayEnvironment;
+      let oauthConfig: OAuthConfigRecord = { source: 'server-default' };
       if (state) {
         const stateRecord = await authStore.consumeOAuthState(state);
         if (!stateRecord) {
@@ -162,6 +238,7 @@ async function createApp(): Promise<express.Application> {
           return;
         }
         environment = stateRecord.environment;
+        oauthConfig = stateRecord.oauthConfig;
       } else {
         environment = (envFromQuery === 'sandbox' || envFromQuery === 'production'
           ? envFromQuery
@@ -172,10 +249,11 @@ async function createApp(): Promise<express.Application> {
       }
 
       const userId = randomUUID();
-      const api = await createUserScopedApi(userId, environment);
+      const api = await createUserScopedApi(userId, environment, oauthConfig);
       const oauthClient = api.getAuthClient().getOAuthClient();
       const tokenData = await oauthClient.exchangeCodeForToken(code);
       const session = await authStore.createSession(userId, environment);
+      const handoff = await authStore.createHandoff(session.sessionToken, userId, environment);
 
       res.status(200).send(`<!doctype html>
 <html>
@@ -186,14 +264,35 @@ async function createApp(): Promise<express.Application> {
     <p><strong>User ID:</strong> <code>${htmlEscape(userId)}</code></p>
     <p><strong>Session Token:</strong></p>
     <pre style="white-space: pre-wrap; word-break: break-all; background: #f5f5f5; padding: 12px; border-radius: 8px;">${htmlEscape(session.sessionToken)}</pre>
+    <p><strong>Handoff Token:</strong></p>
+    <pre style="white-space: pre-wrap; word-break: break-all; background: #f5f5f5; padding: 12px; border-radius: 8px;">${htmlEscape(handoff.handoffToken)}</pre>
     <p>Use this in your MCP client as:</p>
     <pre style="background: #f5f5f5; padding: 12px; border-radius: 8px;">Authorization: Bearer ${htmlEscape(session.sessionToken)}</pre>
     <p><strong>Scopes granted:</strong> ${htmlEscape(tokenData.scope || '')}</p>
+    <p><strong>Handoff exchange endpoint:</strong> <code>${htmlEscape(`${serverUrl}/auth/handoff/exchange`)}</code></p>
   </body>
 </html>`);
     } catch (error) {
       res.status(500).send(`<h1>OAuth callback failed</h1><pre>${htmlEscape(error instanceof Error ? error.message : String(error))}</pre>`);
     }
+  });
+
+  app.post('/auth/handoff/exchange', async (req, res) => {
+    const handoffToken = typeof req.body?.handoffToken === 'string' ? req.body.handoffToken : undefined;
+    if (!handoffToken) {
+      res.status(400).json({ error: 'missing_handoff_token' });
+      return;
+    }
+    const handoff = await authStore.consumeHandoff(handoffToken);
+    if (!handoff) {
+      res.status(404).json({ error: 'invalid_or_expired_handoff_token' });
+      return;
+    }
+    res.json({
+      sessionToken: handoff.sessionToken,
+      userId: handoff.userId,
+      environment: handoff.environment,
+    });
   });
 
   app.get('/admin/session/:sessionToken', requireAdmin, async (req, res) => {
@@ -243,10 +342,22 @@ async function createApp(): Promise<express.Application> {
     res: express.Response,
     next: express.NextFunction
   ): Promise<void> => {
+    let resolvedAuth:
+      | { environment: EbayEnvironment; oauthConfig: OAuthConfigRecord }
+      | null = null;
+    try {
+      resolvedAuth = resolveOauthConfig(req);
+    } catch (error) {
+      res.status(400).json({
+        error: 'invalid_dynamic_oauth_config',
+        message: error instanceof Error ? error.message : String(error),
+      });
+      return;
+    }
+
     const authHeader = req.headers.authorization;
-    const requestedEnv = ((typeof req.query.env === 'string' ? req.query.env : undefined) ||
-      (typeof req.headers['x-ebay-env'] === 'string' ? req.headers['x-ebay-env'] : undefined) ||
-      getConfiguredEnvironment()) as EbayEnvironment;
+    const requestedEnv = resolvedAuth.environment;
+    const oauthConfig = resolvedAuth.oauthConfig;
 
     const sendAuthorizationRequired = async (reason: 'missing_session_token' | 'invalid_session_token') => {
       const oauthUrl = new URL(`${getServerBaseUrl()}/oauth/start`);
@@ -254,6 +365,8 @@ async function createApp(): Promise<express.Application> {
       if (CONFIG.oauthStartKey) {
         oauthUrl.searchParams.set('key', CONFIG.oauthStartKey);
       }
+
+      const handoffExchangeUrl = `${getServerBaseUrl()}/auth/handoff/exchange`;
 
       if (req.method === 'GET') {
         res.redirect(oauthUrl.toString());
@@ -265,8 +378,11 @@ async function createApp(): Promise<express.Application> {
         authorization_required: true,
         environment: requestedEnv,
         authorization_url: oauthUrl.toString(),
+        handoff_supported: true,
+        handoff_exchange_url: handoffExchangeUrl,
+        oauth_config_source: oauthConfig.source,
         message:
-          'No valid hosted session token was provided. Complete the browser OAuth flow using authorization_url, then retry with Authorization: Bearer <session-token>.',
+          'No valid hosted session token was provided. Complete the browser OAuth flow using authorization_url, then exchange any returned handoff token at handoff_exchange_url or retry with Authorization: Bearer <session-token>.',
       });
     };
 
@@ -281,16 +397,21 @@ async function createApp(): Promise<express.Application> {
       return;
     }
     await authStore.touchSession(sessionToken);
-    (req as express.Request & { userContext?: { userId: string; environment: EbayEnvironment; sessionToken: string } }).userContext = {
+    (req as express.Request & { userContext?: { userId: string; environment: EbayEnvironment; sessionToken: string; oauthConfig: OAuthConfigRecord } }).userContext = {
       userId: session.userId,
       environment: session.environment,
       sessionToken,
+      oauthConfig,
     };
     next();
   };
 
-  async function createMcpServer(userId: string, environment: EbayEnvironment): Promise<McpServer> {
-    const api = await createUserScopedApi(userId, environment);
+  async function createMcpServer(
+    userId: string,
+    environment: EbayEnvironment,
+    oauthConfig: OAuthConfigRecord
+  ): Promise<McpServer> {
+    const api = await createUserScopedApi(userId, environment, oauthConfig);
     const server = new McpServer({
       name: 'ebay-mcp',
       version: getVersion(),
@@ -325,7 +446,7 @@ async function createApp(): Promise<express.Application> {
   }
 
   const mcpPostHandler = async (req: express.Request, res: express.Response): Promise<void> => {
-    const userContext = (req as express.Request & { userContext?: { userId: string; environment: EbayEnvironment } }).userContext;
+    const userContext = (req as express.Request & { userContext?: { userId: string; environment: EbayEnvironment; oauthConfig: OAuthConfigRecord } }).userContext;
     if (!userContext) {
       res.status(401).json({ error: 'missing_user_context' });
       return;
@@ -351,7 +472,7 @@ async function createApp(): Promise<express.Application> {
         }
       };
 
-      const server = await createMcpServer(userContext.userId, userContext.environment);
+      const server = await createMcpServer(userContext.userId, userContext.environment, userContext.oauthConfig);
       await server.connect(transport);
     } else {
       res.status(400).json({ jsonrpc: '2.0', error: { code: -32000, message: 'Bad Request: No valid session ID provided' }, id: null });

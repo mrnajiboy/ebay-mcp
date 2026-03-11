@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getBaseUrl } from '@/config/environment.js';
 import type { EbayAppAccessTokenResponse, EbayConfig, EbayUserToken, StoredTokenData } from '@/types/ebay.js';
-import { MultiUserAuthStore } from '@/auth/multi-user-store.js';
+import { MultiUserAuthStore, type OAuthConfigRecord } from '@/auth/multi-user-store.js';
 
 export class EbayOAuthClient {
   private appAccessToken: string | null = null;
@@ -11,14 +11,33 @@ export class EbayOAuthClient {
 
   constructor(
     private config: EbayConfig,
-    private context?: { userId?: string; environment?: 'production' | 'sandbox' }
+    private context?: {
+      userId?: string;
+      environment?: 'production' | 'sandbox';
+      oauthConfig?: OAuthConfigRecord;
+    }
   ) {}
+
+  private getResolvedOauthConfig(): OAuthConfigRecord {
+    if (this.context?.oauthConfig) {
+      return this.context.oauthConfig;
+    }
+    return {
+      source: 'server-default',
+    };
+  }
 
   async initialize(): Promise<void> {
     if (this.context?.userId && this.context.environment) {
       const stored = await this.authStore.getUserTokens(this.context.userId, this.context.environment);
       if (stored?.tokenData) {
         this.userTokens = stored.tokenData;
+        if (!this.context.oauthConfig) {
+          this.context = {
+            ...this.context,
+            oauthConfig: stored.oauthConfig,
+          };
+        }
       }
     }
   }
@@ -37,7 +56,12 @@ export class EbayOAuthClient {
 
   private async persistUserTokens(): Promise<void> {
     if (this.context?.userId && this.context.environment && this.userTokens) {
-      await this.authStore.saveUserTokens(this.context.userId, this.context.environment, this.userTokens);
+      await this.authStore.saveUserTokens(
+        this.context.userId,
+        this.context.environment,
+        this.userTokens,
+        this.getResolvedOauthConfig()
+      );
     }
   }
 
@@ -217,13 +241,7 @@ export class EbayOAuthClient {
 
     if (this.userTokens?.scope) {
       const tokenScopes = this.userTokens.scope.split(' ');
-      const environmentScopes = this.config.environment === 'production'
-        ? [
-            'https://api.ebay.com/oauth/api_scope'
-          ]
-        : [
-            'https://api.ebay.com/oauth/api_scope'
-          ];
+      const environmentScopes = ['https://api.ebay.com/oauth/api_scope'];
       const tokenScopeSet = new Set(tokenScopes);
       const missingScopes = environmentScopes.filter((scope) => !tokenScopeSet.has(scope));
       info.scopeInfo = { tokenScopes, environmentScopes, missingScopes };

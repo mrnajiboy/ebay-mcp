@@ -3,6 +3,7 @@ import { getBaseUrl } from '@/config/environment.js';
 import type { EbayApiError, EbayConfig } from '@/types/ebay.js';
 import axios, { type AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios';
 import { apiLogger, logRequest, logResponse, logErrorResponse } from '@/utils/logger.js';
+import type { OAuthConfigRecord } from '@/auth/multi-user-store.js';
 
 interface AxiosConfigWithRetry extends AxiosRequestConfig {
   __authRetryCount?: number;
@@ -52,7 +53,14 @@ export class EbayApiClient {
     return headers;
   }
 
-  constructor(config: EbayConfig, context?: { userId?: string; environment?: 'production' | 'sandbox' }) {
+  constructor(
+    config: EbayConfig,
+    context?: {
+      userId?: string;
+      environment?: 'production' | 'sandbox';
+      oauthConfig?: OAuthConfigRecord;
+    }
+  ) {
     this.config = config;
     this.authClient = new EbayOAuthClient(config, context);
     this.baseUrl = getBaseUrl(config.environment);

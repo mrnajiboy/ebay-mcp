@@ -21,6 +21,7 @@ import { VeroApi } from '@/api/other/vero.js';
 import { TradingApiClient } from '@/api/client-trading.js';
 import { TradingApi } from '@/api/trading/trading.js';
 import type { EbayConfig } from '@/types/ebay.js';
+import type { OAuthConfigRecord } from '@/auth/multi-user-store.js';
 
 export class EbaySellerApi {
   private client: EbayApiClient;
@@ -45,7 +46,14 @@ export class EbaySellerApi {
   public developer: DeveloperApi;
   public trading: TradingApi;
 
-  constructor(config: EbayConfig, context?: { userId?: string; environment?: 'production' | 'sandbox' }) {
+  constructor(
+    config: EbayConfig,
+    context?: {
+      userId?: string;
+      environment?: 'production' | 'sandbox';
+      oauthConfig?: OAuthConfigRecord;
+    }
+  ) {
     this.client = new EbayApiClient(config, context);
     this.account = new AccountApi(this.client);
     this.inventory = new InventoryApi(this.client);
