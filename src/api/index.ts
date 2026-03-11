@@ -22,13 +22,8 @@ import { TradingApiClient } from '@/api/client-trading.js';
 import { TradingApi } from '@/api/trading/trading.js';
 import type { EbayConfig } from '@/types/ebay.js';
 
-/**
- * Main API facade providing access to all eBay APIs
- */
 export class EbaySellerApi {
   private client: EbayApiClient;
-
-  // API categories
   public account: AccountApi;
   public inventory: InventoryApi;
   public fulfillment: FulfillmentApi;
@@ -50,10 +45,8 @@ export class EbaySellerApi {
   public developer: DeveloperApi;
   public trading: TradingApi;
 
-  constructor(config: EbayConfig) {
-    this.client = new EbayApiClient(config);
-
-    // Initialize API category handlers
+  constructor(config: EbayConfig, context?: { userId?: string; environment?: 'production' | 'sandbox' }) {
+    this.client = new EbayApiClient(config, context);
     this.account = new AccountApi(this.client);
     this.inventory = new InventoryApi(this.client);
     this.fulfillment = new FulfillmentApi(this.client);
@@ -77,54 +70,31 @@ export class EbaySellerApi {
     this.trading = new TradingApi(tradingClient);
   }
 
-  /**
-   * Initialize the API (load tokens from storage)
-   */
   async initialize(): Promise<void> {
     await this.client.initialize();
   }
 
-  /**
-   * Check if the API client is authenticated
-   */
   isAuthenticated(): boolean {
     return this.client.isAuthenticated();
   }
 
-  /**
-   * Check if user tokens are available
-   */
   hasUserTokens(): boolean {
     return this.client.hasUserTokens();
   }
 
-  /**
-   * Set user access and refresh tokens
-   */
   async setUserTokens(
     accessToken: string,
     refreshToken: string,
     accessTokenExpiry?: number,
     refreshTokenExpiry?: number
   ): Promise<void> {
-    await this.client.setUserTokens(
-      accessToken,
-      refreshToken,
-      accessTokenExpiry,
-      refreshTokenExpiry
-    );
+    await this.client.setUserTokens(accessToken, refreshToken, accessTokenExpiry, refreshTokenExpiry);
   }
 
-  /**
-   * Get OAuth client for advanced operations
-   */
   getAuthClient(): EbayApiClient {
     return this.client;
   }
 
-  /**
-   * Get token information for debugging
-   */
   getTokenInfo() {
     return this.client.getTokenInfo();
   }
