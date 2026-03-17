@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.14](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v2.0.13...ebay-mcp-remote-edition-v2.0.14) (2026-03-17)
+
+
+### Bug Fixes
+
+* server credential read ([c779913](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/c7799131ce44973299aed93bd03309a3ccd8942f))
+
 ## [2.0.13](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v2.0.12...ebay-mcp-remote-edition-v2.0.13) (2026-03-17)
 
 
