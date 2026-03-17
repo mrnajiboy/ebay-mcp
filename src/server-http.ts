@@ -21,11 +21,11 @@ import { serverLogger } from '@/utils/logger.js';
 import { MultiUserAuthStore } from '@/auth/multi-user-store.js';
 
 const CONFIG = {
-  host: process.env.MCP_HOST || '0.0.0.0',
-  port: Number(process.env.PORT || process.env.MCP_PORT || 3000),
-  publicBaseUrl: (process.env.PUBLIC_BASE_URL || '').replace(/\/$/, ''),
-  adminApiKey: process.env.ADMIN_API_KEY || '',
-  oauthStartKey: process.env.OAUTH_START_KEY || '',
+  host: process.env.MCP_HOST ?? '0.0.0.0',
+  port: Number(process.env.PORT ?? process.env.MCP_PORT ?? 3000),
+  publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? '').replace(/\/$/, ''),
+  adminApiKey: process.env.ADMIN_API_KEY ?? '',
+  oauthStartKey: process.env.OAUTH_START_KEY ?? '',
 };
 
 const authStore = new MultiUserAuthStore();
@@ -90,9 +90,9 @@ async function createUserScopedApi(
 function createApp(): express.Application {
   const app = express();
   app.disable('x-powered-by');
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = dirname(__filename);
-  const projectRoot = join(__dirname, '..');
+  const currentFilename = fileURLToPath(import.meta.url);
+  const currentDirname = dirname(currentFilename);
+  const projectRoot = join(currentDirname, '..');
 
   app.use(cors({ origin: '*', exposedHeaders: ['Mcp-Session-Id'] }));
   app.use(express.json());
@@ -182,39 +182,39 @@ function createApp(): express.Application {
     try {
       const q = req.query as Record<string, string>;
       const {
-        client_id,
-        redirect_uri,
-        response_type,
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: responseType,
         state: mcpState,
-        code_challenge,
-        code_challenge_method,
+        code_challenge: codeChallenge,
+        code_challenge_method: codeChallengeMethod,
       } = q;
       const environment =
         q.env === 'sandbox' || q.env === 'production' ? q.env : getConfiguredEnvironment();
 
-      if (response_type !== 'code') {
+      if (responseType !== 'code') {
         res.status(400).json({ error: 'unsupported_response_type' });
         return;
       }
-      if (!client_id) {
+      if (!clientId) {
         res
           .status(400)
           .json({ error: 'invalid_request', error_description: 'client_id is required' });
         return;
       }
-      const client = await authStore.getClient(client_id);
+      const client = await authStore.getClient(clientId);
       if (!client) {
         res.status(400).json({ error: 'invalid_client', error_description: 'Unknown client_id' });
         return;
       }
-      if (!redirect_uri || !client.redirectUris.includes(redirect_uri)) {
+      if (!redirectUri || !client.redirectUris.includes(redirectUri)) {
         res.status(400).json({
           error: 'invalid_request',
           error_description: 'redirect_uri not registered for this client',
         });
         return;
       }
-      if (!code_challenge || code_challenge_method !== 'S256') {
+      if (!codeChallenge || codeChallengeMethod !== 'S256') {
         res.status(400).json({
           error: 'invalid_request',
           error_description: 'PKCE with S256 code_challenge is required',
@@ -232,11 +232,11 @@ function createApp(): express.Application {
       }
 
       const stateRecord = await authStore.createOAuthState(environment, undefined, {
-        mcpClientId: client_id,
-        mcpRedirectUri: redirect_uri,
+        mcpClientId: clientId,
+        mcpRedirectUri: redirectUri,
         mcpState,
-        mcpCodeChallenge: code_challenge,
-        mcpCodeChallengeMethod: code_challenge_method,
+        mcpCodeChallenge: codeChallenge,
+        mcpCodeChallengeMethod: codeChallengeMethod,
       });
 
       const oauthUrl = getOAuthAuthorizationUrl(
@@ -273,9 +273,15 @@ function createApp(): express.Application {
     }
 
     const body = req.body as Record<string, string>;
-    const { grant_type, code, redirect_uri, client_id, code_verifier } = body;
+    const {
+      grant_type: grantType,
+      code,
+      redirect_uri: redirectUri,
+      client_id: clientId,
+      code_verifier: codeVerifier,
+    } = body;
 
-    if (grant_type !== 'authorization_code') {
+    if (grantType !== 'authorization_code') {
       res.status(400).json({ error: 'unsupported_grant_type' });
       return;
     }
@@ -292,15 +298,15 @@ function createApp(): express.Application {
       });
       return;
     }
-    if (authCode.clientId !== client_id) {
+    if (authCode.clientId !== clientId) {
       res.status(400).json({ error: 'invalid_client', error_description: 'client_id mismatch' });
       return;
     }
-    if (authCode.redirectUri !== redirect_uri) {
+    if (authCode.redirectUri !== redirectUri) {
       res.status(400).json({ error: 'invalid_grant', error_description: 'redirect_uri mismatch' });
       return;
     }
-    if (!code_verifier) {
+    if (!codeVerifier) {
       res
         .status(400)
         .json({ error: 'invalid_request', error_description: 'code_verifier is required' });
@@ -308,7 +314,7 @@ function createApp(): express.Application {
     }
 
     // Verify PKCE S256: BASE64URL(SHA256(code_verifier)) must equal code_challenge
-    const expectedChallenge = createHash('sha256').update(code_verifier).digest('base64url');
+    const expectedChallenge = createHash('sha256').update(codeVerifier).digest('base64url');
     if (expectedChallenge !== authCode.codeChallenge) {
       res
         .status(400)
@@ -328,7 +334,7 @@ function createApp(): express.Application {
 
   app.get('/oauth/start', requireOauthStartKey, async (req, res) => {
     try {
-      const environment = ((typeof req.query.env === 'string' ? req.query.env : undefined) ||
+      const environment = ((typeof req.query.env === 'string' ? req.query.env : undefined) ??
         getConfiguredEnvironment()) as EbayEnvironment;
       const returnTo = typeof req.query.returnTo === 'string' ? req.query.returnTo : undefined;
       const ebayConfig = getEbayConfig(environment);
@@ -363,7 +369,7 @@ function createApp(): express.Application {
       if (oauthError) {
         res
           .status(400)
-          .send(`<h1>OAuth failed</h1><p>${htmlEscape(errorDescription || oauthError)}</p>`);
+          .send(`<h1>OAuth failed</h1><p>${htmlEscape(errorDescription ?? oauthError)}</p>`);
         return;
       }
       if (!code) {
@@ -479,7 +485,7 @@ function createApp(): express.Application {
       <p><strong>Authorization header format</strong></p>
       <pre>Authorization: Bearer ${htmlEscape(session.sessionToken)}</pre>
     </div>
-    <p><strong>Scopes granted:</strong> ${htmlEscape(tokenData.scope || 'Not returned by eBay in token response')} — <a href="https://developer.ebay.com/my/keys" target="_blank" rel="noopener noreferrer">See full account scope list on the developer platform</a>.</p>
+    <p><strong>Scopes granted:</strong> ${htmlEscape(tokenData.scope ?? 'Not returned by eBay in token response')} — <a href="https://developer.ebay.com/my/keys" target="_blank" rel="noopener noreferrer">See full account scope list on the developer platform</a>.</p>
     <p class="muted">Keep this token private. If it is exposed, revoke it using the admin session endpoints and create a new one.</p>
   </body>
 </html>`);
@@ -540,13 +546,13 @@ function createApp(): express.Application {
     next: express.NextFunction
   ): Promise<void> => {
     const authHeader = req.headers.authorization;
-    const requestedEnv = ((typeof req.query.env === 'string' ? req.query.env : undefined) ||
-      (typeof req.headers['x-ebay-env'] === 'string' ? req.headers['x-ebay-env'] : undefined) ||
+    const requestedEnv = ((typeof req.query.env === 'string' ? req.query.env : undefined) ??
+      (typeof req.headers['x-ebay-env'] === 'string' ? req.headers['x-ebay-env'] : undefined) ??
       getConfiguredEnvironment()) as EbayEnvironment;
 
     const sendAuthorizationRequired = (
       reason: 'missing_session_token' | 'invalid_session_token'
-    ) => {
+    ): void => {
       const oauthUrl = new URL(`${getServerBaseUrl()}/oauth/start`);
       oauthUrl.searchParams.set('env', requestedEnv);
       if (CONFIG.oauthStartKey) {
@@ -596,7 +602,7 @@ function createApp(): express.Application {
     const server = new McpServer({
       name: 'ebay-mcp-remote-edition',
       version: getVersion(),
-      title: 'eBay API MCP Server',
+      title: 'eBay MCP Server',
       websiteUrl: 'https://github.com/mrnajiboy/ebay-mcp-remote-edition',
       icons: [
         { src: `${iconBaseUrl}/16x16.png`, mimeType: 'image/png', sizes: ['16x16'] },
@@ -704,7 +710,7 @@ function createApp(): express.Application {
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await
-async function main() {
+async function main(): Promise<void> {
   try {
     const app = createApp();
     const server = app.listen(CONFIG.port, CONFIG.host, () => {
@@ -716,11 +722,14 @@ async function main() {
     });
 
     process.on('SIGINT', () => {
-      server.close(() => process.exit(0));
+      server.close(() => {
+        process.exitCode = 0;
+        process.kill(process.pid, 'SIGTERM');
+      });
     });
   } catch (error) {
     console.error('Fatal error starting server:', error);
-    process.exit(1);
+    throw error;
   }
 }
 
