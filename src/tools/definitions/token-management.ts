@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { zodToJsonSchema } from '@/utils/zod-compat.js';
 
 export interface OutputArgs {
   [x: string]: unknown;
@@ -169,7 +170,6 @@ export const tokenManagementTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-      description: 'Success response',
     } as OutputArgs,
   },
   {

@@ -1,22 +1,17 @@
 {
   "name": "ebay-mcp-remote-edition",
   "version": "2.0.0",
-  "description": "MCP server for eBay Sell APIs — 325+ tools for inventory, orders, marketing, analytics, and more. Supports local STDIO and hosted multi-user HTTP modes.",
+  "description": "Remote + Local MCP server for eBay APIs - provides access to eBay developer functionality through MCP (Model Context Protocol)",
   "type": "module",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "bin": {
-    "ebay-mcp-remote-edition": "build/index.js"
-  },
-  "publishConfig": {
-    "access": "public"
+    "ebay-mcp": "build/index.js"
   },
   "scripts": {
     "build": "tsc && tsc-alias",
     "start": "node build/index.js",
-    "start:http": "node build/server-http.js",
     "dev": "tsx src/index.ts",
-    "dev:http": "tsx src/server-http.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "setup": "tsx src/scripts/setup.ts",
@@ -25,7 +20,7 @@
     "typecheck": "tsc --noEmit",
     "check": "tsc --noEmit && eslint . && prettier --check \"src/**/*.{ts,js,json,md}\"",
     "fix": "eslint . --fix && prettier --write \"src/**/*.{ts,js,json,md}\"",
-    "prepare": "pnpm run build"
+    "prepare": "npm run build"
   },
   "keywords": [
     "mcp",
@@ -42,16 +37,7 @@
     "server",
     "backend"
   ],
-  "author": {
-    "name": "YosefHayim",
-    "url": "https://github.com/YosefHayim"
-  },
-  "contributors": [
-    {
-      "name": "Kenyatta Naji Johnson-Adams",
-      "url": "https://github.com/mrnajiboy"
-    }
-  ],
+  "author": "Yosef Hayim Sabag",
   "license": "MIT",
   "files": [
     "build/**/*.js",
@@ -64,49 +50,48 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mrnajiboy/ebay-mcp-remote-edition.git"
+    "url": "https://github.com/YosefHayim/ebay-mcp.git"
   },
-  "homepage": "https://github.com/mrnajiboy/ebay-mcp-remote-edition#readme",
+  "homepage": "https://github.com/YosefHayim/ebay-mcp#readme",
   "bugs": {
-    "url": "https://github.com/mrnajiboy/ebay-mcp-remote-edition/issues"
+    "url": "https://github.com/YosefHayim/ebay-mcp/issues"
   },
-  "npmLink": "https://www.npmjs.com/package/ebay-mcp-remote-edition",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.27.1",
+    "@modelcontextprotocol/sdk": "1.27.1",
     "axios": "^1.13.6",
     "chalk": "^5.6.2",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
     "dotenv-stringify": "^3.0.1",
     "express": "^5.1.0",
-    "fast-xml-parser": "^5.5.6",
+    "fast-xml-parser": "^5.5.5",
     "helmet": "^8.1.0",
-    "jose": "^6.1.2",
+    "jose": "^6.2.1",
     "jsonwebtoken": "^9.0.2",
     "prompts": "^2.4.2",
     "update-notifier": "^7.3.1",
     "winston": "^3.19.0",
-    "zod": "^3.23.8",
-    "zod-to-json-schema": "^3.24.1"
+    "zod": "^4.3.6",
+    "zod-to-json-schema": "^3.25.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.10.1",
+    "@types/node": "^25.3.3",
     "@types/prompts": "^2.4.9",
-    "@types/supertest": "^6.0.3",
+    "@types/supertest": "^7.2.0",
     "@types/update-notifier": "^6.0.8",
     "@vitest/coverage-v8": "^4.1.0",
     "@vitest/ui": "^4.1.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-n": "^17.23.1",
+    "eslint-plugin-n": "^17.24.0",
     "eslint-plugin-vitest": "^0.5.4",
-    "nock": "^14.0.10",
-    "openapi-typescript": "^7.10.1",
-    "prettier": "^3.6.2",
+    "nock": "^14.0.11",
+    "openapi-typescript": "^7.13.0",
+    "prettier": "^3.8.1",
     "supertest": "^7.1.4",
     "tsc-alias": "^1.8.16",
     "tsx": "^4.19.2",
@@ -116,7 +101,6 @@
   },
   "packageManager": "pnpm@10.14.0",
   "engines": {
-    "node": ">=22.0.0",
-    "pnpm": ">=9.0.0"
+    "node": ">=18.0.0"
   }
 }

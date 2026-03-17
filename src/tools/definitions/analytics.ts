@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { zodToJsonSchema } from '@/utils/zod-compat.js';
 
 export interface OutputArgs {
   [x: string]: unknown;
@@ -18,7 +19,7 @@ export interface ToolAnnotations {
 
 export interface ToolDefinition {
   name: string;
-  description: string;
+  description?: string;
   inputSchema: Record<string, z.ZodTypeAny>;
   title?: string;
   outputSchema?: OutputArgs;
@@ -41,7 +42,6 @@ export const analyticsTools: ToolDefinition[] = [
         records: { type: 'array' },
         warnings: { type: 'array' },
       },
-      description: 'Traffic report data',
     } as OutputArgs,
   },
   {
@@ -53,7 +53,6 @@ export const analyticsTools: ToolDefinition[] = [
       properties: {
         standards: { type: 'array' },
       },
-      description: 'Seller standards profiles',
     } as OutputArgs,
   },
   {
@@ -70,7 +69,6 @@ export const analyticsTools: ToolDefinition[] = [
         cycle: { type: 'object' },
         metrics: { type: 'array' },
       },
-      description: 'Seller standards profile data',
     } as OutputArgs,
   },
   {
@@ -86,7 +84,6 @@ export const analyticsTools: ToolDefinition[] = [
       properties: {
         metrics: { type: 'array' },
       },
-      description: 'Customer service metric data',
     } as OutputArgs,
   },
 ];

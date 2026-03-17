@@ -1,15 +1,16 @@
 import { z } from 'zod';
+import { zodToJsonSchema } from '@/utils/zod-compat.js';
 import {
   feedbackDataSchema,
   notificationConfigSchema,
   notificationDestinationSchema,
   offerToBuyersSchema,
 } from '../schemas.js';
-import type { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
+import { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
 
 export interface ToolDefinition {
   name: string;
-  description: string;
+  description?: string;
   inputSchema: Record<string, z.ZodTypeAny>;
   title?: string;
   outputSchema?: OutputArgs;
@@ -388,7 +389,6 @@ export const communicationTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-      description: 'Success response',
     } as OutputArgs,
   },
   {
