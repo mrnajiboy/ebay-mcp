@@ -1,8 +1,7 @@
 import { MarketplaceId } from '@/types/ebay-enums.js';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 import { compatibilityDataSchema, compatibilitySpecificationSchema } from '../schemas.js';
-import { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
+import type { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
 
 export interface ToolDefinition {
   name: string;

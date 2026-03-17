@@ -20,10 +20,7 @@ interface ActiveListingsResult {
 export class TradingApi {
   constructor(private client: TradingApiClient) {}
 
-  async getActiveListings(
-    page = 1,
-    entriesPerPage = 50
-  ): Promise<ActiveListingsResult> {
+  async getActiveListings(page = 1, entriesPerPage = 50): Promise<ActiveListingsResult> {
     const result = await this.client.execute('GetMyeBaySelling', {
       ActiveList: {
         Sort: 'TimeLeft',
@@ -37,14 +34,10 @@ export class TradingApi {
     const activeList = result.ActiveList as Record<string, unknown> | undefined;
     const itemArray = activeList?.ItemArray as Record<string, unknown> | null;
     const items = (itemArray?.Item as Record<string, unknown>[]) || [];
-    const pagination = activeList?.PaginationResult as
-      | Record<string, unknown>
-      | undefined;
+    const pagination = activeList?.PaginationResult as Record<string, unknown> | undefined;
 
     const listings: ListingSummary[] = items.map((item) => {
-      const sellingStatus = item.SellingStatus as
-        | Record<string, unknown>
-        | undefined;
+      const sellingStatus = item.SellingStatus as Record<string, unknown> | undefined;
       const currentPrice = sellingStatus?.CurrentPrice as
         | Record<string, unknown>
         | number
@@ -55,14 +48,14 @@ export class TradingApi {
           : Number(currentPrice || 0);
 
       return {
-        itemId: String(item.ItemID || ''),
-        title: String(item.Title || ''),
-        sku: String(item.SKU || ''),
+        itemId: String((item.ItemID as string | number | null) ?? ''),
+        title: String((item.Title as string | number | null) ?? ''),
+        sku: String((item.SKU as string | number | null) ?? ''),
         quantity: Number(item.Quantity || 0),
         quantityAvailable: Number(item.QuantityAvailable || 0),
         currentPrice: priceValue,
         watchCount: Number(item.WatchCount || 0),
-        listingType: String(item.ListingType || ''),
+        listingType: String((item.ListingType as string | number | null) ?? ''),
       };
     });
 
@@ -85,9 +78,7 @@ export class TradingApi {
     return items?.[0] || result;
   }
 
-  async createListing(
-    item: Record<string, unknown>
-  ): Promise<Record<string, unknown>> {
+  async createListing(item: Record<string, unknown>): Promise<Record<string, unknown>> {
     return await this.client.execute('AddFixedPriceItem', { Item: item });
   }
 
@@ -102,10 +93,7 @@ export class TradingApi {
     });
   }
 
-  async endListing(
-    itemId: string,
-    reason = 'NotAvailable'
-  ): Promise<Record<string, unknown>> {
+  async endListing(itemId: string, reason = 'NotAvailable'): Promise<Record<string, unknown>> {
     if (!itemId) throw new Error('itemId is required');
 
     return await this.client.execute('EndFixedPriceItem', {

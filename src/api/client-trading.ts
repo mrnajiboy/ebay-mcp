@@ -15,10 +15,7 @@ export class TradingApiClient {
   constructor(restClient: EbayApiClient) {
     this.restClient = restClient;
     const env = restClient.getConfig().environment;
-    this.baseUrl =
-      env === 'sandbox'
-        ? 'https://api.sandbox.ebay.com'
-        : 'https://api.ebay.com';
+    this.baseUrl = env === 'sandbox' ? 'https://api.sandbox.ebay.com' : 'https://api.ebay.com';
 
     this.parser = new XMLParser({
       ignoreAttributes: false,
@@ -85,8 +82,7 @@ export class TradingApiClient {
         timeout: 30000,
       });
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown HTTP error';
+      const message = error instanceof Error ? error.message : 'Unknown HTTP error';
       throw new Error(`Trading API ${callName} request failed: ${message}`);
     }
 
@@ -112,9 +108,7 @@ export class TradingApiClient {
       const errors = result.Errors;
       const firstError = Array.isArray(errors) ? errors[0] : errors;
       const message =
-        firstError?.ShortMessage ||
-        firstError?.LongMessage ||
-        'Unknown Trading API error';
+        firstError?.ShortMessage || firstError?.LongMessage || 'Unknown Trading API error';
       throw new Error(message);
     }
 

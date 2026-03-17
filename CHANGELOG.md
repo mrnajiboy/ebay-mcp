@@ -9,6 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **release-please** automation — automatic release PRs and GitHub Releases on `main` branch pushes
+- **CI/CD rewrite** — new `ci.yml` with separate lint/typecheck, test (ubuntu + macOS), and build jobs
+- `POST /admin/session/:sessionToken/revoke` and `DELETE /admin/session/:sessionToken` admin endpoints
+- `GET /whoami` endpoint for session-bound user introspection
+
+### Changed
+
+- **Node.js 24** — `.nvmrc`, `Dockerfile`, `docker-compose.yml`, and all GitHub Actions workflows updated from Node 18/20 → 24
+- **ESLint config overhaul** — resolved 7,021 → 0 errors; separated rules for generated types, scripts, test helpers, and test files; added targeted overrides for eBay API naming conventions and MCP tool registration patterns
+- **Unused imports removed** across `src/tools/definitions/`, `src/api/client.ts`, `src/server-http.ts`, and others
+- **Dependency upgrades**: `fast-xml-parser` 5.3.4 → 5.5.6 (vuln fix), `axios` 1.7.9 → 1.13.6 (vuln fix)  
+- `package.json` — `prepare` script now uses `pnpm run build`; author updated to original creator with fork contributor listed; added `pnpm>=9.0.0` engine requirement
+- **Prettier formatting** applied to all `src/` and `tests/` TypeScript files
+- `publish.yml` repurposed — npm publishing disabled out of respect for original creator; now runs build verification on release tags
+
+### Fixed
+
+- `createApp()` in `server-http.ts` changed from `async` to sync (no awaits in function body)
+- Promise executor return errors in `src/scripts/setup.ts` and `src/scripts/test-endpoints.ts`
+- `no-base-to-string` errors in `src/api/trading/trading.ts` and `src/utils/logger.ts`
+- Unused variables/imports prefixed with `_` across schemas, utils, and script files
+- Silent swallowed errors in `src/scripts/auto-setup.ts` and utility files (`catch (error)` → `catch (_error)`)
+
+### Security
+
+- `fast-xml-parser` updated to 5.5.6 (Socket vulnerability score: 25 → 100)
+- `axios` updated to 1.13.6 (Socket vulnerability score: 70 → 100)
+
+---
+
+### Hosted multi-user features (previous [Unreleased])
+
 - Hosted multi-user MCP deployment mode for Render
 - Server-side eBay OAuth callback flow for both production and sandbox
 - Cloudflare KV-backed storage for OAuth state, user tokens, and session records

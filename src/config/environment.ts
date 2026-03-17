@@ -339,7 +339,9 @@ export function getOAuthAuthorizationUrl(
 ): string {
   const authBase =
     environment === 'production' ? 'https://auth.ebay.com' : 'https://auth.sandbox.ebay.com';
-  const scopeList = (scopes && scopes.length > 0 ? scopes : getDefaultScopes(environment)).join('%20');
+  const scopeList = (scopes && scopes.length > 0 ? scopes : getDefaultScopes(environment)).join(
+    '%20'
+  );
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,

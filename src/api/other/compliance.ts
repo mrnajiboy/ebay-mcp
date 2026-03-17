@@ -42,6 +42,6 @@ export class ComplianceApi {
    * Get compliance snapshot (alias for getListingViolations)
    */
   async getComplianceSnapshot(complianceType?: string, offset?: number, limit?: number) {
-    return this.getListingViolations(complianceType, offset, limit);
+    return await this.getListingViolations(complianceType, offset, limit);
   }
 }

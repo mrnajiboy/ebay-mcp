@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import axios from 'axios';
 import chalk from 'chalk';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
@@ -316,9 +314,15 @@ const KNOWN_OPERATION_MAPPINGS: Record<string, string[]> = {
   findeligibleitems: ['ebay_find_eligible_items'],
 
   // Inventory API
-  createorreplaceinventoryitem: ['ebay_create_or_update_inventory_item', 'ebay_create_inventory_item'],
+  createorreplaceinventoryitem: [
+    'ebay_create_or_update_inventory_item',
+    'ebay_create_inventory_item',
+  ],
   getskulocationmapping: ['ebay_get_listing_locations'],
-  createinventorylocation: ['ebay_create_or_replace_inventory_location', 'ebay_create_inventory_location'],
+  createinventorylocation: [
+    'ebay_create_or_replace_inventory_location',
+    'ebay_create_inventory_location',
+  ],
   updateinventorylocation: ['ebay_update_location_details'],
 
   // Marketing API
@@ -333,7 +337,10 @@ const KNOWN_OPERATION_MAPPINGS: Record<string, string[]> = {
   getnegativekeyword: ['ebay_get_negative_keyword'],
   updatenegativekeyword: ['ebay_update_negative_keyword'],
   getreportmetadata: ['ebay_get_ad_report_metadata'],
-  getreportmetadataforreporttype: ['ebay_get_ad_report_metadata_for_report_type', 'ebay_get_ad_report_metadata_for_type'],
+  getreportmetadataforreporttype: [
+    'ebay_get_ad_report_metadata_for_report_type',
+    'ebay_get_ad_report_metadata_for_type',
+  ],
   getpromotionreports: ['ebay_get_promotion_report', 'ebay_get_promotion_reports'],
   getaudiences: ['ebay_get_audiences'],
 

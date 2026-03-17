@@ -9,7 +9,7 @@ import {
   issueRefundOutputSchema,
   getPaymentDisputesOutputSchema,
 } from '@/schemas/fulfillment/orders.js';
-import { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
+import type { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
 
 export interface ToolDefinition {
   name: string;

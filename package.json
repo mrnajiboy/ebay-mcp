@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit",
     "check": "tsc --noEmit && eslint . && prettier --check \"src/**/*.{ts,js,json,md}\"",
     "fix": "eslint . --fix && prettier --write \"src/**/*.{ts,js,json,md}\"",
-    "prepare": "npm run build"
+    "prepare": "pnpm run build"
   },
   "keywords": [
     "mcp",
@@ -39,7 +39,16 @@
     "server",
     "backend"
   ],
-  "author": "Kenyatta Naji Johnson-Adams",
+  "author": {
+    "name": "YosefHayim",
+    "url": "https://github.com/YosefHayim"
+  },
+  "contributors": [
+    {
+      "name": "Kenyatta Naji Johnson-Adams",
+      "url": "https://github.com/mrnajiboy"
+    }
+  ],
   "license": "MIT",
   "files": [
     "build/**/*.js",
@@ -60,13 +69,13 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
-    "axios": "^1.7.9",
+    "axios": "^1.13.6",
     "chalk": "^5.6.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "dotenv-stringify": "^3.0.1",
     "express": "^5.1.0",
-    "fast-xml-parser": "^5.3.4",
+    "fast-xml-parser": "^5.5.6",
     "helmet": "^8.1.0",
     "jose": "^6.1.2",
     "jsonwebtoken": "^9.0.2",
@@ -103,6 +112,7 @@
   },
   "packageManager": "pnpm@10.14.0",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
   }
 }

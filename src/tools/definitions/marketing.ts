@@ -12,7 +12,7 @@ import {
   adResponseSchema,
   baseResponseSchema,
 } from '@/schemas/marketing/marketing.js';
-import { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
+import type { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
 
 export interface ToolDefinition {
   name: string;

@@ -33,7 +33,7 @@ const consoleFormat = winston.format.combine(
   winston.format.errors({ stack: true }),
   winston.format.printf(({ level, message, timestamp, stack, ...meta }) => {
     const metaStr = Object.keys(meta).length ? `\n${JSON.stringify(meta, null, 2)}` : '';
-    const stackStr = stack ? `\n${stack}` : '';
+    const stackStr = typeof stack === 'string' && stack ? `\n${stack}` : '';
     return `[${timestamp}] [${level.toUpperCase()}] ${message}${metaStr}${stackStr}`;
   })
 );
@@ -213,7 +213,12 @@ function truncateData(data: unknown, maxLength = 1000): unknown {
 /**
  * Get log file paths for user reference
  */
-export function getLogPaths(): { logDir: string; errorLog: string; combinedLog: string; debugLog: string } {
+export function getLogPaths(): {
+  logDir: string;
+  errorLog: string;
+  combinedLog: string;
+  debugLog: string;
+} {
   return {
     logDir: LOG_DIR,
     errorLog: join(LOG_DIR, 'error.log'),

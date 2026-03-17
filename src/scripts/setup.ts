@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { dirname, join, resolve } from 'path';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { homedir, platform } from 'os';
@@ -567,7 +565,7 @@ function detectLLMClients(): LLMClient[] {
 /**
  * Write MCP server config for a detected client.
  */
-function configureLLMClient(client: LLMClient, projectRoot: string): boolean {
+function configureLLMClient(client: LLMClient, _projectRoot: string): boolean {
   try {
     const configDir = dirname(client.configPath);
     if (!existsSync(configDir)) {
@@ -594,7 +592,7 @@ function configureLLMClient(client: LLMClient, projectRoot: string): boolean {
 
     const serverConfig = {
       command: 'node',
-      args: [join(projectRoot, 'build/index.js')],
+      args: [join(_projectRoot, 'build/index.js')],
     };
 
     if (client.name === 'continue') {
@@ -602,7 +600,7 @@ function configureLLMClient(client: LLMClient, projectRoot: string): boolean {
       if (!existingConfig.experimental.modelContextProtocolServers) {
         existingConfig.experimental.modelContextProtocolServers = [];
       }
-      const servers = existingConfig.experimental.modelContextProtocolServers as unknown[];
+      const servers = existingConfig.experimental.modelContextProtocolServers;
       const existingIndex = servers.findIndex((s: unknown) =>
         (s as { command?: string; args?: string[] })?.args?.[0]?.includes('ebay-mcp')
       );
@@ -613,7 +611,7 @@ function configureLLMClient(client: LLMClient, projectRoot: string): boolean {
       }
     } else {
       if (!existingConfig.mcpServers) existingConfig.mcpServers = {};
-      existingConfig.mcpServers['ebay'] = serverConfig;
+      existingConfig.mcpServers.ebay = serverConfig;
     }
 
     writeFileSync(client.configPath, JSON.stringify(existingConfig, null, 2));
@@ -724,7 +722,7 @@ function updateClaudeDesktopConfig(
 
     // Add or update only the 'ebay' server - preserve all other servers
     // Use npx with --yes flag and suppress npm/node output to keep stdout clean for MCP
-    mcpServers['ebay'] = {
+    mcpServers.ebay = {
       command: 'npx',
       args: ['--yes', '--quiet', 'ebay-mcp'],
       env: {
@@ -914,7 +912,9 @@ async function stepMarketplaceSettings(state: SetupState): Promise<StepResult> {
 
   if (state.isQuickMode) {
     showInfo('Quick setup enabled. Skipping optional marketplace configuration.');
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => {
+      setTimeout(r, 600);
+    });
     return 'continue';
   }
 
@@ -1691,7 +1691,9 @@ async function stepMCPClients(state: SetupState): Promise<StepResult> {
     if (!client) continue;
 
     const stopSpinner = showSpinner(`Configuring ${client.displayName}...`);
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => {
+      setTimeout(r, 500);
+    });
     const success = configureLLMClient(client, PROJECT_ROOT);
     stopSpinner();
 
@@ -1714,7 +1716,9 @@ async function stepComplete(state: SetupState): Promise<void> {
   showProgress(6, 'Setup Complete');
 
   const stopSpinner = showSpinner('Saving configuration...');
-  await new Promise((r) => setTimeout(r, 300));
+  await new Promise((r) => {
+    setTimeout(r, 300);
+  });
   saveConfig(state.config, state.environment);
   stopSpinner();
   showSuccess('Configuration saved to .env\n');

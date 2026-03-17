@@ -41,7 +41,10 @@ export class MultiUserAuthStore {
     return `session:${sessionToken}`;
   }
 
-  async createOAuthState(environment: EbayEnvironment, returnTo?: string): Promise<OAuthStateRecord> {
+  async createOAuthState(
+    environment: EbayEnvironment,
+    returnTo?: string
+  ): Promise<OAuthStateRecord> {
     const state = randomUUID();
     const record: OAuthStateRecord = {
       state,
@@ -62,7 +65,11 @@ export class MultiUserAuthStore {
     return record;
   }
 
-  async saveUserTokens(userId: string, environment: EbayEnvironment, tokenData: StoredTokenData): Promise<void> {
+  async saveUserTokens(
+    userId: string,
+    environment: EbayEnvironment,
+    tokenData: StoredTokenData
+  ): Promise<void> {
     const record: UserTokenRecord = {
       userId,
       environment,
@@ -72,7 +79,10 @@ export class MultiUserAuthStore {
     await this.kv.put(this.userTokenKey(userId, environment), record);
   }
 
-  async getUserTokens(userId: string, environment: EbayEnvironment): Promise<UserTokenRecord | null> {
+  async getUserTokens(
+    userId: string,
+    environment: EbayEnvironment
+  ): Promise<UserTokenRecord | null> {
     return await this.kv.get<UserTokenRecord>(this.userTokenKey(userId, environment));
   }
 

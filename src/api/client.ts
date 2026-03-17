@@ -2,7 +2,7 @@ import { EbayOAuthClient } from '@/auth/oauth.js';
 import { getBaseUrl } from '@/config/environment.js';
 import type { EbayApiError, EbayConfig } from '@/types/ebay.js';
 import axios, { type AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios';
-import { apiLogger, logRequest, logResponse, logErrorResponse } from '@/utils/logger.js';
+import { logRequest, logResponse, logErrorResponse } from '@/utils/logger.js';
 
 interface AxiosConfigWithRetry extends AxiosRequestConfig {
   __authRetryCount?: number;
@@ -16,7 +16,9 @@ class RateLimitTracker {
 
   canMakeRequest(): boolean {
     const now = Date.now();
-    this.requestTimestamps = this.requestTimestamps.filter((timestamp) => now - timestamp < this.windowMs);
+    this.requestTimestamps = this.requestTimestamps.filter(
+      (timestamp) => now - timestamp < this.windowMs
+    );
     return this.requestTimestamps.length < this.maxRequests;
   }
 
@@ -26,8 +28,14 @@ class RateLimitTracker {
 
   getStats(): { current: number; max: number; windowMs: number } {
     const now = Date.now();
-    this.requestTimestamps = this.requestTimestamps.filter((timestamp) => now - timestamp < this.windowMs);
-    return { current: this.requestTimestamps.length, max: this.maxRequests, windowMs: this.windowMs };
+    this.requestTimestamps = this.requestTimestamps.filter(
+      (timestamp) => now - timestamp < this.windowMs
+    );
+    return {
+      current: this.requestTimestamps.length,
+      max: this.maxRequests,
+      windowMs: this.windowMs,
+    };
   }
 }
 
@@ -73,12 +81,19 @@ export class EbayApiClient {
     this.httpClient.interceptors.request.use(async (config) => {
       if (!this.rateLimitTracker.canMakeRequest()) {
         const stats = this.rateLimitTracker.getStats();
-        throw new Error(`Rate limit exceeded: ${stats.current}/${stats.max} requests in ${stats.windowMs}ms window.`);
+        throw new Error(
+          `Rate limit exceeded: ${stats.current}/${stats.max} requests in ${stats.windowMs}ms window.`
+        );
       }
       const token = await this.authClient.getAccessToken();
       config.headers.Authorization = `Bearer ${token}`;
       this.rateLimitTracker.recordRequest();
-      logRequest(config.method || 'GET', `${config.baseURL}${config.url}`, config.params as Record<string, unknown>, config.data);
+      logRequest(
+        config.method || 'GET',
+        `${config.baseURL}${config.url}`,
+        config.params as Record<string, unknown>,
+        config.data
+      );
       return config;
     });
 
@@ -92,7 +107,12 @@ export class EbayApiClient {
       async (error: AxiosError) => {
         const config = error.config as AxiosConfigWithRetry | undefined;
         if (error.response) {
-          logErrorResponse(error.response.status, error.response.statusText, `${config?.baseURL}${config?.url}`, error.response.data);
+          logErrorResponse(
+            error.response.status,
+            error.response.statusText,
+            `${config?.baseURL}${config?.url}`,
+            error.response.data
+          );
         }
 
         if (error.response?.status === 401 && config) {
@@ -107,7 +127,10 @@ export class EbayApiClient {
             return await this.httpClient.request(config);
           }
           const ebayError = error.response?.data as EbayApiError;
-          const errorMessage = ebayError.errors?.[0]?.longMessage || ebayError.errors?.[0]?.message || 'Invalid access token';
+          const errorMessage =
+            ebayError.errors?.[0]?.longMessage ||
+            ebayError.errors?.[0]?.message ||
+            'Invalid access token';
           throw new Error(`${errorMessage}. Automatic token refresh failed.`);
         }
 
@@ -122,14 +145,17 @@ export class EbayApiClient {
           if (retryCount < 3) {
             config.__retryCount = retryCount + 1;
             const delay = Math.pow(2, retryCount) * 1000;
-            await new Promise<void>((resolve) => setTimeout(resolve, Math.min(delay, 5000)));
+            await new Promise<void>((resolve) => {
+              setTimeout(resolve, Math.min(delay, 5000));
+            });
             return await this.httpClient.request(config);
           }
         }
 
         if (axios.isAxiosError(error) && error.response?.data) {
           const ebayError = error.response.data as EbayApiError;
-          const errorMessage = ebayError.errors?.[0]?.longMessage || ebayError.errors?.[0]?.message || error.message;
+          const errorMessage =
+            ebayError.errors?.[0]?.longMessage || ebayError.errors?.[0]?.message || error.message;
           throw new Error(`eBay API Error: ${errorMessage}`);
         }
 
@@ -156,7 +182,12 @@ export class EbayApiClient {
     accessTokenExpiry?: number,
     refreshTokenExpiry?: number
   ): Promise<void> {
-    await this.authClient.setUserTokens(accessToken, refreshToken, accessTokenExpiry, refreshTokenExpiry);
+    await this.authClient.setUserTokens(
+      accessToken,
+      refreshToken,
+      accessTokenExpiry,
+      refreshTokenExpiry
+    );
   }
 
   getTokenInfo() {
@@ -184,12 +215,20 @@ export class EbayApiClient {
     return response.data;
   }
 
-  async post<T = unknown>(url: string, data?: unknown, params?: Record<string, unknown>): Promise<T> {
+  async post<T = unknown>(
+    url: string,
+    data?: unknown,
+    params?: Record<string, unknown>
+  ): Promise<T> {
     const response = await this.httpClient.post<T>(url, data, { params });
     return response.data;
   }
 
-  async put<T = unknown>(url: string, data?: unknown, params?: Record<string, unknown>): Promise<T> {
+  async put<T = unknown>(
+    url: string,
+    data?: unknown,
+    params?: Record<string, unknown>
+  ): Promise<T> {
     const response = await this.httpClient.put<T>(url, data, { params });
     return response.data;
   }

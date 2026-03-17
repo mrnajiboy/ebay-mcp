@@ -5,7 +5,6 @@ import {
   RegionType,
   ShippingCostType,
   ShippingOptionType,
-  DepositType,
   RefundMethod,
   ReturnMethod,
   ReturnShippingCostPayer,

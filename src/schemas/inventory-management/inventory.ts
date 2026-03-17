@@ -387,7 +387,7 @@ export const createInventoryLocationOutputSchema = z.object({
 // Product Compatibility Schemas
 // ============================================================================
 
-const compatibilityPropertySchema = z.object({
+const _compatibilityPropertySchema = z.object({
   name: z.string(),
   value: z.string(),
 });

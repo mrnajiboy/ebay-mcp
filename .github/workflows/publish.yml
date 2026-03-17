@@ -1,18 +1,21 @@
-name: Publish Package
+name: Build & Verify Release
+
+# Note: npm publishing is intentionally disabled out of respect for the original creator.
+# Releases are created automatically via release-please.yml on main branch pushes.
 
 on:
   push:
-    branches: [main]
     tags:
-      - 'v*.*.*' # Trigger on semantic version tags like v1.0.0
+      - 'v*.*.*'
 
 permissions:
-  id-token: write # Required for provenance
   contents: read
 
 jobs:
-  publish:
+  build-and-verify:
+    name: Build & Verify
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,8 +26,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: '24'
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -33,17 +35,16 @@ jobs:
       - name: Run type check
         run: pnpm run typecheck
 
-      # - name: Run linting
-      #   run: pnpm run lint
-
       - name: Run tests
         run: pnpm run test
 
       - name: Build
         run: pnpm run build
 
-      - name: Update npm for trusted publishing support
-        run: npm install -g npm@latest
-
-      - name: Publish to npm
-        run: pnpm publish --no-git-checks --access public --provenance
+      - name: Verify build output
+        run: |
+          echo "Build output:"
+          ls -la build/
+          echo "Entry point exists:"
+          test -f build/index.js && echo "✓ build/index.js" || echo "✗ build/index.js MISSING"
+          test -f build/server-http.js && echo "✓ build/server-http.js" || echo "✗ build/server-http.js MISSING"

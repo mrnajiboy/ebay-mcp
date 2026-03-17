@@ -19,7 +19,7 @@ const getUrlsFromReadme = (content: string): string[] => {
   return urls;
 };
 
-const getSpecUrlsFromHtml = (html: string): string[] => {
+const _getSpecUrlsFromHtml = (html: string): string[] => {
   const linkRegex = /<a[^>]*?class="[^"]*\bspec-parent\b[^"]*"[^>]*?href="([^"]+)"/g;
   const matches = [...html.matchAll(linkRegex)];
   const urls = matches.map((match) => match[1]);
@@ -132,4 +132,4 @@ const main = async () => {
   }
 };
 
-main();
+void main();

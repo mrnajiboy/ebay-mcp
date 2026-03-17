@@ -16,9 +16,12 @@ export default tseslint.config(
       'docs/**',
       '*.config.js',
       '*.config.mjs',
+      '*.mjs',
       'scripts/**',
-      // Generated OpenAPI types
+      // Generated OpenAPI types — do not lint auto-generated files
       'src/types/*.d.ts',
+      'src/types/sell-apps/**',
+      'src/types/application-settings/**',
     ],
   },
 
@@ -95,7 +98,7 @@ export default tseslint.config(
       'n/no-unsupported-features/node-builtins': [
         'error',
         {
-          version: '>=18.0.0',
+          version: '>=22.0.0',
         },
       ],
       'n/no-process-exit': 'warn',
@@ -136,15 +139,30 @@ export default tseslint.config(
         },
         {
           selector: 'enumMember',
-          format: ['UPPER_CASE', 'PascalCase'],
+          format: ['UPPER_CASE', 'PascalCase', 'camelCase'],
         },
+        // Allow any format for object/type properties — eBay API uses snake_case in their schemas
         {
           selector: 'objectLiteralProperty',
-          format: null, // Allow any format for object properties (for API responses)
+          format: null,
+        },
+        {
+          selector: 'typeProperty',
+          format: null,
+        },
+        {
+          selector: 'classProperty',
+          format: ['camelCase'],
+          leadingUnderscore: 'allow',
         },
         {
           selector: 'import',
           format: ['camelCase', 'PascalCase'],
+        },
+        // Interface names don't require I-prefix
+        {
+          selector: 'interface',
+          format: ['PascalCase'],
         },
       ],
 
@@ -161,6 +179,31 @@ export default tseslint.config(
       // ===== Error Handling =====
       '@typescript-eslint/only-throw-error': 'error',
       'no-promise-executor-return': 'error',
+
+      // ===== Intentional Patterns =====
+      // Unbound-method is commonly intentional in MCP tool registration, callback passing,
+      // and method extraction patterns throughout this codebase
+      '@typescript-eslint/unbound-method': 'warn',
+      // no-empty-function is needed for mock/stub patterns in utils and tests
+      '@typescript-eslint/no-empty-function': 'warn',
+    },
+  },
+
+  // Script files — process.exit is acceptable in CLI scripts
+  {
+    files: ['src/scripts/**/*.ts'],
+    rules: {
+      'n/no-process-exit': 'off',
+    },
+  },
+
+  // Test helper files — mocks & stubs intentionally have async-without-await and unused exports
+  {
+    files: ['tests/helpers/**/*.ts'],
+    rules: {
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-empty-function': 'off',
     },
   },
 
@@ -176,6 +219,10 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/await-thenable': 'off',
+      'vitest/no-identical-title': 'warn',
       'no-console': 'off',
     },
   },

@@ -1,6 +1,11 @@
 import axios from 'axios';
 import { getBaseUrl } from '@/config/environment.js';
-import type { EbayAppAccessTokenResponse, EbayConfig, EbayUserToken, StoredTokenData } from '@/types/ebay.js';
+import type {
+  EbayAppAccessTokenResponse,
+  EbayConfig,
+  EbayUserToken,
+  StoredTokenData,
+} from '@/types/ebay.js';
 import { MultiUserAuthStore } from '@/auth/multi-user-store.js';
 
 export class EbayOAuthClient {
@@ -16,7 +21,10 @@ export class EbayOAuthClient {
 
   async initialize(): Promise<void> {
     if (this.context?.userId && this.context.environment) {
-      const stored = await this.authStore.getUserTokens(this.context.userId, this.context.environment);
+      const stored = await this.authStore.getUserTokens(
+        this.context.userId,
+        this.context.environment
+      );
       if (stored?.tokenData) {
         this.userTokens = stored.tokenData;
       }
@@ -37,7 +45,11 @@ export class EbayOAuthClient {
 
   private async persistUserTokens(): Promise<void> {
     if (this.context?.userId && this.context.environment && this.userTokens) {
-      await this.authStore.saveUserTokens(this.context.userId, this.context.environment, this.userTokens);
+      await this.authStore.saveUserTokens(
+        this.context.userId,
+        this.context.environment,
+        this.userTokens
+      );
     }
   }
 
@@ -50,7 +62,9 @@ export class EbayOAuthClient {
         await this.refreshUserToken();
         return this.userTokens.userAccessToken;
       }
-      throw new Error('User authorization expired. Re-authorize through browser OAuth and update your MCP connection token.');
+      throw new Error(
+        'User authorization expired. Re-authorize through browser OAuth and update your MCP connection token.'
+      );
     }
 
     if (this.appAccessToken && Date.now() < this.appAccessTokenExpiry) {
@@ -87,7 +101,9 @@ export class EbayOAuthClient {
     }
 
     const authUrl = `${getBaseUrl(this.config.environment)}/identity/v1/oauth2/token`;
-    const credentials = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString('base64');
+    const credentials = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString(
+      'base64'
+    );
 
     const response = await axios.post<EbayAppAccessTokenResponse>(
       authUrl,
@@ -114,7 +130,9 @@ export class EbayOAuthClient {
     }
 
     const tokenUrl = `${getBaseUrl(this.config.environment)}/identity/v1/oauth2/token`;
-    const credentials = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString('base64');
+    const credentials = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString(
+      'base64'
+    );
 
     const response = await axios.post<EbayUserToken>(
       tokenUrl,
@@ -154,7 +172,9 @@ export class EbayOAuthClient {
     }
 
     const authUrl = `${getBaseUrl(this.config.environment)}/identity/v1/oauth2/token`;
-    const credentials = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString('base64');
+    const credentials = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString(
+      'base64'
+    );
 
     const response = await axios.post<EbayUserToken>(
       authUrl,

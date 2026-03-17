@@ -11,7 +11,9 @@ function createMockRestClient(environment = 'production') {
     getConfig: vi.fn().mockReturnValue({ environment }),
     getOAuthClient: vi.fn().mockReturnValue(mockOAuthClient),
     _mockOAuthClient: mockOAuthClient,
-  } as unknown as EbayApiClient & { _mockOAuthClient: { getAccessToken: ReturnType<typeof vi.fn> } };
+  } as unknown as EbayApiClient & {
+    _mockOAuthClient: { getAccessToken: ReturnType<typeof vi.fn> };
+  };
 }
 
 describe('TradingApiClient', () => {
@@ -87,9 +89,7 @@ describe('TradingApiClient', () => {
         </GetItemResponse>`
       );
 
-    await expect(client.execute('GetItem', { ItemID: '99999' })).rejects.toThrow(
-      'Invalid item ID'
-    );
+    await expect(client.execute('GetItem', { ItemID: '99999' })).rejects.toThrow('Invalid item ID');
   });
 
   it('should use sandbox URL for sandbox environment', () => {

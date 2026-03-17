@@ -30,7 +30,7 @@ import {
   bulkOfferResponseSchema,
   bulkPublishResponseSchema,
 } from '@/schemas/inventory-management/inventory.js';
-import { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
+import type { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
 
 export interface ToolDefinition {
   name: string;

@@ -45,9 +45,7 @@ function normalizeString(value: unknown): string {
 
 function parseItem(raw: RssItemRaw): ApiStatusItem {
   const summary =
-    normalizeString(raw.summary) ||
-    stripHtml(normalizeString(raw.description)).slice(0, 300) ||
-    '';
+    normalizeString(raw.summary) || stripHtml(normalizeString(raw.description)).slice(0, 300) || '';
   return {
     title: normalizeString(raw.title) || 'Untitled',
     summary: summary || normalizeString(raw.title),
@@ -107,9 +105,7 @@ export async function getApiStatusFeed(
     let items: ApiStatusItem[] = rawItems.map(parseItem);
 
     if (statusFilter) {
-      items = items.filter(
-        (i) => i.status.toLowerCase() === statusFilter.toLowerCase()
-      );
+      items = items.filter((i) => i.status.toLowerCase() === statusFilter.toLowerCase());
     }
     if (apiFilter?.trim()) {
       const needle = apiFilter.trim().toLowerCase();

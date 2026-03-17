@@ -191,6 +191,7 @@ export class TokenVerifier {
       const JWKS = jose.createRemoteJWKSet(new URL(this.metadata.jwks_uri));
 
       // Verify JWT
+
       const { payload } = await jose.jwtVerify(token, JWKS, {
         issuer: this.metadata.issuer,
         audience: this.config.expectedAudience,

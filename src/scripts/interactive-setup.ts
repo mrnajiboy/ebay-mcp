@@ -21,7 +21,6 @@
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
-/* eslint-disable n/no-process-exit */
 
 import prompts from 'prompts';
 import chalk from 'chalk';

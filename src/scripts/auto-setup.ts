@@ -242,7 +242,7 @@ function updateClientConfig(client: MCPClient, serverConfig: MCPServerConfig): b
       try {
         const existing = readFileSync(client.configPath, 'utf-8');
         config = JSON.parse(existing) as Record<string, unknown>;
-      } catch (error) {
+      } catch (_error) {
         printWarning(`Invalid JSON in ${client.configPath}, creating backup and new config`);
         const backup = `${client.configPath}.backup.${Date.now()}`;
         writeFileSync(backup, readFileSync(client.configPath));
@@ -386,6 +386,7 @@ function validateEnvironment(): { valid: boolean; errors: string[]; warnings: st
 // Main
 // ═══════════════════════════════════════════════════════════════════════════
 
+// eslint-disable-next-line @typescript-eslint/require-await
 async function main(): Promise<void> {
   printHeader('eBay API MCP Server - Auto Setup');
 

@@ -82,7 +82,7 @@ export class NegotiationApi {
    * @throws Error if the request fails
    */
   async getOffersForListing(filter?: string, limit?: number, offset?: number) {
-    return this.getOffersToBuyers(filter, limit, offset);
+    return await this.getOffersToBuyers(filter, limit, offset);
   }
 
   /**

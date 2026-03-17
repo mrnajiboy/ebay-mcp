@@ -28,7 +28,7 @@ import {
   privilegesOutputSchema,
   programsOutputSchema,
 } from '@/schemas/account-management/account.js';
-import { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
+import type { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
 
 export interface ToolDefinition {
   name: string;

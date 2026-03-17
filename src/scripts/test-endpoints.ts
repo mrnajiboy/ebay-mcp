@@ -154,7 +154,9 @@ class EndpointTester {
         // If retryable and we have retries left, wait and retry
         if (isRetryable && attempt < maxRetries) {
           const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff: 1s, 2s
-          await new Promise((resolve) => setTimeout(resolve, waitTime));
+          await new Promise((resolve) => {
+            setTimeout(resolve, waitTime);
+          });
           continue;
         }
 

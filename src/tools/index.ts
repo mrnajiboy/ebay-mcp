@@ -1919,10 +1919,7 @@ export async function executeTool(
         args.fields as Record<string, unknown>
       );
     case 'ebay_end_listing':
-      return await api.trading.endListing(
-        args.itemId as string,
-        args.reason as string | undefined
-      );
+      return await api.trading.endListing(args.itemId as string, args.reason as string | undefined);
     case 'ebay_relist_item':
       return await api.trading.relistItem(
         args.itemId as string,

@@ -635,26 +635,26 @@ export function configureAmazonQ(projectRoot: string): boolean {
 /**
  * Configure specified LLM client
  */
-export function configureLLMClient(clientName: string, projectRoot: string): boolean {
+export function configureLLMClient(clientName: string, _projectRoot: string): boolean {
   switch (clientName) {
     case 'claude':
-      return configureClaudeDesktop(projectRoot);
+      return configureClaudeDesktop(_projectRoot);
     case 'cline':
-      return configureCline(projectRoot);
+      return configureCline(_projectRoot);
     case 'continue':
-      return configureContinue(projectRoot);
+      return configureContinue(_projectRoot);
     case 'zed':
-      return configureZed(projectRoot);
+      return configureZed(_projectRoot);
     case 'cursor':
-      return configureCursor(projectRoot);
+      return configureCursor(_projectRoot);
     case 'windsurf':
-      return configureWindsurf(projectRoot);
+      return configureWindsurf(_projectRoot);
     case 'roocode':
-      return configureRooCode(projectRoot);
+      return configureRooCode(_projectRoot);
     case 'claudecode':
-      return configureClaudeCode(projectRoot);
+      return configureClaudeCode(_projectRoot);
     case 'amazonq':
-      return configureAmazonQ(projectRoot);
+      return configureAmazonQ(_projectRoot);
     default:
       return false;
   }
@@ -797,7 +797,7 @@ Add this to ${getAmazonQConfigPath()}:
 /**
  * Verify client configuration is correct
  */
-export function verifyClientConfiguration(clientName: string, projectRoot: string): boolean {
+export function verifyClientConfiguration(clientName: string, _projectRoot: string): boolean {
   try {
     switch (clientName) {
       case 'claude': {

@@ -111,7 +111,7 @@ export async function checkNetworkConnectivity(): Promise<SecurityCheckResult> {
       severity: 'warning',
       fix: 'Check your internet connection and firewall settings',
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       check: 'Network Connectivity',
       passed: false,

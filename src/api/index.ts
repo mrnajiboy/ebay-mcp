@@ -94,7 +94,12 @@ export class EbaySellerApi {
     accessTokenExpiry?: number,
     refreshTokenExpiry?: number
   ): Promise<void> {
-    await this.client.setUserTokens(accessToken, refreshToken, accessTokenExpiry, refreshTokenExpiry);
+    await this.client.setUserTokens(
+      accessToken,
+      refreshToken,
+      accessTokenExpiry,
+      refreshTokenExpiry
+    );
   }
 
   getAuthClient(): EbayApiClient {

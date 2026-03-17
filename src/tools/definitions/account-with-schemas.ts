@@ -12,25 +12,12 @@ import type { ToolDefinition } from './account.js';
 // Import schemas from the new schemas folder
 import {
   getCustomPoliciesInputSchema,
-  customPolicyResponseSchema,
   getFulfillmentPoliciesInputSchema,
-  getFulfillmentPoliciesOutputSchema,
   createFulfillmentPolicyInputSchema,
-  createFulfillmentPolicyOutputSchema,
-  fulfillmentPolicyResponseSchema,
   getPaymentPoliciesInputSchema,
-  getPaymentPoliciesOutputSchema,
   createPaymentPolicyInputSchema,
-  createPaymentPolicyOutputSchema,
   getReturnPoliciesInputSchema,
-  getReturnPoliciesOutputSchema,
   createReturnPolicyInputSchema,
-  createReturnPolicyOutputSchema,
-  getSalesTaxesOutputSchema,
-  salesTaxSchema,
-  kycOutputSchema,
-  privilegesOutputSchema,
-  programsOutputSchema,
 } from '@/schemas/account-management/account.js';
 
 /**

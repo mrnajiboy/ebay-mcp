@@ -25,7 +25,7 @@ const marketplaceIdSchema = z
   .optional();
 
 // Reusable schema for optional name parameter
-const nameSchema = z
+const _nameSchema = z
   .string({
     invalid_type_error: 'name must be a string',
     description: 'The policy name',

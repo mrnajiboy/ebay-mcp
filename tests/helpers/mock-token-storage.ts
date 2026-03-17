@@ -6,22 +6,22 @@ import type { StoredTokenData } from '@/types/ebay.js';
 export class MockTokenStorage {
   private static tokens: StoredTokenData | null = null;
 
-  static async hasTokens(): Promise<boolean> {
+  static hasTokens(): Promise<boolean> {
     return this.tokens !== null;
   }
 
-  static async loadTokens(): Promise<StoredTokenData> {
+  static loadTokens(): Promise<StoredTokenData> {
     if (!this.tokens) {
       throw new Error('No tokens stored');
     }
     return this.tokens;
   }
 
-  static async saveTokens(tokens: StoredTokenData): Promise<void> {
+  static saveTokens(tokens: StoredTokenData): Promise<void> {
     this.tokens = tokens;
   }
 
-  static async clearTokens(): Promise<void> {
+  static clearTokens(): Promise<void> {
     this.tokens = null;
   }
 

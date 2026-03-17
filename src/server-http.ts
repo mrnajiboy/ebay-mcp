@@ -10,7 +10,6 @@ import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { EbaySellerApi } from '@/api/index.js';
 import {
   getConfiguredEnvironment,
-  getDefaultScopes,
   getHostedOauthScopes,
   getEbayConfig,
   getOAuthAuthorizationUrl,
@@ -44,7 +43,11 @@ function htmlEscape(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
-function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction): void {
+function requireAdmin(
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+): void {
   if (!CONFIG.adminApiKey) {
     res.status(500).json({ error: 'ADMIN_API_KEY is not configured' });
     return;
@@ -57,7 +60,11 @@ function requireAdmin(req: express.Request, res: express.Response, next: express
   next();
 }
 
-function requireOauthStartKey(req: express.Request, res: express.Response, next: express.NextFunction): void {
+function requireOauthStartKey(
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+): void {
   if (!CONFIG.oauthStartKey) {
     next();
     return;
@@ -71,13 +78,16 @@ function requireOauthStartKey(req: express.Request, res: express.Response, next:
   next();
 }
 
-async function createUserScopedApi(userId: string, environment: EbayEnvironment): Promise<EbaySellerApi> {
+async function createUserScopedApi(
+  userId: string,
+  environment: EbayEnvironment
+): Promise<EbaySellerApi> {
   const api = new EbaySellerApi(getEbayConfig(environment), { userId, environment });
   await api.initialize();
   return api;
 }
 
-async function createApp(): Promise<express.Application> {
+function createApp(): express.Application {
   const app = express();
   app.disable('x-powered-by');
   const __filename = fileURLToPath(import.meta.url);
@@ -92,7 +102,9 @@ async function createApp(): Promise<express.Application> {
   app.use((req, res, next) => {
     const start = Date.now();
     res.on('finish', () => {
-      serverLogger.info(`${req.method} ${req.path} -> ${res.statusCode}`, { durationMs: Date.now() - start });
+      serverLogger.info(`${req.method} ${req.path} -> ${res.statusCode}`, {
+        durationMs: Date.now() - start,
+      });
     });
     next();
   });
@@ -145,10 +157,13 @@ async function createApp(): Promise<express.Application> {
       const state = typeof req.query.state === 'string' ? req.query.state : undefined;
       const envFromQuery = typeof req.query.env === 'string' ? req.query.env : undefined;
       const oauthError = typeof req.query.error === 'string' ? req.query.error : undefined;
-      const errorDescription = typeof req.query.error_description === 'string' ? req.query.error_description : undefined;
+      const errorDescription =
+        typeof req.query.error_description === 'string' ? req.query.error_description : undefined;
 
       if (oauthError) {
-        res.status(400).send(`<h1>OAuth failed</h1><p>${htmlEscape(errorDescription || oauthError)}</p>`);
+        res
+          .status(400)
+          .send(`<h1>OAuth failed</h1><p>${htmlEscape(errorDescription || oauthError)}</p>`);
         return;
       }
       if (!code) {
@@ -165,12 +180,16 @@ async function createApp(): Promise<express.Application> {
         }
         environment = stateRecord.environment;
       } else {
-        environment = (envFromQuery === 'sandbox' || envFromQuery === 'production'
-          ? envFromQuery
-          : getConfiguredEnvironment()) as EbayEnvironment;
-        serverLogger.warn('OAuth callback received without state; falling back to configured/query environment', {
-          environment,
-        });
+        environment =
+          envFromQuery === 'sandbox' || envFromQuery === 'production'
+            ? envFromQuery
+            : getConfiguredEnvironment();
+        serverLogger.warn(
+          'OAuth callback received without state; falling back to configured/query environment',
+          {
+            environment,
+          }
+        );
       }
 
       const userId = randomUUID();
@@ -240,12 +259,16 @@ async function createApp(): Promise<express.Application> {
   </body>
 </html>`);
     } catch (error) {
-      res.status(500).send(`<h1>OAuth callback failed</h1><pre>${htmlEscape(error instanceof Error ? error.message : String(error))}</pre>`);
+      res
+        .status(500)
+        .send(
+          `<h1>OAuth callback failed</h1><pre>${htmlEscape(error instanceof Error ? error.message : String(error))}</pre>`
+        );
     }
   });
 
   app.get('/admin/session/:sessionToken', requireAdmin, async (req, res) => {
-    const session = await authStore.getSession(req.params.sessionToken);
+    const session = await authStore.getSession(req.params.sessionToken as string);
     if (!session) {
       res.status(404).json({ error: 'not_found' });
       return;
@@ -255,7 +278,7 @@ async function createApp(): Promise<express.Application> {
 
   app.get('/whoami', async (req, res) => {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader?.startsWith('Bearer ')) {
       res.status(401).json({ error: 'missing_session_token' });
       return;
     }
@@ -275,12 +298,12 @@ async function createApp(): Promise<express.Application> {
   });
 
   app.post('/admin/session/:sessionToken/revoke', requireAdmin, async (req, res) => {
-    await authStore.revokeSession(req.params.sessionToken);
+    await authStore.revokeSession(req.params.sessionToken as string);
     res.json({ ok: true, revoked: true });
   });
 
   app.delete('/admin/session/:sessionToken', requireAdmin, async (req, res) => {
-    await authStore.deleteSession(req.params.sessionToken);
+    await authStore.deleteSession(req.params.sessionToken as string);
     res.json({ ok: true, deleted: true });
   });
 
@@ -296,7 +319,9 @@ async function createApp(): Promise<express.Application> {
       (typeof req.headers['x-ebay-env'] === 'string' ? req.headers['x-ebay-env'] : undefined) ||
       getConfiguredEnvironment()) as EbayEnvironment;
 
-    const sendAuthorizationRequired = async (reason: 'missing_session_token' | 'invalid_session_token') => {
+    const sendAuthorizationRequired = (
+      reason: 'missing_session_token' | 'invalid_session_token'
+    ) => {
       const oauthUrl = new URL(`${getServerBaseUrl()}/oauth/start`);
       oauthUrl.searchParams.set('env', requestedEnv);
       if (CONFIG.oauthStartKey) {
@@ -318,18 +343,22 @@ async function createApp(): Promise<express.Application> {
       });
     };
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      await sendAuthorizationRequired('missing_session_token');
+    if (!authHeader?.startsWith('Bearer ')) {
+      sendAuthorizationRequired('missing_session_token');
       return;
     }
     const sessionToken = authHeader.slice('Bearer '.length).trim();
     const session = await authStore.getSession(sessionToken);
     if (!session || session.revokedAt) {
-      await sendAuthorizationRequired('invalid_session_token');
+      sendAuthorizationRequired('invalid_session_token');
       return;
     }
     await authStore.touchSession(sessionToken);
-    (req as express.Request & { userContext?: { userId: string; environment: EbayEnvironment; sessionToken: string } }).userContext = {
+    (
+      req as express.Request & {
+        userContext?: { userId: string; environment: EbayEnvironment; sessionToken: string };
+      }
+    ).userContext = {
       userId: session.userId,
       environment: session.environment,
       sessionToken,
@@ -362,7 +391,16 @@ async function createApp(): Promise<express.Application> {
             return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
           } catch (error) {
             return {
-              content: [{ type: 'text' as const, text: JSON.stringify({ error: error instanceof Error ? error.message : String(error) }, null, 2) }],
+              content: [
+                {
+                  type: 'text' as const,
+                  text: JSON.stringify(
+                    { error: error instanceof Error ? error.message : String(error) },
+                    null,
+                    2
+                  ),
+                },
+              ],
               isError: true,
             };
           }
@@ -373,7 +411,9 @@ async function createApp(): Promise<express.Application> {
   }
 
   const mcpPostHandler = async (req: express.Request, res: express.Response): Promise<void> => {
-    const userContext = (req as express.Request & { userContext?: { userId: string; environment: EbayEnvironment } }).userContext;
+    const userContext = (
+      req as express.Request & { userContext?: { userId: string; environment: EbayEnvironment } }
+    ).userContext;
     if (!userContext) {
       res.status(401).json({ error: 'missing_user_context' });
       return;
@@ -389,7 +429,10 @@ async function createApp(): Promise<express.Application> {
         sessionIdGenerator: () => randomUUID(),
         onsessioninitialized: (newSessionId) => {
           transports.set(newSessionId, transport);
-          serverLogger.info('New MCP session initialized', { sessionId: newSessionId, userId: userContext.userId });
+          serverLogger.info('New MCP session initialized', {
+            sessionId: newSessionId,
+            userId: userContext.userId,
+          });
         },
       });
 
@@ -402,17 +445,28 @@ async function createApp(): Promise<express.Application> {
       const server = await createMcpServer(userContext.userId, userContext.environment);
       await server.connect(transport);
     } else {
-      res.status(400).json({ jsonrpc: '2.0', error: { code: -32000, message: 'Bad Request: No valid session ID provided' }, id: null });
+      res
+        .status(400)
+        .json({
+          jsonrpc: '2.0',
+          error: { code: -32000, message: 'Bad Request: No valid session ID provided' },
+          id: null,
+        });
       return;
     }
 
     await transport.handleRequest(req, res, req.body);
   };
 
-  const handleSessionRequest = async (req: express.Request, res: express.Response): Promise<void> => {
+  const handleSessionRequest = async (
+    req: express.Request,
+    res: express.Response
+  ): Promise<void> => {
     const sessionId = req.headers['mcp-session-id'] as string | undefined;
     if (!sessionId || !transports.has(sessionId)) {
-      res.status(400).json({ error: 'invalid_session', error_description: 'Invalid or missing session ID' });
+      res
+        .status(400)
+        .json({ error: 'invalid_session', error_description: 'Invalid or missing session ID' });
       return;
     }
     const transport = transports.get(sessionId)!;
@@ -426,9 +480,10 @@ async function createApp(): Promise<express.Application> {
   return app;
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await
 async function main() {
   try {
-    const app = await createApp();
+    const app = createApp();
     const server = app.listen(CONFIG.port, CONFIG.host, () => {
       const serverUrl = getServerBaseUrl();
       console.log(`Server running at ${serverUrl}`);
