@@ -152,15 +152,26 @@ export class CloudflareKVStore implements KVStore {
  * existing hosted deployments continue to work without any config change.
  */
 export function createKVStore(): KVStore {
-  const backend = (process.env.EBAY_TOKEN_STORE_BACKEND ?? 'cloudflare-kv').toLowerCase().trim();
+  const rawEnv = process.env.EBAY_TOKEN_STORE_BACKEND;
+  const backend = (rawEnv ?? 'cloudflare-kv').toLowerCase().trim();
 
+  // Always log to stdout so the chosen backend is visible in server logs.
+  // This runs once at startup when MultiUserAuthStore is first instantiated.
   switch (backend) {
     case 'memory':
-    case 'in-memory':
+    case 'in-memory': {
+      console.log(
+        `[kv-store] EBAY_TOKEN_STORE_BACKEND="${rawEnv ?? ''}" → using InMemoryKVStore (no external KV calls)`
+      );
       return new InMemoryKVStore();
+    }
     case 'cloudflare-kv':
     case 'cloudflare':
-    default:
+    default: {
+      console.log(
+        `[kv-store] EBAY_TOKEN_STORE_BACKEND="${rawEnv ?? '(unset)'}" → using CloudflareKVStore (accountId="${process.env.CLOUDFLARE_ACCOUNT_ID ?? '(unset)'}") — set EBAY_TOKEN_STORE_BACKEND=memory to disable`
+      );
       return new CloudflareKVStore();
+    }
   }
 }
