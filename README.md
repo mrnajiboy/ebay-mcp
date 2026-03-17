@@ -2,12 +2,6 @@
 
 <div align="center">
 
-[![npm version](https://img.shields.io/npm/v/ebay-mcp)](https://www.npmjs.com/package/ebay-mcp)
-[![npm downloads](https://img.shields.io/npm/dm/ebay-mcp)](https://www.npmjs.com/package/ebay-mcp)
-[![Tests](https://img.shields.io/badge/tests-958%20passing-brightgreen)](tests/)
-[![API Coverage](https://img.shields.io/badge/API%20coverage-100%25-success)](src/tools/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
 A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server providing AI assistants with comprehensive access to eBay's Sell APIs. Includes **325+ tools** for inventory management, order fulfillment, marketing campaigns, analytics, developer tools, and more.
 
 **API Coverage:** 100% (270+ unique eBay API endpoints)
