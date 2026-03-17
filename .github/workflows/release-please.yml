@@ -19,19 +19,7 @@ jobs:
       version: ${{ steps.release.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: latest
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - uses: actions/checkout@v4
 
       - name: Run Release Please
         uses: googleapis/release-please-action@v4
