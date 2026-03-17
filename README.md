@@ -11,7 +11,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server providi
 
 </div>
 
----
+----
 
 ## Fork differences
 
