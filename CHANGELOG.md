@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.8](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v2.0.7...ebay-mcp-remote-edition-v2.0.8) (2026-03-17)
+
+
+### Bug Fixes
+
+* take out the npm_token ([37ac37d](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/37ac37dce84500a0c409405ed8163c2e44b299bb))
+
 ## [2.0.7](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v2.0.6...ebay-mcp-remote-edition-v2.0.7) (2026-03-17)
 
 
