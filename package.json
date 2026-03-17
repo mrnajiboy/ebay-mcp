@@ -20,7 +20,7 @@
     "typecheck": "tsc --noEmit",
     "check": "tsc --noEmit && eslint . && prettier --check \"src/**/*.{ts,js,json,md}\"",
     "fix": "eslint . --fix && prettier --write \"src/**/*.{ts,js,json,md}\"",
-    "prepare": "npm run build"
+    "prepare": "tsc && tsc-alias"
   },
   "keywords": [
     "mcp",
@@ -102,5 +102,8 @@
   "packageManager": "pnpm@10.14.0",
   "engines": {
     "node": ">=18.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
   }
 }

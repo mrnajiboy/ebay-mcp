@@ -1,0 +1,12 @@
+{
+  "json.schemaDownload.enable": true,
+  "json.schemas": [
+    {
+      "fileMatch": [".markdownlint.json", ".markdownlint.jsonc", ".markdownlintrc"],
+      "url": "https://raw.githubusercontent.com/DavidAnson/markdownlint/v0.40.0/schema/markdownlint-config-schema.json"
+    }
+  ],
+  "markdownlint.config": {
+    "$schema": "https://raw.githubusercontent.com/DavidAnson/markdownlint/v0.40.0/schema/markdownlint-config-schema.json"
+  }
+}
