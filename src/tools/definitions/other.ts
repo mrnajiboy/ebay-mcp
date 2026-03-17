@@ -1,7 +1,6 @@
 import { z } from 'zod';
-import { zodToJsonSchema } from '@/utils/zod-compat.js';
 import { shippingQuoteRequestSchema, veroReportDataSchema } from '../schemas.js';
-import { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
+import type { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
 
 export interface ToolDefinition {
   name: string;
@@ -118,7 +117,10 @@ export const otherApiTools: ToolDefinition[] = [
     name: 'ebay_get_actual_costs',
     description: 'Get actual costs for shipped packages',
     inputSchema: {
-      params: z.record(z.string(), z.string()).optional().describe('Query parameters (e.g., package_id)'),
+      params: z
+        .record(z.string(), z.string())
+        .optional()
+        .describe('Query parameters (e.g., package_id)'),
     },
   },
   {
@@ -150,28 +152,39 @@ export const otherApiTools: ToolDefinition[] = [
     name: 'ebay_get_agents',
     description: 'Get available shipping agents for international shipping',
     inputSchema: {
-      params: z.record(z.string(), z.string()).optional().describe('Query parameters (e.g., country)'),
+      params: z
+        .record(z.string(), z.string())
+        .optional()
+        .describe('Query parameters (e.g., country)'),
     },
   },
   {
     name: 'ebay_get_battery_qualifications',
     description: 'Get battery qualifications for international shipping',
     inputSchema: {
-      params: z.record(z.string(), z.string()).optional().describe('Query parameters (e.g., battery_type)'),
+      params: z
+        .record(z.string(), z.string())
+        .optional()
+        .describe('Query parameters (e.g., battery_type)'),
     },
   },
   {
     name: 'ebay_get_dropoff_sites',
     description: 'Get available dropoff sites for international shipping',
     inputSchema: {
-      params: z.record(z.string(), z.string()).describe('Query parameters (postal_code, country required)'),
+      params: z
+        .record(z.string(), z.string())
+        .describe('Query parameters (postal_code, country required)'),
     },
   },
   {
     name: 'ebay_get_shipping_services',
     description: 'Get available shipping services for international shipping',
     inputSchema: {
-      params: z.record(z.string(), z.string()).optional().describe('Query parameters (e.g., country)'),
+      params: z
+        .record(z.string(), z.string())
+        .optional()
+        .describe('Query parameters (e.g., country)'),
     },
   },
   // eDelivery API - Bundles
@@ -280,21 +293,29 @@ export const otherApiTools: ToolDefinition[] = [
     name: 'ebay_get_labels',
     description: 'Get shipping labels for packages',
     inputSchema: {
-      params: z.record(z.string(), z.string()).optional().describe('Query parameters (e.g., package_id)'),
+      params: z
+        .record(z.string(), z.string())
+        .optional()
+        .describe('Query parameters (e.g., package_id)'),
     },
   },
   {
     name: 'ebay_get_handover_sheet',
     description: 'Get handover sheet for packages',
     inputSchema: {
-      params: z.record(z.string(), z.string()).optional().describe('Query parameters (e.g., bundle_id)'),
+      params: z
+        .record(z.string(), z.string())
+        .optional()
+        .describe('Query parameters (e.g., bundle_id)'),
     },
   },
   {
     name: 'ebay_get_tracking',
     description: 'Get tracking information for packages',
     inputSchema: {
-      params: z.record(z.string(), z.string()).describe('Query parameters (tracking_number required)'),
+      params: z
+        .record(z.string(), z.string())
+        .describe('Query parameters (tracking_number required)'),
     },
   },
   // eDelivery API - Other

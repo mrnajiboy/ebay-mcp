@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { zodToJsonSchema } from '@/utils/zod-compat.js';
 import {
   feedbackDataSchema,
   notificationConfigSchema,
   notificationDestinationSchema,
   offerToBuyersSchema,
 } from '../schemas.js';
-import { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
+import type { OutputArgs, ToolAnnotations } from '../tool-definitions.js';
 
 export interface ToolDefinition {
   name: string;

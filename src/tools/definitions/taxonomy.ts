@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { zodToJsonSchema } from '@/utils/zod-compat.js';
 
 export interface OutputArgs {
   [x: string]: unknown;
