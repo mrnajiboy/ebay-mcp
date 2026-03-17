@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: 💬 GitHub Discussions
-    url: https://github.com/mrnajiboy/ebay-mcp/discussions
+    url: https://github.com/mrnajiboy/ebay-mcp-remote-edition/discussions
     about: Ask questions, share ideas, and discuss with the community
   - name: 📖 Documentation
-    url: https://github.com/mrnajiboy/ebay-mcp#readme
+    url: https://github.com/mrnajiboy/ebay-mcp-remote-edition#readme
     about: Read the documentation and guides
   - name: 🔐 Security Vulnerability
-    url: https://github.com/mrnajiboy/ebay-mcp/security/advisories/new
+    url: https://github.com/mrnajiboy/ebay-mcp-remote-edition/security/advisories/new
     about: Report a security vulnerability privately

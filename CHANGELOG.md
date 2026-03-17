@@ -743,10 +743,10 @@ This is a **minor version update** with no breaking changes. All existing functi
 
 ```bash
 # Using npm
-npm install ebay-mcp@1.1.0
+npm install ebay-mcp-remote-edition@1.1.0
 
 # Using pnpm
-pnpm update ebay-mcp@1.1.0
+pnpm update ebay-mcp-remote-edition@1.1.0
 ```
 
 ## Contributing
@@ -760,8 +760,8 @@ When contributing to this project, please:
 
 ## Links
 
-- [GitHub Repository](https://github.com/mrnajiboy/ebay-mcp)
-- [npm Package](https://www.npmjs.com/package/ebay-mcp)
-- [Issue Tracker](https://github.com/mrnajiboy/ebay-mcp/issues)
+- [GitHub Repository](https://github.com/mrnajiboy/ebay-mcp-remote-edition)
+- [npm Package](https://www.npmjs.com/package/ebay-mcp-remote-edition)
+- [Issue Tracker](https://github.com/mrnajiboy/ebay-mcp-remote-edition/issues)
 - [eBay Developer Portal](https://developer.ebay.com)
 - [MCP Documentation](https://modelcontextprotocol.io)

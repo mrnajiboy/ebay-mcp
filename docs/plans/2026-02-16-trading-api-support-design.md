@@ -1,12 +1,12 @@
-# Trading API Support for ebay-mcp
+# Trading API Support for ebay-mcp-remote-edition
 
 ## Problem
 
-The ebay-mcp server only wraps eBay's REST Sell APIs. Listings created through eBay's UI (or the older Trading API) are invisible to the REST inventory endpoints. This means common seller operations — checking active listings, updating quantities, revising prices — don't work for most existing sellers.
+The ebay-mcp-remote-edition server only wraps eBay's REST Sell APIs. Listings created through eBay's UI (or the older Trading API) are invisible to the REST inventory endpoints. This means common seller operations — checking active listings, updating quantities, revising prices — don't work for most existing sellers.
 
 ## Solution
 
-Add eBay Trading API support to ebay-mcp with six MCP tools for full fixed-price listing management.
+Add eBay Trading API support to ebay-mcp-remote-edition with six MCP tools for full fixed-price listing management.
 
 ## Architecture
 
@@ -54,4 +54,4 @@ All tools target fixed-price listings. Auction support is out of scope for now.
 
 ## Workflow
 
-Build on fork `longrackslabs/ebay-mcp`, new branch `feat/trading-api`. PR to upstream `mrnajiboy/ebay-mcp` when proven.
+Build on fork `longrackslabs/ebay-mcp-remote-edition`, new branch `feat/trading-api`. PR to upstream `mrnajiboy/ebay-mcp-remote-edition` when proven.

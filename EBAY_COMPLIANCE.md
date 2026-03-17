@@ -1,6 +1,6 @@
 # eBay Developer Program Compliance
 
-This document outlines how the ebay-mcp project complies with eBay's developer policies and open source best practices.
+This document outlines how the ebay-mcp-remote-edition project complies with eBay's developer policies and open source best practices.
 
 ## Project Classification
 
@@ -101,7 +101,7 @@ The project properly integrates with eBay's Developer Program:
 From [SECURITY.md](SECURITY.md):
 
 1. **Vulnerability Reporting**
-   - GitHub Security Advisory: https://github.com/YosefHayim/ebay-mcp/security/advisories/new
+   - GitHub Security Advisory: https://github.com/mrnajiboy/ebay-mcp-remote-edition/security/advisories/new
    - Email contact: k.naji.ja@gmail.com
    - Responsible disclosure process
 
@@ -160,7 +160,7 @@ Contributors agree that:
 
 ### Current Status: FULLY COMPLIANT ✅
 
-The ebay-mcp project is **fully compliant** with:
+The ebay-mcp-remote-edition project is **fully compliant** with:
 1. eBay's Open Source licensing policies (MIT is "green")
 2. eBay's Repository Best Practices
 3. eBay Developer Program Terms of Use

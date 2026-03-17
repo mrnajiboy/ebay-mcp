@@ -116,7 +116,7 @@ function createApp(): express.Application {
 
   app.get('/', (_req, res) => {
     res.json({
-      name: 'ebay-mcp',
+      name: 'ebay-mcp-remote-edition',
       version: getVersion(),
       mode: 'multi-user-hosted',
       oauth_start: `${serverUrl}/oauth/start?env=${getConfiguredEnvironment()}`,
@@ -567,10 +567,10 @@ function createApp(): express.Application {
   async function createMcpServer(userId: string, environment: EbayEnvironment): Promise<McpServer> {
     const api = await createUserScopedApi(userId, environment);
     const server = new McpServer({
-      name: 'ebay-mcp',
+      name: 'ebay-mcp-remote-edition',
       version: getVersion(),
       title: 'eBay API MCP Server',
-      websiteUrl: 'https://github.com/mrnajiboy/ebay-mcp',
+      websiteUrl: 'https://github.com/mrnajiboy/ebay-mcp-remote-edition',
       icons: [
         { src: `${iconBaseUrl}/16x16.png`, mimeType: 'image/png', sizes: ['16x16'] },
         { src: `${iconBaseUrl}/32x32.png`, mimeType: 'image/png', sizes: ['32x32'] },

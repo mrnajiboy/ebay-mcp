@@ -17,7 +17,7 @@ body:
       options:
         - label: I have searched existing issues to avoid duplicates
           required: true
-        - label: I have reviewed the [documentation](https://github.com/mrnajiboy/ebay-mcp#readme)
+        - label: I have reviewed the [documentation](https://github.com/mrnajiboy/ebay-mcp-remote-edition#readme)
           required: true
         - label: I am using the latest version of the package
           required: false
@@ -26,8 +26,8 @@ body:
     id: version
     attributes:
       label: Package Version
-      description: What version of ebay-mcp are you using?
-      placeholder: "e.g., 1.1.4"
+      description: What version of ebay-mcp-remote-edition are you using?
+      placeholder: "e.g., 1.1.0"
     validations:
       required: true
 

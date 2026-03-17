@@ -1,4 +1,4 @@
-# eBay API MCP Server+ (`ebay-mcp-remote-edition`)
+# eBay API MCP Server (Remote Edition) (`ebay-mcp-remote-edition`)
 
 <div align="center">
 
@@ -47,8 +47,8 @@ This fork preserves the original local/STDIO workflow while adding hosted multi-
 I want to set up the eBay MCP Server for my AI assistant. Please help me:
 
 1. Install the eBay MCP server:
-git clone https://github.com/mrnajiboy/ebay-mcp.git
-cd ebay-mcp
+git clone https://github.com/mrnajiboy/ebay-mcp-remote-edition.git
+cd ebay-mcp-remote-edition
 pnpm install
 pnpm run build
 
@@ -146,8 +146,8 @@ ebay-mcp-remote-edition --setup
 **Option B — clone and build (for contributors or if you want to self-host the HTTP server):**
 
 ```bash
-git clone https://github.com/mrnajiboy/ebay-mcp.git
-cd ebay-mcp
+git clone https://github.com/mrnajiboy/ebay-mcp-remote-edition.git
+cd ebay-mcp-remote-edition
 pnpm install
 pnpm run build
 ```
@@ -171,7 +171,7 @@ For hosted Render usage, see the next section.
 Two ways to configure your MCP client for local (STDIO) usage:
 
 - **Option A — `npx` (no clone needed):** Use `npx -y ebay-mcp-remote-edition` as the command. npm downloads and runs the latest published version automatically.
-- **Option B — local build:** Clone the repo, run `pnpm run build` and `pnpm run setup`, then point at `/absolute/path/to/ebay-mcp/build/index.js`.
+- **Option B — local build:** Clone the repo, run `pnpm run build` and `pnpm run setup`, then point at `/absolute/path/to/ebay-mcp-remote-edition/build/index.js`.
 
 The configs below show both. Supply your eBay credentials either as `env` fields in the config or via a `.env` file in the working directory.
 
@@ -209,7 +209,7 @@ Config file location:
   "mcpServers": {
     "ebay": {
       "command": "node",
-      "args": ["/absolute/path/to/ebay-mcp/build/index.js"],
+      "args": ["/absolute/path/to/ebay-mcp-remote-edition/build/index.js"],
       "env": {
         "EBAY_CLIENT_ID": "YOUR_CLIENT_ID",
         "EBAY_CLIENT_SECRET": "YOUR_CLIENT_SECRET",
@@ -255,7 +255,7 @@ Config file location:
   "mcpServers": {
     "ebay": {
       "command": "node",
-      "args": ["/absolute/path/to/ebay-mcp/build/index.js"],
+      "args": ["/absolute/path/to/ebay-mcp-remote-edition/build/index.js"],
       "env": {
         "EBAY_CLIENT_ID": "YOUR_CLIENT_ID",
         "EBAY_CLIENT_SECRET": "YOUR_CLIENT_SECRET",
@@ -300,7 +300,7 @@ Project config: `.cursor/mcp.json` (in your project root)
   "mcpServers": {
     "ebay": {
       "command": "node",
-      "args": ["/absolute/path/to/ebay-mcp/build/index.js"],
+      "args": ["/absolute/path/to/ebay-mcp-remote-edition/build/index.js"],
       "env": {
         "EBAY_CLIENT_ID": "YOUR_CLIENT_ID",
         "EBAY_CLIENT_SECRET": "YOUR_CLIENT_SECRET",
@@ -622,8 +622,8 @@ For the complete tool list, see [src/tools/definitions/](src/tools/definitions/)
 ### Quick Start for Contributors
 
 ```bash
-git clone https://github.com/mrnajiboy/ebay-mcp.git
-cd ebay-mcp
+git clone https://github.com/mrnajiboy/ebay-mcp-remote-edition.git
+cd ebay-mcp-remote-edition
 pnpm install
 pnpm run build
 pnpm run typecheck

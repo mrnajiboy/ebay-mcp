@@ -42,7 +42,7 @@ There are many ways to contribute to the eBay API MCP Server:
 
 ### Reporting Bugs
 
-Before creating bug reports, please check the [existing issues](https://github.com/mrnajiboy/ebay-mcp/issues) to avoid duplicates.
+Before creating bug reports, please check the [existing issues](https://github.com/mrnajiboy/ebay-mcp-remote-edition/issues) to avoid duplicates.
 
 When you create a bug report, please include as many details as possible:
 
@@ -111,8 +111,8 @@ Unsure where to begin? Look for issues labeled:
 
 1. **Fork and clone** the repository:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/ebay-mcp.git
-   cd ebay-mcp
+   git clone https://github.com/YOUR_USERNAME/ebay-mcp-remote-server.git
+   cd ebay-mcp-remote-server
    ```
 
 2. **Install dependencies**:

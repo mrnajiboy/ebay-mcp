@@ -830,7 +830,7 @@ export function verifyClientConfiguration(clientName: string, _projectRoot: stri
           | MCPServerConfig[]
           | undefined;
 
-        return !!mcpServers?.some((server) => server.args?.[0]?.includes('ebay-mcp-server'));
+        return !!mcpServers?.some((server) => server.args?.[0]?.includes('ebay-mcp'));
       }
 
       case 'zed': {

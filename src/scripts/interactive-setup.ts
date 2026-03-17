@@ -13,10 +13,10 @@
  * - Post-setup quick start guide
  *
  * Usage:
- *   npx ebay-mcp                         Interactive setup wizard
- *   npx ebay-mcp --help                  Show help
- *   npx ebay-mcp --diagnose              Run diagnostics
- *   npx ebay-mcp --first-time            First-time developer guide
+ *   npx ebay-mcp-remote-edition                         Interactive setup wizard
+ *   npx ebay-mcp-remote-edition --help                  Show help
+ *   npx ebay-mcp-remote-edition --diagnose              Run diagnostics
+ *   npx ebay-mcp-remote-edition --first-time            First-time developer guide
  */
 
 /* eslint-disable @typescript-eslint/naming-convention */
@@ -92,7 +92,7 @@ function parseArgs(): CLIArgs {
 function showHelp() {
   console.log(chalk.bold.cyan('\n📖 eBay API MCP Server Setup Help\n'));
   console.log(chalk.white('Usage:'));
-  console.log(chalk.gray('  npx ebay-mcp [options]\n'));
+  console.log(chalk.gray('  npx ebay-mcp-remote-edition [options]\n'));
   console.log(chalk.white('Options:'));
   console.log(chalk.yellow('  --help, -h           ') + chalk.gray('Show this help message'));
   console.log(chalk.yellow('  --diagnose, -d       ') + chalk.gray('Run system diagnostics'));
@@ -109,12 +109,12 @@ function showHelp() {
     chalk.yellow('  (no options)         ') + chalk.gray('Run interactive setup wizard\n')
   );
   console.log(chalk.white('Examples:'));
-  console.log(chalk.gray('  npx ebay-mcp                     # Interactive wizard'));
-  console.log(chalk.gray('  npx ebay-mcp --first-time        # First-time guide'));
-  console.log(chalk.gray('  npx ebay-mcp --diagnose          # Run diagnostics'));
-  console.log(chalk.gray('  npx ebay-mcp --env=production    # Setup for production\n'));
+  console.log(chalk.gray('  npx ebay-mcp-remote-edition                     # Interactive wizard'));
+  console.log(chalk.gray('  npx ebay-mcp-remote-edition --first-time        # First-time guide'));
+  console.log(chalk.gray('  npx ebay-mcp-remote-edition --diagnose          # Run diagnostics'));
+  console.log(chalk.gray('  npx ebay-mcp-remote-edition --env=production    # Setup for production\n'));
   console.log(chalk.white('Learn more:'));
-  console.log(chalk.blue('  https://github.com/mrnajiboy/ebay-mcp#readme\n'));
+  console.log(chalk.blue('  https://github.com/mrnajiboy/ebay-mcp-remote-edition#readme\n'));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -394,7 +394,7 @@ async function detectAndConfigureLLMClients(): Promise<void> {
     console.log(chalk.gray('  • Cline             (VSCode extension)'));
     console.log(chalk.gray('  • Continue.dev      (VSCode/JetBrains extension)\n'));
     console.log(chalk.cyan('💡 You can manually configure your MCP client later.'));
-    console.log(chalk.gray('   See: https://github.com/mrnajiboy/ebay-mcp#setup\n'));
+    console.log(chalk.gray('   See: https://github.com/mrnajiboy/ebay-mcp-remote-edition#setup\n'));
     return;
   }
 
@@ -622,15 +622,15 @@ function displayQuickStart(): void {
   console.log(chalk.bold.white('Resources:\n'));
   console.log(
     chalk.gray('  📖 Documentation: ') +
-      chalk.blue.underline('https://github.com/mrnajiboy/ebay-mcp#readme')
+      chalk.blue.underline('https://github.com/mrnajiboy/ebay-mcp-remote-edition#readme')
   );
   console.log(
     chalk.gray('  🐛 Report Issues:  ') +
-      chalk.blue.underline('https://github.com/mrnajiboy/ebay-mcp/issues')
+      chalk.blue.underline('https://github.com/mrnajiboy/ebay-mcp-remote-edition/issues')
   );
   console.log(
     chalk.gray('  💬 Get Support:    ') +
-      chalk.blue.underline('https://github.com/mrnajiboy/ebay-mcp/discussions\n')
+      chalk.blue.underline('https://github.com/mrnajiboy/ebay-mcp-remote-edition/discussions\n')
   );
 }
 

@@ -5,9 +5,9 @@ import { homedir } from 'os';
 
 /**
  * Log directory for eBay MCP Server
- * Stored in user's home directory under .ebay-mcp/logs
+ * Stored in user's home directory under .ebay-mcp-remote-edition/logs
  */
-const LOG_DIR = join(homedir(), '.ebay-mcp', 'logs');
+const LOG_DIR = join(homedir(), '.ebay-mcp-remote-edition', 'logs');
 
 // Ensure log directory exists
 if (!existsSync(LOG_DIR)) {
