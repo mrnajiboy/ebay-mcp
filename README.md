@@ -154,11 +154,11 @@ pnpm install && pnpm run build
 pnpm run start:http
 ```
 
-### Render environment variables
+### Recommended Render environment variables
 
 ```bash
-NODE_VERSION=24
-PORT=3000
+PORT=
+NODE_VERSION=
 PUBLIC_BASE_URL=https://your-server.com
 EBAY_CONFIG_FILE=/etc/secrets/ebay-config.json
 EBAY_DEFAULT_ENVIRONMENT=sandbox|production
