@@ -17,19 +17,13 @@ const fulfillmentIdSchema = z.string({
 });
 
 // Reusable schema for filter parameter
-const filterSchema = z
-  .string({ error: 'filter must be a string' })
-  .optional();
+const filterSchema = z.string({ error: 'filter must be a string' }).optional();
 
 // Reusable schema for limit parameter (number in API)
-const limitSchema = z
-  .number({ error: 'limit must be a number' })
-  .optional();
+const limitSchema = z.number({ error: 'limit must be a number' }).optional();
 
 // Reusable schema for offset parameter (number in API)
-const offsetSchema = z
-  .number({ error: 'offset must be a number' })
-  .optional();
+const offsetSchema = z.number({ error: 'offset must be a number' }).optional();
 
 /**
  * Schema for getOrders method

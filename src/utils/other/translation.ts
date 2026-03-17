@@ -12,19 +12,12 @@ import { z } from 'zod';
  * Body: TranslateRequest - from, to, translationContext, text
  */
 export const translateSchema = z.object({
-  from: z
-    .string({ error: 'from must be a string' })
-    .optional(),
-  to: z
-    .string({ error: 'to must be a string' })
-    .optional(),
-  translation_context: z
-    .string({ error: 'translation_context must be a string' })
-    .optional(),
+  from: z.string({ error: 'from must be a string' }).optional(),
+  to: z.string({ error: 'to must be a string' }).optional(),
+  translation_context: z.string({ error: 'translation_context must be a string' }).optional(),
   text: z
-    .array(
-      z.string({ error: 'text array items must be strings' }),
-      { error: 'text must be an array' }
-    )
+    .array(z.string({ error: 'text array items must be strings' }), {
+      error: 'text must be an array',
+    })
     .optional(),
 });

@@ -1546,7 +1546,9 @@ export const marketingTools: ToolDefinition[] = [
     description: 'Update an existing email campaign.',
     inputSchema: {
       emailCampaignId: z.string().describe('Email campaign ID'),
-      emailCampaign: z.record(z.string(), z.unknown()).describe('Updated email campaign configuration'),
+      emailCampaign: z
+        .record(z.string(), z.unknown())
+        .describe('Updated email campaign configuration'),
     },
     outputSchema: genericSuccessSchema,
   },

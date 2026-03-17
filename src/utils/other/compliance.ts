@@ -6,9 +6,7 @@ import { z } from 'zod';
  * OpenAPI spec: docs/sell-apps/other-apis/sell_compliance_v1_oas3.json
  */
 
-const complianceTypeSchema = z
-  .string({ error: 'compliance_type must be a string' })
-  .optional();
+const complianceTypeSchema = z.string({ error: 'compliance_type must be a string' }).optional();
 
 const offsetSchema = z.string({ error: 'offset must be a string' }).optional();
 

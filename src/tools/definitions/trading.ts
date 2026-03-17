@@ -8,10 +8,7 @@ export const tradingTools: ToolDefinition[] = [
       'Get all active fixed-price listings with SKU, quantity, price, and watch count.\n\nUses the Trading API (GetMyeBaySelling). Returns listings created via any method (UI, Trading API, or REST API).\n\nRequired: User OAuth token.',
     inputSchema: {
       page: z.number().optional().describe('Page number (default 1)'),
-      entriesPerPage: z
-        .number()
-        .optional()
-        .describe('Items per page, max 200 (default 50)'),
+      entriesPerPage: z.number().optional().describe('Items per page, max 200 (default 50)'),
     },
     annotations: { readOnlyHint: true },
   },
@@ -20,9 +17,7 @@ export const tradingTools: ToolDefinition[] = [
     description:
       'Get full details for a single listing by item ID.\n\nUses the Trading API (GetItem). Returns all listing fields including description, specifics, shipping, and images.\n\nRequired: User OAuth token.',
     inputSchema: {
-      itemId: z
-        .string()
-        .describe('The eBay item ID (e.g., "167382780779")'),
+      itemId: z.string().describe('The eBay item ID (e.g., "167382780779")'),
     },
     annotations: { readOnlyHint: true },
   },
@@ -47,9 +42,7 @@ export const tradingTools: ToolDefinition[] = [
       itemId: z.string().describe('The eBay item ID to revise'),
       fields: z
         .record(z.string(), z.unknown())
-        .describe(
-          'Fields to update (e.g., { "Quantity": 10, "StartPrice": 14.99 })'
-        ),
+        .describe('Fields to update (e.g., { "Quantity": 10, "StartPrice": 14.99 })'),
     },
     annotations: { readOnlyHint: false },
   },
@@ -81,9 +74,7 @@ export const tradingTools: ToolDefinition[] = [
       modifications: z
         .record(z.string(), z.unknown())
         .optional()
-        .describe(
-          'Optional fields to change when relisting (e.g., { "Quantity": 20 })'
-        ),
+        .describe('Optional fields to change when relisting (e.g., { "Quantity": 20 })'),
     },
     annotations: { readOnlyHint: false },
   },

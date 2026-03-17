@@ -582,7 +582,7 @@ describe('Zod Schema Enum Validation', () => {
         expect.fail('Should have thrown validation error');
       } catch (error: unknown) {
         // Zod v4 uses .issues instead of .errors
-        const zodError = error as { issues?: Array<{ path: (string | number)[] }>; errors?: Array<{ path: (string | number)[] }> };
+        const zodError = error as { issues?: { path: (string | number)[] }[]; errors?: { path: (string | number)[] }[] };
         const issues = zodError.issues ?? zodError.errors;
         expect(issues).toBeDefined();
         expect(issues![0].path).toContain('unit');
