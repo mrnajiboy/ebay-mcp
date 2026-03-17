@@ -1,5 +1,4 @@
-# eBay API MCP Server (Remote Edition) (`ebay-mcp-remote-edition`)
-
+# eBay MCP (Remote Edition)
 <div align="center">
 
 A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server providing AI assistants with comprehensive access to eBay's Sell APIs. Includes **325+ tools** for inventory management, order fulfillment, marketing campaigns, analytics, developer tools, and more.
@@ -14,13 +13,13 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server providi
 
 ---
 
-## Fork additions in this deployment-focused version
+## Fork differences
 
-This fork preserves the original local/STDIO workflow while adding hosted multi-user support for a [Render](https://www.google.com/search?q=render.com&sourceid=chrome&ie=UTF-8) or similar remote server instance.
+This fork of [Yosef Hayim's eBay MCP](https://github.com/YosefHayim/ebay-mcp) preserves the original local/STDIO workflow up to v1.7.5, while expanding and focusing on adding hosted multi-user support for both ephemeral and persistant remote server instances. For all intents and purposes, any changes made to the original project from that version on is completely independent of any changes made here, and may be considered a wholly separate project.
 
 ### Added in this fork
 
-- Hosted HTTP MCP deployment mode for Render
+- Hosted Streamable HTTP MCP deployment mode for remote server deployment
 - Multi-user server-side eBay OAuth for both production and sandbox
 - Cloudflare KV-backed storage for:
   - OAuth state

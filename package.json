@@ -9,8 +9,7 @@
     "ebay-mcp-remote-edition": "build/index.js"
   },
   "publishConfig": {
-    "access": "public",
-    "provenance": true
+    "access": "public"
   },
   "scripts": {
     "build": "tsc && tsc-alias",
@@ -65,7 +64,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/mrnajiboy/ebay-mcp-remote-edition.git"
+    "url": "git+https://github.com/mrnajiboy/ebay-mcp-remote-edition.git"
   },
   "homepage": "https://github.com/mrnajiboy/ebay-mcp-remote-edition#readme",
   "bugs": {
