@@ -42,7 +42,10 @@ This fork preserves the original local/STDIO workflow while adding hosted multi-
 I want to set up the eBay MCP Server for my AI assistant. Please help me:
 
 1. Install the eBay MCP server:
-   npm install -g ebay-mcp
+git clone https://github.com/mrnajiboy/ebay-mcp.git
+cd ebay-mcp
+pnpm install
+pnpm run build
 
 2. I need to configure it for [Claude Desktop / Cursor / Cline / Zed / Continue.dev / Windsurf / Claude Code CLI / Amazon Q] (choose one)
 
