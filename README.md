@@ -119,14 +119,6 @@ For official eBay API support, please refer to the [eBay Developer Program](http
 
 ### 2. Install
 
-**Option A: Install from npm**
-
-```bash
-npm install -g ebay-mcp
-```
-
-**Option B: Install from source**
-
 ```bash
 git clone https://github.com/mrnajiboy/ebay-mcp.git
 cd ebay-mcp
@@ -248,7 +240,7 @@ Use it in your MCP client:
 Authorization: Bearer <session-token>
 ```
 
-For Make and TypingMind, the practical supported flow is:
+For Make/Zapier/TypingMind anywhere where Remote MCP is accepted, the practical supported flow is:
 
 1. complete browser OAuth via the hosted server
 2. copy the returned session token from the callback page
