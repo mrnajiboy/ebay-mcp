@@ -25,7 +25,7 @@ export function getPackageJson(): PackageJson {
     cachedPackageJson = JSON.parse(content) as PackageJson;
     return cachedPackageJson;
   } catch {
-    return { name: 'ebay-mcp-remote-edition', version: '1.0.0' };
+    return { name: 'ebay-mcp-remote-edition', version: '3.1.2' };
   }
 }
 
