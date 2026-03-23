@@ -15,7 +15,7 @@ function isHostedEnvironment(): boolean {
 function main(): void {
   const args = process.argv.slice(2);
   if (args.length === 0) {
-    throw new Error('Usage: tsx src/scripts/run-with-local-env.ts <command> [args...]');
+    throw new Error('Usage: tsx src/scripts/env-check.ts <command> [args...]');
   }
 
   const hosted = isHostedEnvironment();
