@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v3.1.0...ebay-mcp-remote-edition-v3.1.1) (2026-03-23)
+
+
+### Documentation
+
+* refactor README and add to context7 ([d3666b9](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/d3666b974f18500d8c3aaf0e419b7388bcfe210f))
+
 ## [3.1.0](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v3.0.0...ebay-mcp-remote-edition-v3.1.0) (2026-03-23)
 
 
