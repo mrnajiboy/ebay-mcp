@@ -140,6 +140,7 @@ function createApp(): express.Application {
   app.use(express.urlencoded({ extended: false }));
   app.use(helmet({ xPoweredBy: false }));
   app.use('/icons', express.static(join(projectRoot, 'public', 'icons')));
+  app.use('/callback-copy.js', express.static(join(projectRoot, 'public', 'callback-copy.js')));
 
   app.use((req, res, next) => {
     const start = Date.now();
@@ -1089,32 +1090,7 @@ async function handleOAuthCallback(
       .muted { color: #6b7280; }
       a { color: #2563eb; }
     </style>
-    <script>
-      async function copyText(elementId, statusId) {
-        const token = document.getElementById(elementId).innerText;
-        const status = document.getElementById(statusId);
-        try {
-          if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(token);
-          } else {
-            const temp = document.createElement('textarea');
-            temp.value = token;
-            temp.setAttribute('readonly', '');
-            temp.style.position = 'absolute';
-            temp.style.left = '-9999px';
-            document.body.appendChild(temp);
-            temp.select();
-            document.execCommand('copy');
-            document.body.removeChild(temp);
-          }
-          status.textContent = 'Copied!';
-          setTimeout(() => { status.textContent = ''; }, 1800);
-        } catch (err) {
-          status.textContent = 'Copy failed — select manually';
-          setTimeout(() => { status.textContent = ''; }, 2500);
-        }
-      }
-    </script>
+    <script src="/callback-copy.js" defer></script>
   </head>
   <body>
     <h1>eBay account connected ✓</h1>
@@ -1124,21 +1100,21 @@ async function handleOAuthCallback(
     <h2>① Session token — paste as Bearer token in your MCP client</h2>
     <div class="card">
       <pre id="session-token">${htmlEscape(session.sessionToken)}</pre>
-      <button class="copy-btn" onclick="copyText('session-token','st-status')">Copy</button><span id="st-status" class="copy-status"></span>
+      <button class="copy-btn" data-copy-source="session-token" data-copy-status="st-status">Copy</button><span id="st-status" class="copy-status"></span>
       <p class="muted">Set as <code>EBAY_SESSION_TOKEN</code> in your server env to survive restarts.</p>
     </div>
 
     <h2>② eBay user access token</h2>
     <div class="card">
       <pre id="access-token">${htmlEscape(tokenData.access_token)}</pre>
-      <button class="copy-btn" onclick="copyText('access-token','at-status')">Copy</button><span id="at-status" class="copy-status"></span>
+      <button class="copy-btn" data-copy-source="access-token" data-copy-status="at-status">Copy</button><span id="at-status" class="copy-status"></span>
       <p class="muted">Set as <code>EBAY_USER_ACCESS_TOKEN</code> in your server env (optional — auto-refreshed from refresh token).</p>
     </div>
 
     <h2>③ eBay user refresh token</h2>
     <div class="card">
       <pre id="refresh-token">${htmlEscape(tokenData.refresh_token ?? '')}</pre>
-      <button class="copy-btn" onclick="copyText('refresh-token','rt-status')">Copy</button><span id="rt-status" class="copy-status"></span>
+      <button class="copy-btn" data-copy-source="refresh-token" data-copy-status="rt-status">Copy</button><span id="rt-status" class="copy-status"></span>
       <p class="muted">Set as <code>EBAY_USER_REFRESH_TOKEN</code> in your server env. The server uses this to keep the access token fresh automatically.</p>
     </div>
 
