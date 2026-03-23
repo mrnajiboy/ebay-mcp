@@ -1,6 +1,8 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import { createServer as createHttpsServer } from 'https';
+import { readFileSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { randomUUID, createHash } from 'crypto';
@@ -905,13 +907,43 @@ EBAY_USER_REFRESH_TOKEN=${htmlEscape(tokenData.refresh_token ?? '')}</pre>
 async function main(): Promise<void> {
   try {
     const app = createApp();
-    const server = app.listen(CONFIG.port, CONFIG.host, () => {
+
+    const certPath = process.env.EBAY_LOCAL_TLS_CERT_PATH;
+    const keyPath = process.env.EBAY_LOCAL_TLS_KEY_PATH;
+    const useHttps = CONFIG.publicBaseUrl.startsWith('https://') && !!certPath && !!keyPath;
+
+    const onListening = (): void => {
       const serverUrl = getServerBaseUrl();
-      console.log(`Server running at ${serverUrl}`);
+      const protocol = useHttps ? 'HTTPS' : 'HTTP';
+      console.log(`Server running at ${serverUrl} [${protocol}]`);
       console.log(`OAuth start: ${serverUrl}/oauth/start?env=production`);
       console.log(`OAuth start sandbox: ${serverUrl}/oauth/start?env=sandbox`);
       console.log(`MCP endpoint: ${serverUrl}/mcp`);
-    });
+    };
+
+    let server: ReturnType<typeof app.listen>;
+
+    if (useHttps) {
+      let cert: Buffer;
+      let key: Buffer;
+      try {
+        cert = readFileSync(certPath);
+        key = readFileSync(keyPath);
+      } catch (err) {
+        console.error(
+          `Fatal: could not read TLS cert/key files — ` +
+            `EBAY_LOCAL_TLS_CERT_PATH=${certPath}, EBAY_LOCAL_TLS_KEY_PATH=${keyPath}\n`,
+          err
+        );
+        throw err;
+      }
+      const httpsServer = createHttpsServer({ cert, key }, app);
+      server = httpsServer.listen(CONFIG.port, CONFIG.host, onListening) as ReturnType<
+        typeof app.listen
+      >;
+    } else {
+      server = app.listen(CONFIG.port, CONFIG.host, onListening);
+    }
 
     process.on('SIGINT', () => {
       server.close(() => {

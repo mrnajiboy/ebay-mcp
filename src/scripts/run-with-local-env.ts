@@ -12,7 +12,7 @@ function isHostedEnvironment(): boolean {
   );
 }
 
-async function main(): Promise<void> {
+function main(): void {
   const args = process.argv.slice(2);
   if (args.length === 0) {
     throw new Error('Usage: tsx src/scripts/run-with-local-env.ts <command> [args...]');
@@ -52,8 +52,10 @@ async function main(): Promise<void> {
 const entryPath = process.argv[1] ? resolve(process.argv[1]) : undefined;
 const modulePath = resolve(fileURLToPath(import.meta.url));
 if (entryPath && modulePath === entryPath) {
-  main().catch((error) => {
+  try {
+    main();
+  } catch (error) {
     console.error('[env-launcher] Failed:', error instanceof Error ? error.message : String(error));
     process.exit(1);
-  });
+  }
 }

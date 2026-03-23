@@ -15,7 +15,7 @@
  */
 
 import chalk from 'chalk';
-import { createServer as createHttpServer, type Server } from 'http';
+import { createServer as createHttpServer, type Server, type IncomingMessage, type ServerResponse } from 'http';
 import { createServer as createHttpsServer } from 'https';
 import { readFileSync } from 'fs';
 import type { EbayConfig } from '../types/ebay.js';
@@ -182,8 +182,8 @@ export async function startCallbackServer(
     });
 
     const handleRequest = (
-      req: import('http').IncomingMessage,
-      res: import('http').ServerResponse
+      req: IncomingMessage,
+      res: ServerResponse
     ) => {
       if (!req.url) {
         res.writeHead(400);
@@ -300,7 +300,7 @@ export async function interactiveOAuthFlow(
   let callbackUrl: string;
   if (publicBase) {
     callbackUrl = `${publicBase}/oauth/callback`;
-  } else if (config.redirectUri && config.redirectUri.startsWith('http')) {
+  } else if (config.redirectUri?.startsWith('http')) {
     // Backward-compat: redirectUri contains an actual URL instead of a RuName
     callbackUrl = config.redirectUri;
   } else {
