@@ -11,6 +11,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { EbaySellerApi } from '@/api/index.js';
 import {
+  getBaseUrl,
   getConfiguredEnvironment,
   getHostedOauthScopes,
   getEbayConfig,
@@ -379,10 +380,10 @@ function mountEnvRouter(
     }
 
     // Step 2: per-env RuName detection.
-    const sandboxRuName = process.env.EBAY_SANDBOX_RUNAME || process.env.EBAY_SANDBOX_REDIRECT_URI;
+    const sandboxRuName = process.env.EBAY_SANDBOX_RUNAME ?? process.env.EBAY_SANDBOX_REDIRECT_URI;
     const productionRuName =
-      process.env.EBAY_PRODUCTION_RUNAME || process.env.EBAY_PRODUCTION_REDIRECT_URI;
-    const genericRuName = process.env.EBAY_RUNAME || process.env.EBAY_REDIRECT_URI;
+      process.env.EBAY_PRODUCTION_RUNAME ?? process.env.EBAY_PRODUCTION_REDIRECT_URI;
+    const genericRuName = process.env.EBAY_RUNAME ?? process.env.EBAY_REDIRECT_URI;
 
     const sandboxDetected = ruNameToEnvironment(sandboxRuName);
     const productionDetected = ruNameToEnvironment(productionRuName);
@@ -938,7 +939,6 @@ async function handleOAuthCallback(
   try {
     const code = typeof req.query.code === 'string' ? req.query.code : undefined;
     const state = typeof req.query.state === 'string' ? req.query.state : undefined;
-    const envFromQuery = typeof req.query.env === 'string' ? req.query.env : undefined;
     const oauthError = typeof req.query.error === 'string' ? req.query.error : undefined;
     const errorDescription =
       typeof req.query.error_description === 'string' ? req.query.error_description : undefined;
@@ -960,36 +960,43 @@ async function handleOAuthCallback(
       return;
     }
 
-    let environment: EbayEnvironment;
-    let stateRecord: Awaited<ReturnType<typeof authStore.consumeOAuthState>> = null;
-    if (state) {
-      stateRecord = await authStore.consumeOAuthState(state);
-      if (!stateRecord) {
-        serverLogger.warn('[oauth/callback] OAuth state not found or expired', { state });
-        res.status(400).send('<h1>Invalid or expired OAuth state</h1>');
-        return;
-      }
-      environment = stateRecord.environment;
-      serverLogger.info('[oauth/callback] State resolved', {
-        environment,
-        isMcpFlow: !!(stateRecord.mcpClientId && stateRecord.mcpRedirectUri),
-      });
-    } else {
-      environment =
-        envFromQuery === 'sandbox' || envFromQuery === 'production'
-          ? envFromQuery
-          : getConfiguredEnvironment();
-      serverLogger.warn(
-        'OAuth callback received without state; falling back to configured/query environment',
-        { environment }
-      );
+    if (!state) {
+      serverLogger.warn('[oauth/callback] Missing OAuth state in callback');
+      res
+        .status(400)
+        .send(
+          "<h1>Missing OAuth state</h1><p>Restart the OAuth flow from this server's /oauth/start or /authorize endpoint.</p>"
+        );
+      return;
     }
+
+    const stateRecord = await authStore.getOAuthState(state);
+    if (!stateRecord) {
+      serverLogger.warn('[oauth/callback] OAuth state not found or expired', { state });
+      res.status(400).send('<h1>Invalid or expired OAuth state</h1>');
+      return;
+    }
+
+    const environment: EbayEnvironment = stateRecord.environment;
+    serverLogger.info('[oauth/callback] State resolved', {
+      environment,
+      isMcpFlow: !!(stateRecord.mcpClientId && stateRecord.mcpRedirectUri),
+    });
+
+    const ebayConfig = getEbayConfig(environment);
+    serverLogger.info('[oauth/callback] Prepared eBay token exchange', {
+      environment,
+      tokenBaseUrl: getBaseUrl(environment),
+      clientIdPrefix: ebayConfig.clientId ? `${ebayConfig.clientId.slice(0, 12)}...` : '(missing)',
+      ruName: ebayConfig.redirectUri ?? '(missing)',
+    });
 
     const userId = randomUUID();
     const api = await createUserScopedApi(userId, environment);
     const oauthClient = api.getAuthClient().getOAuthClient();
     serverLogger.info('[oauth/callback] Exchanging code for eBay tokens', { userId });
     const tokenData = await oauthClient.exchangeCodeForToken(code);
+    await authStore.deleteOAuthState(state);
     serverLogger.info('[oauth/callback] eBay token exchange successful', {
       userId,
       hasScope: !!tokenData.scope,

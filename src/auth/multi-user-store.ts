@@ -114,7 +114,7 @@ export class MultiUserAuthStore {
    * `lastUsedAt` once per TOUCH_THROTTLE_MS (default: 1 hour).
    */
   private sessionTouchCache = new Map<string, number>();
-  private static readonly TOUCH_THROTTLE_MS = 60 * 60 * 1_000; // 1 hour
+  private static readonly touchThrottleMs = 60 * 60 * 1_000; // 1 hour
 
   private stateKey(state: string): string {
     return `oauth_state:${state}`;
@@ -150,6 +150,14 @@ export class MultiUserAuthStore {
     };
     await this.kv.put(this.stateKey(state), record, OAUTH_STATE_TTL_S);
     return record;
+  }
+
+  async getOAuthState(state: string): Promise<OAuthStateRecord | null> {
+    return await this.kv.get<OAuthStateRecord>(this.stateKey(state));
+  }
+
+  async deleteOAuthState(state: string): Promise<void> {
+    await this.kv.delete(this.stateKey(state));
   }
 
   async consumeOAuthState(state: string): Promise<OAuthStateRecord | null> {
@@ -222,7 +230,7 @@ export class MultiUserAuthStore {
     // Skip the KV write entirely if we touched this session recently.
     // The in-memory cache in CloudflareKVStore already keeps reads free,
     // so the only cost we're avoiding here is the unnecessary KV PUT.
-    if (lastTouched !== undefined && now - lastTouched < MultiUserAuthStore.TOUCH_THROTTLE_MS) {
+    if (lastTouched !== undefined && now - lastTouched < MultiUserAuthStore.touchThrottleMs) {
       return;
     }
 
