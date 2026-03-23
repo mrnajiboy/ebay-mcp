@@ -1602,8 +1602,39 @@ export async function executeTool(
         args.continuationToken as string | undefined
       );
     case 'ebay_create_notification_destination': {
-      const validated = createDestinationSchema.parse(args);
-      return await api.notification.createDestination(validated as Record<string, unknown>);
+      // The MCP tool definition wraps inputs inside a `destination` field:
+      // { destination: { name, endpoint, verificationToken } }
+      // eBay API expects: { name, status, deliveryConfig: { endpoint, verificationToken } }
+      const dest = (args as Record<string, unknown>).destination as
+        | Record<string, unknown>
+        | undefined;
+      if (dest) {
+        const { name, endpoint, verificationToken, status } = dest as {
+          name?: string;
+          endpoint?: string;
+          verificationToken?: string;
+          status?: string;
+        };
+        const ebayPayload: Record<string, unknown> = {
+          name,
+          status: status ?? 'ENABLED',
+          deliveryConfig: { endpoint, verificationToken },
+        };
+        return await api.notification.createDestination(ebayPayload);
+      } else {
+        // Fallback: legacy flat delivery_config format
+        const validated = createDestinationSchema.parse(args);
+        const { delivery_config, name, status } = validated;
+        const ebayPayload: Record<string, unknown> = {
+          name,
+          status: status ?? 'ENABLED',
+          deliveryConfig: {
+            endpoint: delivery_config?.endpoint,
+            verificationToken: delivery_config?.verification_token,
+          },
+        };
+        return await api.notification.createDestination(ebayPayload);
+      }
     }
     case 'ebay_get_notification_destination': {
       const validated = getDestinationSchema.parse(args);
@@ -1629,7 +1660,20 @@ export async function executeTool(
     }
     case 'ebay_create_notification_subscription': {
       const validated = createSubscriptionSchema.parse(args);
-      return await api.notification.createSubscription(validated as Record<string, unknown>);
+      // Convert snake_case to camelCase for eBay API
+      const subPayload: Record<string, unknown> = {};
+      if (validated.destination_id !== undefined) subPayload.destinationId = validated.destination_id;
+      if (validated.status !== undefined) subPayload.status = validated.status;
+      if (validated.topic_id !== undefined) subPayload.topicId = validated.topic_id;
+      if (validated.payload !== undefined) {
+        const p = validated.payload as Record<string, unknown>;
+        subPayload.payload = {
+          ...(p.delivery_protocol !== undefined && { deliveryProtocol: p.delivery_protocol }),
+          ...(p.format !== undefined && { format: p.format }),
+          ...(p.schema_version !== undefined && { schemaVersion: p.schema_version }),
+        };
+      }
+      return await api.notification.createSubscription(subPayload);
     }
     case 'ebay_get_notification_subscription': {
       const validated = getSubscriptionSchema.parse(args);
