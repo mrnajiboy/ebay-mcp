@@ -378,8 +378,7 @@ function mountEnvRouter(
     }
 
     // Step 2: per-env RuName detection.
-    const sandboxRuName =
-      process.env.EBAY_SANDBOX_RUNAME || process.env.EBAY_SANDBOX_REDIRECT_URI;
+    const sandboxRuName = process.env.EBAY_SANDBOX_RUNAME || process.env.EBAY_SANDBOX_REDIRECT_URI;
     const productionRuName =
       process.env.EBAY_PRODUCTION_RUNAME || process.env.EBAY_PRODUCTION_REDIRECT_URI;
     const genericRuName = process.env.EBAY_RUNAME || process.env.EBAY_REDIRECT_URI;
@@ -470,10 +469,13 @@ function mountEnvRouter(
       //   2. Explicit ?env= query param
       //   3. ?resource param (RFC 9728 — full MCP URL encodes env in its path)
       //   4. RuName -SB-/-PR- segment / EBAY_ENVIRONMENT fallback (see resolveEnv)
-      const envSource = hardcodedEnv ? 'path' :
-        (q.env === 'sandbox' || q.env === 'production') ? 'query' :
-        (q.resource && (q.resource.includes('/sandbox/') || q.resource.includes('/production/'))) ? 'resource' :
-        'runame';
+      const envSource = hardcodedEnv
+        ? 'path'
+        : q.env === 'sandbox' || q.env === 'production'
+          ? 'query'
+          : q.resource && (q.resource.includes('/sandbox/') || q.resource.includes('/production/'))
+            ? 'resource'
+            : 'runame';
       let environment = resolveEnv(req);
 
       serverLogger.info(`[${prefix || 'root'}/authorize] Request received`, {
@@ -627,7 +629,7 @@ function mountEnvRouter(
     // URL, or the deep link is silently swallowed by VS Code).
     serverLogger.info(`[${prefix || 'root'}/token] Request received`, {
       contentType: req.headers['content-type'],
-      origin: req.headers['origin'],
+      origin: req.headers.origin,
       hasBody: !!req.body,
     });
 
@@ -762,9 +764,7 @@ function mountEnvRouter(
       //   /.well-known/oauth-protected-resource/sandbox/mcp
       // For the root MCP path we fall back to the generic well-known endpoint.
       const resourcePath = req.path; // e.g. "" (when router is at /sandbox)
-      const fullResourcePath = hardcodedEnv
-        ? `/${hardcodedEnv}${resourcePath}`
-        : resourcePath;
+      const fullResourcePath = hardcodedEnv ? `/${hardcodedEnv}${resourcePath}` : resourcePath;
       // Normalise: strip trailing slashes, ensure it does not double-encode
       const resourceMetadataUrl = `${serverUrl}/.well-known/oauth-protected-resource${fullResourcePath.replace(/\/$/, '')}`;
 
@@ -1029,8 +1029,7 @@ async function handleOAuthCallback(
       // navigation; browsers allow this) and shows a manual button fallback.
       // The page also shows a "close this tab" message after the redirect so
       // the user knows the flow completed.
-      const isCustomScheme =
-        redirectUrl.protocol !== 'http:' && redirectUrl.protocol !== 'https:';
+      const isCustomScheme = redirectUrl.protocol !== 'http:' && redirectUrl.protocol !== 'https:';
 
       if (isCustomScheme) {
         const safeFinalUrl = htmlEscape(finalRedirectUrl);
