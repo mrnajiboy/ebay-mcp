@@ -1396,16 +1396,22 @@ describe('Comprehensive Tools Coverage', () => {
     it('ebay_create_notification_destination', async () => {
       const mockResponse = { destinationId: 'DEST123' };
       const args = {
-        name: 'Test Destination',
-        delivery_config: {
+        destination: {
+          name: 'Test Destination',
           endpoint: 'https://example.com/webhook',
-          verification_token: 'abcdef1234567890abcdef1234567890',
+          verificationToken: 'abcdef1234567890abcdef1234567890',
         },
-        status: 'ENABLED',
       };
       vi.mocked(mockApi.notification.createDestination).mockResolvedValue(mockResponse);
       await executeTool(mockApi, 'ebay_create_notification_destination', args);
-      expect(mockApi.notification.createDestination).toHaveBeenCalledWith(args);
+      expect(mockApi.notification.createDestination).toHaveBeenCalledWith({
+        name: 'Test Destination',
+        status: 'ENABLED',
+        deliveryConfig: {
+          endpoint: 'https://example.com/webhook',
+          verificationToken: 'abcdef1234567890abcdef1234567890',
+        },
+      });
     });
   });
 
