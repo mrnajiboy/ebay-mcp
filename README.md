@@ -154,10 +154,10 @@ For hosted deployments, register your server's public HTTPS URL instead (e.g. `h
 
 ### Install
 
-**Option A — npm global install (no build step):**
+**Option A — pnpm global install (no build step):**
 
 ```bash
-npm install -g ebay-mcp-remote-edition
+pnpm install -g ebay-mcp-remote-edition
 ```
 
 **Option B — clone and build (for contributors or self-hosting):**
