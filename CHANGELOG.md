@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.3](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v3.1.2...ebay-mcp-remote-edition-v3.1.3) (2026-03-29)
+
+
+### Bug Fixes
+
+* a lot ([e07c955](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/e07c9553d3ba36257c7a1bb6087fd6c79d6c360a))
+* callback page ([a7d358f](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/a7d358f6a2df95e16860f4b116a875fc4f5492dc))
+* createDestination call ([5082ef4](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/5082ef440ed1ed72fcfe9884b0da71550a265cea))
+* lint ([092ac48](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/092ac482335a9c4bccda4a38a9c6b493ea51ce1a))
+* linting/prettier ([a04c389](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/a04c3895de01f95f940a70c4cd57fedee213a886))
+* rename script ([ad1784c](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/ad1784c831b8286e7dc94ace984d064e4e77c886))
+* test formatting issue for destination tool call ([7120876](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/7120876cb874cc6279aa2f7e5983d020b8b86bf0))
+* versioning logic ([2aca668](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/2aca668cd2c2c9878d1b535376c243a4c5e76df8))
+
+
+### Dependencies
+
+* update deps ([c8257d9](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/c8257d96bb576561f2b0a6f4f1a642c5319c3ebe))
+
+
+### Documentation
+
+* update gitignore ([0502279](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/050227934d4cd01047e34f73dc6a8be0d489a945))
+
 ## [3.1.2](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v3.1.1...ebay-mcp-remote-edition-v3.1.2) (2026-03-23)
 
 
