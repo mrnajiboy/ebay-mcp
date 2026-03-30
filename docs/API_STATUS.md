@@ -3,10 +3,11 @@
 Auto-updated snapshot from the [eBay API Status RSS feed](https://developer.ebay.com/rss/api-status).
 Full list: [developer.ebay.com/support/api-status](https://developer.ebay.com/support/api-status).
 
-*Last updated: 2026-03-23T09:00:10.156Z*
+*Last updated: 2026-03-30T09:15:52.191Z*
 
 | Title | API | Site | Status | Last updated | Link |
 |-------|-----|------|--------|--------------|------|
+| feed files | feed files | Production | Unresolved | Sat Mar 28 2026 | [Details](https://developer.ebay.com/support/api-status/Production/feed-files-are-unavailable) |
 | Sandbox | Sandbox | Sandbox | Resolved | Tue Mar 03 2026 | [Details](https://developer.ebay.com/support/api-status/Sandbox/application-keyset-page-is-not-displaying-the-existing-sandbox-keyset) |
 | Trading API | Trading API | Production | Resolved | Mon Feb 09 2026 | [Details](https://developer.ebay.com/support/api-status/Production/resolved-addorder-trading-api-returns-http-500-during-invoice-generation-blocking-invoicing) |
 | Developer portal | Developer portal | Production | Resolved | Thu Feb 05 2026 | [Details](https://developer.ebay.com/support/api-status/Production/application-keysets-page-not-showing-production-keyset-and-create-new-keyset-is-not-working) |
@@ -21,7 +22,6 @@ Full list: [developer.ebay.com/support/api-status](https://developer.ebay.com/su
 | getItemConditionPolicies | getItemConditionPolicies | Production | Resolved | Fri Sep 26 2025 | [Details](https://developer.ebay.com/support/api-status/Production/resolved-getitemconditionpolicies-api-currently-not-working-and-is-returning-404-response) |
 | AddMemberMessageRTQ  AddMemberMessageAAQToPartner APIs | AddMemberMessageRTQ  AddMemberMessageAAQToPartner APIs | Production | Resolved | Tue Sep 23 2025 | [Details](https://developer.ebay.com/support/api-status/Production/resolved-discrepancies-in-newline-character-display-between-messages-on-ui-and-email-content) |
 | Sandbox | Sandbox | Sandbox | Resolved | Fri Sep 19 2025 | [Details](https://developer.ebay.com/support/api-status/Sandbox/resolved-sandbox-user-creation-issue) |
-| createShippingFulfillment | createShippingFulfillment | Production | Resolved | Fri Sep 19 2025 | [Details](https://developer.ebay.com/support/api-status/Production/resolved-createshippingfulfillment-api-is-currently-not-working-and-is-returning-400-response) |
 
 ---
 
