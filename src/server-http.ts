@@ -16,6 +16,7 @@ import {
   getHostedOauthScopes,
   getEbayConfig,
   getOAuthAuthorizationUrl,
+  getValidationRunnerUserId,
   validateCredentialsForEnvironment,
   ruNameToEnvironment,
   type EbayEnvironment,
@@ -23,6 +24,10 @@ import {
 import { getVersion } from '@/utils/version.js';
 import { serverLogger } from '@/utils/logger.js';
 import { MultiUserAuthStore } from '@/auth/multi-user-store.js';
+import type {
+  getToolDefinitions as GetToolDefinitionsFn,
+  executeTool as ExecuteToolFn,
+} from './tools/index.js';
 
 const CONFIG = {
   host: process.env.MCP_HOST ?? '0.0.0.0',
@@ -49,6 +54,25 @@ function htmlEscape(value: string): string {
     .replace(/>/g, '>')
     .replace(/"/g, '"')
     .replace(/'/g, '&#39;');
+}
+
+function getValidationIdFromBody(body: unknown): string {
+  if (
+    typeof body === 'object' &&
+    body !== null &&
+    'validationId' in body &&
+    typeof body.validationId === 'string'
+  ) {
+    return body.validationId;
+  }
+  return '';
+}
+
+function getRetryTimestampFromBody(body: unknown): string {
+  if (typeof body === 'object' && body !== null && 'timestamp' in body && typeof body.timestamp === 'string') {
+    return new Date(new Date(body.timestamp).getTime() + 30 * 60 * 1000).toISOString();
+  }
+  return new Date(Date.now() + 30 * 60 * 1000).toISOString();
 }
 
 function requireAdmin(
@@ -397,6 +421,58 @@ function mountEnvRouter(
     // Step 4: final fallback.
     return getConfiguredEnvironment();
   }
+
+  router.post('/validation/run', requireAdmin, async (req, res) => {
+    const environment = resolveEnv(req);
+    const validationRunnerUserId = getValidationRunnerUserId(environment);
+
+    if (!validationRunnerUserId) {
+      res.status(500).json({
+        status: 'error',
+        validationId: getValidationIdFromBody(req.body),
+        errorCode: 'VALIDATION_USER_NOT_CONFIGURED',
+        message: `No validation runner user is configured for ${environment}`,
+        retryable: false,
+        nextCheckAt: null,
+      });
+      return;
+    }
+
+    const storedTokens = await authStore.getUserTokens(validationRunnerUserId, environment);
+    if (!storedTokens?.tokenData) {
+      res.status(500).json({
+        status: 'error',
+        validationId: getValidationIdFromBody(req.body),
+        errorCode: 'VALIDATION_USER_TOKENS_MISSING',
+        message: `Stored refresh-token-backed credentials were not found for validation user ${validationRunnerUserId} in ${environment}`,
+        retryable: false,
+        nextCheckAt: null,
+      });
+      return;
+    }
+
+    try {
+      const api = await createUserScopedApi(validationRunnerUserId, environment);
+      const { runValidation } = await import('./validation/run-validation.js');
+      const result = await runValidation(api, req.body);
+
+      if (result.status === 'error') {
+        res.status(500).json(result);
+        return;
+      }
+
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({
+        status: 'error',
+        validationId: getValidationIdFromBody(req.body),
+        errorCode: 'VALIDATION_ROUTE_ERROR',
+        message: error instanceof Error ? error.message : String(error),
+        retryable: true,
+        nextCheckAt: getRetryTimestampFromBody(req.body),
+      });
+    }
+  });
 
   // ── RFC 8414 – Authorization Server Metadata ──────────────────────────
   // For env-scoped routers: endpoints are relative to the env base URL.
@@ -815,7 +891,20 @@ function mountEnvRouter(
   };
 
   async function createMcpServer(userId: string, environment: EbayEnvironment): Promise<McpServer> {
-    const { getToolDefinitions, executeTool } = await import('./tools/index.js');
+    let getToolDefinitions: typeof GetToolDefinitionsFn;
+    let executeTool: typeof ExecuteToolFn;
+
+    try {
+      ({ getToolDefinitions, executeTool } = await import('./tools/index.js'));
+    } catch (error) {
+      serverLogger.error('Failed to import MCP tool registry', {
+        userId,
+        environment,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+
     const api = await createUserScopedApi(userId, environment);
     const server = new McpServer({
       name: 'ebay-mcp-remote-edition',
@@ -831,30 +920,40 @@ function mountEnvRouter(
 
     const tools = getToolDefinitions();
     for (const toolDef of tools) {
-      server.registerTool(
-        toolDef.name,
-        { description: toolDef.description, inputSchema: toolDef.inputSchema },
-        async (args: Record<string, unknown>) => {
-          try {
-            const result = await executeTool(api, toolDef.name, args);
-            return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
-          } catch (error) {
-            return {
-              content: [
-                {
-                  type: 'text' as const,
-                  text: JSON.stringify(
-                    { error: error instanceof Error ? error.message : String(error) },
-                    null,
-                    2
-                  ),
-                },
-              ],
-              isError: true,
-            };
+      try {
+        server.registerTool(
+          toolDef.name,
+          { description: toolDef.description, inputSchema: toolDef.inputSchema },
+          async (args: Record<string, unknown>) => {
+            try {
+              const result = await executeTool(api, toolDef.name, args);
+              return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+            } catch (error) {
+              return {
+                content: [
+                  {
+                    type: 'text' as const,
+                    text: JSON.stringify(
+                      { error: error instanceof Error ? error.message : String(error) },
+                      null,
+                      2
+                    ),
+                  },
+                ],
+                isError: true,
+              };
+            }
           }
-        }
-      );
+        );
+      } catch (error) {
+        serverLogger.error('Failed to register MCP tool', {
+          toolName: toolDef.name,
+          userId,
+          environment,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
     }
     return server;
   }
@@ -874,27 +973,51 @@ function mountEnvRouter(
     if (sessionId && transports.has(sessionId)) {
       transport = transports.get(sessionId)!;
     } else if (!sessionId && isInitializeRequest(req.body)) {
-      transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => randomUUID(),
-        onsessioninitialized: (newSessionId) => {
-          transports.set(newSessionId, transport);
-          serverLogger.info('New MCP session initialized', {
-            sessionId: newSessionId,
-            userId: userContext.userId,
-            environment: userContext.environment,
-          });
-        },
-      });
+      try {
+        transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => randomUUID(),
+          onsessioninitialized: (newSessionId) => {
+            transports.set(newSessionId, transport);
+            serverLogger.info('New MCP session initialized', {
+              sessionId: newSessionId,
+              userId: userContext.userId,
+              environment: userContext.environment,
+            });
+          },
+        });
 
-      transport.onclose = () => {
-        if (transport.sessionId) {
-          transports.delete(transport.sessionId);
-        }
-      };
+        transport.onclose = () => {
+          if (transport.sessionId) {
+            transports.delete(transport.sessionId);
+          }
+        };
 
-      const server = await createMcpServer(userContext.userId, userContext.environment);
-      await server.connect(transport);
+        const server = await createMcpServer(userContext.userId, userContext.environment);
+        await server.connect(transport);
+      } catch (error) {
+        serverLogger.error('Failed to initialize MCP session', {
+          userId: userContext.userId,
+          environment: userContext.environment,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        res.status(500).json({
+          jsonrpc: '2.0',
+          error: {
+            code: -32603,
+            message: error instanceof Error ? error.message : 'Failed to initialize MCP session',
+          },
+          id: null,
+        });
+        return;
+      }
     } else {
+      serverLogger.warn('Rejected MCP request without valid transport session', {
+        hasSessionId: !!sessionId,
+        sessionId,
+        isInitialize: isInitializeRequest(req.body),
+        userId: userContext.userId,
+        environment: userContext.environment,
+      });
       res.status(400).json({
         jsonrpc: '2.0',
         error: { code: -32000, message: 'Bad Request: No valid session ID provided' },

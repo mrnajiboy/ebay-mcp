@@ -356,6 +356,16 @@ export function getEbayConfig(environmentOverride?: EbayEnvironment): EbayConfig
   };
 }
 
+export function getValidationRunnerUserId(environment: EbayEnvironment): string | null {
+  const envSpecific =
+    environment === 'production'
+      ? process.env.VALIDATION_RUNNER_USER_ID_PRODUCTION
+      : process.env.VALIDATION_RUNNER_USER_ID_SANDBOX;
+
+  const resolved = (envSpecific ?? process.env.VALIDATION_RUNNER_USER_ID ?? '').trim();
+  return resolved || null;
+}
+
 export function getBaseUrl(environment: EbayEnvironment): string {
   return environment === 'production' ? 'https://api.ebay.com' : 'https://api.sandbox.ebay.com';
 }

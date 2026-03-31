@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { ToolDefinition } from './definitions/index.js';
+import type { ToolDefinition } from './tool-definitions.js';
 
 export const chatGptTools: ToolDefinition[] = [
   {
