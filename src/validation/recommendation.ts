@@ -1,5 +1,6 @@
 import type {
   ChartValidationSignals,
+  EbaySoldValidationSignals,
   EbayValidationSignals,
   SocialValidationSignals,
   TrackingCadence,
@@ -8,6 +9,7 @@ import type {
 
 interface ValidationRecommendationInput {
   ebay: EbayValidationSignals;
+  sold: EbaySoldValidationSignals;
   social: SocialValidationSignals;
   chart: ChartValidationSignals;
 }
@@ -45,12 +47,17 @@ export function buildValidationRecommendation(
       ? addHours(request.timestamp, 1)
       : addHours(request.timestamp, 24);
 
-  const marketPrice = signals.ebay.marketPriceUsd;
+  const marketPrice = signals.sold.soldMedianPriceUsd ?? signals.ebay.marketPriceUsd;
   const wholesale = request.item.wholesalePrice;
   const marginRatio =
     marketPrice !== null && wholesale !== null && wholesale > 0
       ? (marketPrice - wholesale) / wholesale
       : null;
+  const recentSoldCount = [
+    signals.sold.soldVelocity.day1Sold,
+    signals.sold.soldVelocity.day2Sold,
+    signals.sold.soldVelocity.day3Sold,
+  ].reduce<number>((sum, value) => sum + (value ?? 0), 0);
 
   let latestAiRecommendation = 'Continue watching until stronger market signal appears.';
   let latestAiConfidence: 'High' | 'Medium' | 'Low' = 'Medium';
@@ -73,6 +80,26 @@ export function buildValidationRecommendation(
     latestAiConfidence = 'High';
     monitoringNotes =
       'Healthy active-listing volume and strong projected margin support continued monitoring.';
+    if (signals.sold.soldMedianPriceUsd !== null) {
+      monitoringNotes =
+        'Healthy active-listing volume and sold comparables support continued monitoring without yet forcing a buy-state change.';
+    }
+  } else if (
+    signals.sold.soldMedianPriceUsd !== null &&
+    recentSoldCount > 0 &&
+    signals.sold.confidence !== 'Low'
+  ) {
+    latestAiRecommendation =
+      'Recent sold comparables support real resale demand. Continue watching closely while waiting for a stronger conviction signal.';
+    latestAiConfidence = signals.sold.confidence === 'High' ? 'High' : 'Medium';
+    monitoringNotes =
+      'Sold-item data confirms recent transaction activity, improving confidence while remaining conservative on buy-state changes.';
+  } else if (signals.sold.soldMedianPriceUsd !== null) {
+    latestAiRecommendation =
+      'Sold comps are available, but sample depth is still limited. Keep monitoring until resale momentum becomes clearer.';
+    latestAiConfidence = 'Medium';
+    monitoringNotes =
+      'Temporary sold-provider data is present, but sample depth is not yet strong enough to justify an automatic buy-decision change.';
   } else if (
     signals.social.youtubeViews24hMillions !== null ||
     signals.social.redditPostsCount7d !== null

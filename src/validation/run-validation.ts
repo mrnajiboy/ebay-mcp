@@ -2,6 +2,7 @@ import type { EbaySellerApi } from '@/api/index.js';
 import { validationRunRequestSchema } from './schemas.js';
 import type { ValidationRunRequest, ValidationRunResponse } from './types.js';
 import { getEbayValidationSignals } from './providers/ebay.js';
+import { getEbaySoldValidationSignals } from './providers/ebay-sold.js';
 import { getSocialValidationSignals } from './providers/social.js';
 import { getChartValidationSignals } from './providers/chart.js';
 import { buildValidationRecommendation } from './recommendation.js';
@@ -32,6 +33,7 @@ function getValidationId(input: unknown): string {
 
 function buildProviderDebug(
   ebay: Awaited<ReturnType<typeof getEbayValidationSignals>>,
+  sold: Awaited<ReturnType<typeof getEbaySoldValidationSignals>>,
   social: ReturnType<typeof getSocialValidationSignals>,
   chart: ReturnType<typeof getChartValidationSignals>
 ): Record<string, unknown> {
@@ -43,6 +45,14 @@ function buildProviderDebug(
       hasMarketPrice: ebay.marketPriceUsd !== null,
       hasShipping: ebay.avgShippingCostUsd !== null,
       hasWatchers: ebay.avgWatchersPerListing !== null,
+    },
+    sold: {
+      status: sold.status,
+      provider: sold.provider,
+      confidence: sold.confidence.toLowerCase(),
+      results: sold.soldResultsCount,
+      hasMedianPrice: sold.soldMedianPriceUsd !== null,
+      hasVelocity: sold.soldVelocity.daysTracked !== null,
     },
     social: {
       status: 'stub',
@@ -81,11 +91,21 @@ export async function runValidation(
 
   try {
     const ebay = await getEbayValidationSignals(api, request);
+    const sold = await getEbaySoldValidationSignals(request);
     const social = getSocialValidationSignals(request);
     const chart = getChartValidationSignals(request);
+    const marketPriceUsd = sold.soldMedianPriceUsd ?? ebay.marketPriceUsd;
+    const soldVelocity = {
+      day1Sold: sold.soldVelocity.day1Sold ?? ebay.soldVelocity.day1Sold,
+      day2Sold: sold.soldVelocity.day2Sold ?? ebay.soldVelocity.day2Sold,
+      day3Sold: sold.soldVelocity.day3Sold ?? ebay.soldVelocity.day3Sold,
+      day4Sold: sold.soldVelocity.day4Sold ?? ebay.soldVelocity.day4Sold,
+      day5Sold: sold.soldVelocity.day5Sold ?? ebay.soldVelocity.day5Sold,
+      daysTracked: sold.soldVelocity.daysTracked ?? ebay.soldVelocity.daysTracked,
+    };
 
-    const recommendation = buildValidationRecommendation(request, { ebay, social, chart });
-    const mergedSignals = { ebay, social, chart };
+    const recommendation = buildValidationRecommendation(request, { ebay, sold, social, chart });
+    const mergedSignals = { ebay, sold, social, chart };
 
     return {
       status: 'ok',
@@ -96,16 +116,16 @@ export async function runValidation(
         twitterTrending: social.twitterTrending,
         youtubeViews24hMillions: social.youtubeViews24hMillions,
         redditPostsCount7d: social.redditPostsCount7d,
-        marketPriceUsd: ebay.marketPriceUsd,
+        marketPriceUsd,
         avgShippingCostUsd: ebay.avgShippingCostUsd,
         competitionLevel: ebay.competitionLevel,
         marketPriceTrend: ebay.marketPriceTrend,
-        day1Sold: ebay.soldVelocity.day1Sold,
-        day2Sold: ebay.soldVelocity.day2Sold,
-        day3Sold: ebay.soldVelocity.day3Sold,
-        day4Sold: ebay.soldVelocity.day4Sold,
-        day5Sold: ebay.soldVelocity.day5Sold,
-        daysTracked: ebay.soldVelocity.daysTracked,
+        day1Sold: soldVelocity.day1Sold,
+        day2Sold: soldVelocity.day2Sold,
+        day3Sold: soldVelocity.day3Sold,
+        day4Sold: soldVelocity.day4Sold,
+        day5Sold: soldVelocity.day5Sold,
+        daysTracked: soldVelocity.daysTracked,
         monitoringNotes: recommendation.monitoringNotes,
         lastDataSnapshot: JSON.stringify(mergedSignals),
         latestAiRecommendation: recommendation.latestAiRecommendation,
@@ -121,9 +141,10 @@ export async function runValidation(
       },
       debug: {
         ebayQuery: ebay.ebayQuery,
+        soldQuery: sold.query,
         sampleSize: ebay.sampleSize,
-        sourceSet: ['ebay', 'social', 'chart'],
-        providers: buildProviderDebug(ebay, social, chart),
+        sourceSet: ['ebay', 'sold', 'social', 'chart'],
+        providers: buildProviderDebug(ebay, sold, social, chart),
       },
     };
   } catch (error) {

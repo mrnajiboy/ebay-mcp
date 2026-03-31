@@ -1,5 +1,16 @@
 export type TrackingCadence = 'Daily' | 'Hourly' | 'Off';
 
+export type ValidationSignalConfidence = 'High' | 'Medium' | 'Low';
+
+export interface ValidationSoldVelocity {
+  day1Sold: number | null;
+  day2Sold: number | null;
+  day3Sold: number | null;
+  day4Sold: number | null;
+  day5Sold: number | null;
+  daysTracked: number | null;
+}
+
 export interface ValidationCurrentMetrics {
   avgWatchersPerListing: number | null;
   preOrderListingsCount: number | null;
@@ -59,14 +70,30 @@ export interface EbayValidationSignals {
   marketPriceTrend: string;
   ebayQuery: string;
   sampleSize: number;
-  soldVelocity: {
-    day1Sold: number | null;
-    day2Sold: number | null;
-    day3Sold: number | null;
-    day4Sold: number | null;
-    day5Sold: number | null;
-    daysTracked: number | null;
-  };
+  soldVelocity: ValidationSoldVelocity;
+}
+
+export interface SoldItemSample {
+  title: string;
+  soldAt: string | null;
+  priceUsd: number | null;
+  itemUrl: string | null;
+}
+
+export interface EbaySoldValidationSignals {
+  provider: string;
+  confidence: ValidationSignalConfidence;
+  soldResultsCount: number | null;
+  soldAveragePriceUsd: number | null;
+  soldMedianPriceUsd: number | null;
+  soldMinPriceUsd: number | null;
+  soldMaxPriceUsd: number | null;
+  soldItemsSample: SoldItemSample[];
+  soldVelocity: ValidationSoldVelocity;
+  query: string;
+  responseUrl: string | null;
+  status: 'ok' | 'unavailable' | 'error';
+  errorMessage?: string;
 }
 
 export interface SocialValidationSignals {
@@ -98,7 +125,7 @@ export interface ValidationWrites {
   monitoringNotes?: string;
   lastDataSnapshot?: string;
   latestAiRecommendation?: string;
-  latestAiConfidence?: 'High' | 'Medium' | 'Low';
+  latestAiConfidence?: ValidationSignalConfidence;
   validationError?: string;
 }
 
