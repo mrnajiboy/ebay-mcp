@@ -32,6 +32,8 @@ interface RedditSearchResponse {
   };
 }
 
+const REDDIT_PAGE_LIMIT = 100;
+
 function getPrimaryArtist(request: ValidationRunRequest): string {
   return request.item.canonicalArtists[0]?.trim() ?? '';
 }
@@ -61,8 +63,8 @@ function buildYouTubeSearchUrl(query: string): string {
   return `https://www.googleapis.com/youtube/v3/search?q=${encodeURIComponent(query)}`;
 }
 
-function buildRedditSearchUrl(query: string): string {
-  return `https://www.reddit.com/search.json?q=${encodeURIComponent(query)}&sort=new&t=week`;
+function buildRedditSearchUrl(query: string, pageLimit: number): string {
+  return `https://www.reddit.com/search.json?q=${encodeURIComponent(query)}&sort=new&t=week&limit=${pageLimit}`;
 }
 
 function getConfidenceFromCount(count: number): ValidationSignalConfidence {
@@ -225,23 +227,28 @@ export async function getSocialValidationSignals(
 
   {
     const query = buildRedditQuery(request);
-    const searchUrl = buildRedditSearchUrl(query);
-    result.debug!.reddit = { checked: true, query, searchUrl };
+    const pageLimit = REDDIT_PAGE_LIMIT;
+    const searchUrl = buildRedditSearchUrl(query, pageLimit);
+    result.debug!.reddit = { checked: true, query, searchUrl, pageLimit };
 
     try {
       const response = await axios.get<RedditSearchResponse>(searchUrl, {
         headers: { 'User-Agent': redditUserAgent },
+        params: { limit: pageLimit },
         timeout: 15000,
       });
       const recentResultCount = response.data.data?.children?.length ?? 0;
+      const pageLimitReached = recentResultCount === pageLimit;
       result.redditPostsCount7d = recentResultCount;
       result.debug!.reddit = {
         checked: true,
         query,
         searchUrl,
         recentResultCount,
+        pageLimit,
+        pageLimitReached,
         confidence: getConfidenceFromCount(recentResultCount),
-        note: 'Recent Reddit post count over the last week used as a phase-1 discussion proxy.',
+        note: 'Recent Reddit post sample count from the first page of weekly results, not total weekly discussion volume.',
       };
     } catch (error) {
       result.debug!.reddit = {
@@ -249,6 +256,8 @@ export async function getSocialValidationSignals(
         query,
         searchUrl,
         recentResultCount: null,
+        pageLimit,
+        pageLimitReached: null,
         confidence: 'Low',
         note: error instanceof Error ? error.message : String(error),
       };

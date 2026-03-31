@@ -518,6 +518,11 @@ function mountEnvRouter(
     const storedTokens = validationRunnerUserId
       ? await authStore.getUserTokens(validationRunnerUserId, environment)
       : null;
+    const socialConfig = {
+      hasTwitterBearerToken: Boolean(process.env.TWITTER_BEARER_TOKEN?.trim()),
+      hasYoutubeApiKey: Boolean(process.env.YOUTUBE_API_KEY?.trim()),
+      hasRedditUserAgent: Boolean(process.env.REDDIT_USER_AGENT?.trim()),
+    };
 
     let authenticated = false;
     let authError: string | null = null;
@@ -589,6 +594,7 @@ function mountEnvRouter(
         ebay: { available: true, implemented: true, confidence: 'medium' },
         social: { available: false, implemented: false, confidence: 'low' },
         chart: { available: false, implemented: false, confidence: 'low' },
+        socialConfig,
       },
       ...(authError ? { authError } : {}),
     });

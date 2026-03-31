@@ -140,6 +140,8 @@ export interface SocialValidationSignals {
       query?: string;
       searchUrl?: string;
       recentResultCount?: number | null;
+      pageLimit?: number;
+      pageLimitReached?: boolean | null;
       confidence?: ValidationSignalConfidence;
       note?: string;
     };
