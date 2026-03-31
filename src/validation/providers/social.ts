@@ -57,11 +57,23 @@ interface RankedYouTubeCandidate {
   relevanceScore: number;
 }
 
+interface SocialValidationDebugState {
+  twitter: NonNullable<NonNullable<SocialValidationSignals['debug']>['twitter']>;
+  youtube: NonNullable<NonNullable<SocialValidationSignals['debug']>['youtube']>;
+  reddit: NonNullable<NonNullable<SocialValidationSignals['debug']>['reddit']>;
+}
+
 const REDDIT_PAGE_LIMIT = 100;
 const YOUTUBE_SEARCH_MAX_RESULTS = 5;
 const YOUTUBE_MAX_CANDIDATE_VIDEOS = 15;
 const TWITTER_COUNTS_GRANULARITY = 'day' as const;
 const TWITTER_TRENDING_THRESHOLD = 10;
+const YOUTUBE_OFFICIAL_TITLE_PATTERN =
+  /\bofficial\b|\bmv\b|music video|teaser|concept|highlight medley|performance|special video/;
+const YOUTUBE_DEMOTED_TITLE_PATTERN =
+  /unboxing|shorts?\b|shop\b|store\b|merch|haul|reaction|cover|fan cam|fancam|reseller|resale/;
+const YOUTUBE_OFFICIAL_CHANNEL_PATTERN = /\bofficial\b|\btopic\b/;
+const YOUTUBE_BRANDED_CHANNEL_PATTERN = /entertainment|music|records|labels?/;
 
 function getPrimaryArtist(request: ValidationRunRequest): string {
   return request.item.canonicalArtists[0]?.trim() ?? '';
@@ -73,6 +85,25 @@ function getPrimaryAlbum(request: ValidationRunRequest): string {
 
 function dedupeStrings(values: string[]): string[] {
   return Array.from(new Set(values.map((value) => normalizeWhitespace(value)).filter(Boolean)));
+}
+
+function stripDecorativeMetadata(value: string): string {
+  return normalizeWhitespace(
+    value
+      .replace(/\[[^\]]*\]/g, ' ')
+      .replace(/\([^)]*\)/g, ' ')
+      .replace(/[,:;/\\|]+/g, ' ')
+      .replace(/[-–—]+/g, ' ')
+  );
+}
+
+function buildCompactPhrase(...parts: string[]): string {
+  return normalizeWhitespace(
+    parts
+      .map((part) => stripDecorativeMetadata(part))
+      .join(' ')
+      .replace(/[^\p{L}\p{N}\s"]+/gu, ' ')
+  );
 }
 
 function tokenizeKeywords(value: string): string[] {
@@ -88,33 +119,37 @@ function tokenizeKeywords(value: string): string[] {
 }
 
 function buildTwitterQueryCandidates(request: ValidationRunRequest): string[] {
-  const primaryArtist = getPrimaryArtist(request);
-  const primaryAlbum = getPrimaryAlbum(request);
-  const browseCandidates = buildValidationQueryCandidates(request);
+  const compactArtist = buildCompactPhrase(getPrimaryArtist(request));
+  const compactAlbum = buildCompactPhrase(getPrimaryAlbum(request));
+  const compactTitle = buildCompactPhrase(request.item.name);
+  const rawBrowseCandidates = buildValidationQueryCandidates(request);
 
   return dedupeStrings([
-    `${primaryArtist} ${primaryAlbum}`,
-    browseCandidates[0] ?? '',
-    browseCandidates[1] ?? '',
-    primaryArtist,
+    buildCompactPhrase(compactArtist, compactAlbum),
+    compactArtist && compactAlbum ? `"${compactArtist}" "${compactAlbum}"` : '',
+    buildCompactPhrase(compactArtist, 'album', compactAlbum),
+    buildCompactPhrase(compactArtist, compactTitle),
+    rawBrowseCandidates[0] ?? normalizeWhitespace(request.item.name),
+    compactArtist,
   ]);
 }
 
 function buildYouTubeQueryCandidates(request: ValidationRunRequest): string[] {
-  const primaryArtist = getPrimaryArtist(request);
-  const primaryAlbum = getPrimaryAlbum(request);
-  const releaseTitle = normalizeWhitespace(request.item.name);
-  const browseCandidates = buildValidationQueryCandidates(request);
+  const artistPhrase = buildCompactPhrase(getPrimaryArtist(request));
+  const albumPhrase = buildCompactPhrase(getPrimaryAlbum(request));
+  const releaseTitle = buildCompactPhrase(request.item.name);
+  const rawBrowseCandidates = buildValidationQueryCandidates(request);
 
   return dedupeStrings([
-    `${primaryArtist} ${primaryAlbum}`,
-    `${primaryArtist} ${primaryAlbum} official`,
-    `${primaryArtist} ${primaryAlbum} mv`,
-    `${primaryArtist} ${primaryAlbum} music video`,
-    `${primaryArtist} ${primaryAlbum} teaser`,
-    browseCandidates[0] ?? '',
-    browseCandidates[1] ?? '',
-    `${primaryArtist} ${releaseTitle}`,
+    buildCompactPhrase(artistPhrase, albumPhrase),
+    buildCompactPhrase(artistPhrase, albumPhrase, 'official'),
+    buildCompactPhrase(artistPhrase, albumPhrase, 'mv'),
+    buildCompactPhrase(artistPhrase, albumPhrase, 'music video'),
+    buildCompactPhrase(artistPhrase, albumPhrase, 'teaser'),
+    buildCompactPhrase(artistPhrase, albumPhrase, 'concept'),
+    buildCompactPhrase(artistPhrase, albumPhrase, 'highlight medley'),
+    rawBrowseCandidates[0] ?? normalizeWhitespace(request.item.name),
+    buildCompactPhrase(artistPhrase, releaseTitle),
   ]);
 }
 
@@ -173,16 +208,22 @@ function scoreYouTubeCandidate(
   const combinedText = `${title} ${channelTitle}`;
   const normalizedArtist = normalizeWhitespace(primaryArtist).toLowerCase();
   const albumMatches = albumKeywords.filter((keyword) => combinedText.includes(keyword)).length;
-  const hasOfficialSignal = /\bofficial\b|\bmv\b|music video|teaser|performance/.test(title);
-  const hasOfficialChannelSignal = /\bofficial\b|\btopic\b/.test(channelTitle);
+  const hasOfficialSignal = YOUTUBE_OFFICIAL_TITLE_PATTERN.test(title);
+  const hasOfficialChannelSignal = YOUTUBE_OFFICIAL_CHANNEL_PATTERN.test(channelTitle);
+  const hasBrandedChannelSignal = YOUTUBE_BRANDED_CHANNEL_PATTERN.test(channelTitle);
+  const hasDemotedTitleSignal = YOUTUBE_DEMOTED_TITLE_PATTERN.test(title);
+  const hasDemotedChannelSignal = /shop\b|store\b|merch|reseller|resale|unboxing/.test(channelTitle);
+  const channelContainsArtist = normalizedArtist.length > 0 && channelTitle.includes(normalizedArtist);
   const viewSignal =
     candidate.totalViews !== null ? Math.min(10, Math.log10(candidate.totalViews + 1)) : 0;
 
   return (
     (normalizedArtist.length > 0 && combinedText.includes(normalizedArtist) ? 100 : 0) +
-    albumMatches * 20 +
-    (hasOfficialSignal ? 5 : 0) +
-    (hasOfficialChannelSignal ? 3 : 0) +
+    albumMatches * 25 +
+    (hasOfficialSignal ? 30 : 0) +
+    (hasOfficialChannelSignal ? 20 : hasBrandedChannelSignal && channelContainsArtist ? 8 : 0) -
+    (hasDemotedTitleSignal ? 40 : 0) -
+    (hasDemotedChannelSignal ? 25 : 0) +
     viewSignal
   );
 }
@@ -190,15 +231,17 @@ function scoreYouTubeCandidate(
 export async function getSocialValidationSignals(
   request: ValidationRunRequest
 ): Promise<SocialValidationSignals> {
+  const debug: SocialValidationDebugState = {
+    twitter: { checked: false },
+    youtube: { checked: false },
+    reddit: { checked: false },
+  };
+
   const result: SocialValidationSignals = {
     twitterTrending: null,
     youtubeViews24hMillions: null,
     redditPostsCount7d: null,
-    debug: {
-      twitter: { checked: false },
-      youtube: { checked: false },
-      reddit: { checked: false },
-    },
+    debug,
   };
 
   const twitterToken = process.env.TWITTER_BEARER_TOKEN?.trim();
@@ -210,7 +253,7 @@ export async function getSocialValidationSignals(
     let selectedQuery = queryCandidates[0];
     let totalTweetCount: number | null = null;
 
-    result.debug!.twitter = {
+    debug.twitter = {
       checked: true,
       queryCandidates,
       selectedQuery,
@@ -238,7 +281,7 @@ export async function getSocialValidationSignals(
       }
 
       result.twitterTrending = (totalTweetCount ?? 0) >= TWITTER_TRENDING_THRESHOLD;
-      result.debug!.twitter = {
+      debug.twitter = {
         checked: true,
         queryCandidates,
         selectedQuery,
@@ -250,7 +293,7 @@ export async function getSocialValidationSignals(
         note: 'Recent X post count over the last 7 days used as a conversation-volume proxy.',
       };
     } catch (error) {
-      result.debug!.twitter = {
+      debug.twitter = {
         checked: true,
         queryCandidates,
         selectedQuery,
@@ -270,7 +313,7 @@ export async function getSocialValidationSignals(
     const queryCandidates = buildYouTubeQueryCandidates(request);
     const searchCandidateMap = new Map<string, YouTubeSearchCandidate>();
 
-    result.debug!.youtube = {
+    debug.youtube = {
       checked: true,
       queryCandidates,
       selectedQuery: queryCandidates[0],
@@ -385,7 +428,7 @@ export async function getSocialValidationSignals(
             : null;
 
         result.youtubeViews24hMillions = roundMillions(selectedCandidate?.avgDailyViews ?? null);
-        result.debug!.youtube = {
+        debug.youtube = {
           checked: true,
           queryCandidates,
           selectedQuery,
@@ -421,7 +464,7 @@ export async function getSocialValidationSignals(
           note: 'Average daily views proxy selected from the best relevant high-view candidate, not true 24h delta.',
         };
       } else {
-        result.debug!.youtube = {
+        debug.youtube = {
           checked: true,
           queryCandidates,
           selectedQuery: queryCandidates[0],
@@ -447,7 +490,7 @@ export async function getSocialValidationSignals(
         };
       }
     } catch (error) {
-      result.debug!.youtube = {
+      debug.youtube = {
         checked: true,
         queryCandidates,
         selectedQuery: queryCandidates[0],
@@ -478,7 +521,7 @@ export async function getSocialValidationSignals(
     const query = buildRedditQuery(request);
     const pageLimit = REDDIT_PAGE_LIMIT;
     const searchUrl = buildRedditSearchUrl(query, pageLimit);
-    result.debug!.reddit = { checked: true, query, searchUrl, pageLimit };
+    debug.reddit = { checked: true, query, searchUrl, pageLimit };
 
     try {
       const response = await axios.get<RedditSearchResponse>(searchUrl, {
@@ -489,7 +532,7 @@ export async function getSocialValidationSignals(
       const recentResultCount = response.data.data?.children?.length ?? 0;
       const pageLimitReached = recentResultCount === pageLimit;
       result.redditPostsCount7d = recentResultCount;
-      result.debug!.reddit = {
+      debug.reddit = {
         checked: true,
         query,
         searchUrl,
@@ -500,7 +543,7 @@ export async function getSocialValidationSignals(
         note: 'Recent Reddit post sample count from the first page of weekly results, not total weekly discussion volume.',
       };
     } catch (error) {
-      result.debug!.reddit = {
+      debug.reddit = {
         checked: true,
         query,
         searchUrl,
