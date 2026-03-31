@@ -75,6 +75,7 @@ export interface EbayValidationSignals {
   queryDiagnostics?: {
     query: string;
     tier: number;
+    family?: string;
     itemSummaryCount: number;
     totalListings: number;
   }[];
@@ -105,6 +106,14 @@ export interface EbaySoldValidationSignals {
   soldVelocity: ValidationSoldVelocity;
   query: string | null;
   queryCandidates?: string[];
+  queryDiagnostics?: {
+    query: string;
+    tier: number;
+    family?: string;
+    soldResultsCount: number | null;
+    status: 'ok' | 'error';
+    note?: string;
+  }[];
   selectedQuery?: string;
   selectedQueryTier?: number | null;
   responseUrl: string | null;
@@ -125,6 +134,13 @@ export interface SocialValidationSignals {
       selectedQuery?: string;
       totalTweetCount?: number | null;
       granularity?: 'minute' | 'hour' | 'day';
+      queryDiagnostics?: {
+        query: string;
+        family?: string;
+        totalTweetCount: number | null;
+        responseStatus?: number | null;
+        note?: string;
+      }[];
       recentResultCount?: number | null;
       confidence?: ValidationSignalConfidence;
       note?: string;
@@ -136,6 +152,12 @@ export interface SocialValidationSignals {
       queryCandidates?: string[];
       selectedQuery?: string;
       resultsExamined?: number;
+      queryDiagnostics?: {
+        query: string;
+        family?: string;
+        resultCount: number;
+        topVideoTitles: string[];
+      }[];
       selectedVideoId?: string | null;
       selectedVideoTitle?: string | null;
       selectedVideoUrl?: string | null;
@@ -153,6 +175,16 @@ export interface SocialValidationSignals {
         avgDailyViews: number | null;
         relevanceScore: number;
         matchedQueries: string[];
+        officialTitleSignal?: boolean;
+        officialChannelSignal?: boolean;
+        brandedChannelSignal?: boolean;
+        demotedTitleSignal?: boolean;
+        demotedChannelSignal?: boolean;
+        shortsPenalty?: boolean;
+        artistAlignment?: boolean;
+        albumPhraseAlignment?: boolean;
+        albumKeywordMatches?: number;
+        queryMatchCount?: number;
       }[];
       topVideoTitle?: string | null;
       topVideoUrl?: string | null;
@@ -167,6 +199,15 @@ export interface SocialValidationSignals {
       checked: boolean;
       query?: string;
       searchUrl?: string;
+      queryCandidates?: string[];
+      selectedQuery?: string;
+      queryDiagnostics?: {
+        query: string;
+        family?: string;
+        recentResultCount?: number | null;
+        pageLimitReached?: boolean | null;
+        note?: string;
+      }[];
       recentResultCount?: number | null;
       pageLimit?: number;
       pageLimitReached?: boolean | null;

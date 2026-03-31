@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getBaseUrl } from '@/config/environment.js';
 import type { EbaySellerApi } from '@/api/index.js';
 import type { EbayValidationSignals, ValidationRunRequest } from '../types.js';
-import { buildValidationQueryCandidates } from './query-utils.js';
+import { buildBrowseQueryPlan } from './query-utils.js';
 
 interface BrowseItemSummary {
   title?: string;
@@ -20,7 +20,7 @@ function round(value: number): number {
 }
 
 export function buildEbayValidationQueries(request: ValidationRunRequest): string[] {
-  return buildValidationQueryCandidates(request);
+  return buildBrowseQueryPlan(request).map((candidate) => candidate.query);
 }
 
 function deriveTrend(current: number | null, previous: number | null, fallback: string): string {
@@ -77,7 +77,8 @@ export async function getEbayValidationSignals(
   api: EbaySellerApi,
   request: ValidationRunRequest
 ): Promise<EbayValidationSignals> {
-  const queryCandidates = buildEbayValidationQueries(request);
+  const queryPlan = buildBrowseQueryPlan(request);
+  const queryCandidates = queryPlan.map((candidate) => candidate.query);
   const ebayQuery = queryCandidates[0] ?? '';
   const fallbackTrend = request.validation.currentMetrics.marketPriceTrend || 'Stable';
 
@@ -147,6 +148,7 @@ export async function getEbayValidationSignals(
       queryDiagnostics.push({
         query,
         tier: index + 1,
+        family: queryPlan[index]?.family,
         itemSummaryCount: itemSummaries.length,
         totalListings,
       });

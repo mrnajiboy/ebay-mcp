@@ -4,7 +4,14 @@ import type {
   ValidationRunRequest,
   ValidationSignalConfidence,
 } from '../types.js';
-import { buildValidationQueryCandidates, normalizeWhitespace } from './query-utils.js';
+import {
+  buildRedditQueryPlan,
+  buildTwitterQueryPlan,
+  buildYouTubeQueryPlan,
+  extractSemanticTokens,
+  getPrimaryAlbumPhrase,
+  normalizeWhitespace,
+} from './query-utils.js';
 
 interface TwitterRecentCountsResponse {
   data?: {
@@ -55,6 +62,18 @@ interface RankedYouTubeCandidate {
   daysLive: number | null;
   avgDailyViews: number | null;
   relevanceScore: number;
+  rankingSignals: {
+    officialTitleSignal: boolean;
+    officialChannelSignal: boolean;
+    brandedChannelSignal: boolean;
+    demotedTitleSignal: boolean;
+    demotedChannelSignal: boolean;
+    shortsPenalty: boolean;
+    artistAlignment: boolean;
+    albumPhraseAlignment: boolean;
+    albumKeywordMatches: number;
+    queryMatchCount: number;
+  };
 }
 
 interface SocialValidationDebugState {
@@ -71,90 +90,13 @@ const TWITTER_TRENDING_THRESHOLD = 10;
 const YOUTUBE_OFFICIAL_TITLE_PATTERN =
   /\bofficial\b|\bmv\b|music video|teaser|concept|highlight medley|performance|special video/;
 const YOUTUBE_DEMOTED_TITLE_PATTERN =
-  /unboxing|shorts?\b|shop\b|store\b|merch|haul|reaction|cover|fan cam|fancam|reseller|resale/;
+  /unboxing|shop\b|store\b|merch|haul|reaction|cover|fan cam|fancam|reseller|resale/;
+const YOUTUBE_SHORTS_PATTERN = /shorts?\b/;
 const YOUTUBE_OFFICIAL_CHANNEL_PATTERN = /\bofficial\b|\btopic\b/;
 const YOUTUBE_BRANDED_CHANNEL_PATTERN = /entertainment|music|records|labels?/;
 
 function getPrimaryArtist(request: ValidationRunRequest): string {
   return request.item.canonicalArtists[0]?.trim() ?? '';
-}
-
-function getPrimaryAlbum(request: ValidationRunRequest): string {
-  return request.item.relatedAlbums[0]?.trim() ?? normalizeWhitespace(request.item.name);
-}
-
-function dedupeStrings(values: string[]): string[] {
-  return Array.from(new Set(values.map((value) => normalizeWhitespace(value)).filter(Boolean)));
-}
-
-function stripDecorativeMetadata(value: string): string {
-  return normalizeWhitespace(
-    value
-      .replace(/\[[^\]]*\]/g, ' ')
-      .replace(/\([^)]*\)/g, ' ')
-      .replace(/[,:;/\\|]+/g, ' ')
-      .replace(/[-–—]+/g, ' ')
-  );
-}
-
-function buildCompactPhrase(...parts: string[]): string {
-  return normalizeWhitespace(
-    parts
-      .map((part) => stripDecorativeMetadata(part))
-      .join(' ')
-      .replace(/[^\p{L}\p{N}\s"]+/gu, ' ')
-  );
-}
-
-function tokenizeKeywords(value: string): string[] {
-  return Array.from(
-    new Set(
-      normalizeWhitespace(value)
-        .toLowerCase()
-        .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
-        .split(/\s+/)
-        .filter((token) => token.length >= 2)
-    )
-  );
-}
-
-function buildTwitterQueryCandidates(request: ValidationRunRequest): string[] {
-  const compactArtist = buildCompactPhrase(getPrimaryArtist(request));
-  const compactAlbum = buildCompactPhrase(getPrimaryAlbum(request));
-  const compactTitle = buildCompactPhrase(request.item.name);
-  const rawBrowseCandidates = buildValidationQueryCandidates(request);
-
-  return dedupeStrings([
-    buildCompactPhrase(compactArtist, compactAlbum),
-    compactArtist && compactAlbum ? `"${compactArtist}" "${compactAlbum}"` : '',
-    buildCompactPhrase(compactArtist, 'album', compactAlbum),
-    buildCompactPhrase(compactArtist, compactTitle),
-    rawBrowseCandidates[0] ?? normalizeWhitespace(request.item.name),
-    compactArtist,
-  ]);
-}
-
-function buildYouTubeQueryCandidates(request: ValidationRunRequest): string[] {
-  const artistPhrase = buildCompactPhrase(getPrimaryArtist(request));
-  const albumPhrase = buildCompactPhrase(getPrimaryAlbum(request));
-  const releaseTitle = buildCompactPhrase(request.item.name);
-  const rawBrowseCandidates = buildValidationQueryCandidates(request);
-
-  return dedupeStrings([
-    buildCompactPhrase(artistPhrase, albumPhrase),
-    buildCompactPhrase(artistPhrase, albumPhrase, 'official'),
-    buildCompactPhrase(artistPhrase, albumPhrase, 'mv'),
-    buildCompactPhrase(artistPhrase, albumPhrase, 'music video'),
-    buildCompactPhrase(artistPhrase, albumPhrase, 'teaser'),
-    buildCompactPhrase(artistPhrase, albumPhrase, 'concept'),
-    buildCompactPhrase(artistPhrase, albumPhrase, 'highlight medley'),
-    rawBrowseCandidates[0] ?? normalizeWhitespace(request.item.name),
-    buildCompactPhrase(artistPhrase, releaseTitle),
-  ]);
-}
-
-function buildRedditQuery(request: ValidationRunRequest): string {
-  return normalizeWhitespace(`${getPrimaryArtist(request)} ${getPrimaryAlbum(request)}`);
 }
 
 function buildTwitterCountsUrl(query: string): string {
@@ -201,31 +143,73 @@ function roundMillions(value: number | null): number | null {
 function scoreYouTubeCandidate(
   candidate: RankedYouTubeCandidate,
   primaryArtist: string,
+  albumPhrase: string,
   albumKeywords: string[]
-): number {
+): RankedYouTubeCandidate['rankingSignals'] & { score: number } {
   const title = normalizeWhitespace(candidate.title ?? '').toLowerCase();
   const channelTitle = normalizeWhitespace(candidate.channelTitle ?? '').toLowerCase();
   const combinedText = `${title} ${channelTitle}`;
   const normalizedArtist = normalizeWhitespace(primaryArtist).toLowerCase();
+  const normalizedAlbumPhrase = normalizeWhitespace(albumPhrase).toLowerCase();
   const albumMatches = albumKeywords.filter((keyword) => combinedText.includes(keyword)).length;
   const hasOfficialSignal = YOUTUBE_OFFICIAL_TITLE_PATTERN.test(title);
   const hasOfficialChannelSignal = YOUTUBE_OFFICIAL_CHANNEL_PATTERN.test(channelTitle);
   const hasBrandedChannelSignal = YOUTUBE_BRANDED_CHANNEL_PATTERN.test(channelTitle);
   const hasDemotedTitleSignal = YOUTUBE_DEMOTED_TITLE_PATTERN.test(title);
-  const hasDemotedChannelSignal = /shop\b|store\b|merch|reseller|resale|unboxing/.test(channelTitle);
-  const channelContainsArtist = normalizedArtist.length > 0 && channelTitle.includes(normalizedArtist);
-  const viewSignal =
-    candidate.totalViews !== null ? Math.min(10, Math.log10(candidate.totalViews + 1)) : 0;
-
-  return (
-    (normalizedArtist.length > 0 && combinedText.includes(normalizedArtist) ? 100 : 0) +
-    albumMatches * 25 +
-    (hasOfficialSignal ? 30 : 0) +
-    (hasOfficialChannelSignal ? 20 : hasBrandedChannelSignal && channelContainsArtist ? 8 : 0) -
-    (hasDemotedTitleSignal ? 40 : 0) -
-    (hasDemotedChannelSignal ? 25 : 0) +
-    viewSignal
+  const hasShortsSignal = YOUTUBE_SHORTS_PATTERN.test(title);
+  const hasDemotedChannelSignal = /shop\b|store\b|merch|reseller|resale|unboxing/.test(
+    channelTitle
   );
+  const channelContainsArtist =
+    normalizedArtist.length > 0 && channelTitle.includes(normalizedArtist);
+  const hasAlbumPhraseMatch =
+    normalizedAlbumPhrase.length > 0 && combinedText.includes(normalizedAlbumPhrase);
+  const hasArtistAlignment = normalizedArtist.length > 0 && combinedText.includes(normalizedArtist);
+  const queryMatchBoost = candidate.matchedQueries.length * 8;
+  const viewSignal =
+    candidate.totalViews !== null ? Math.min(8, Math.log10(candidate.totalViews + 1)) : 0;
+  const score =
+    (hasArtistAlignment ? 110 : 0) +
+    (hasAlbumPhraseMatch ? 50 : 0) +
+    albumMatches * 30 +
+    (hasOfficialSignal ? 55 : 0) +
+    (hasOfficialChannelSignal ? 50 : hasBrandedChannelSignal && channelContainsArtist ? 18 : 0) -
+    (hasDemotedTitleSignal ? 65 : 0) -
+    (hasShortsSignal ? 35 : 0) -
+    (hasDemotedChannelSignal ? 35 : 0) +
+    queryMatchBoost +
+    viewSignal;
+
+  return {
+    officialTitleSignal: hasOfficialSignal,
+    officialChannelSignal: hasOfficialChannelSignal,
+    brandedChannelSignal: hasBrandedChannelSignal,
+    demotedTitleSignal: hasDemotedTitleSignal,
+    demotedChannelSignal: hasDemotedChannelSignal,
+    shortsPenalty: hasShortsSignal,
+    artistAlignment: hasArtistAlignment,
+    albumPhraseAlignment: hasAlbumPhraseMatch,
+    albumKeywordMatches: albumMatches,
+    queryMatchCount: candidate.matchedQueries.length,
+    score,
+  };
+}
+
+function getAxiosFailureDebug(error: unknown): {
+  responseStatus: number | null;
+  note: string;
+} {
+  if (!axios.isAxiosError(error)) {
+    return {
+      responseStatus: null,
+      note: error instanceof Error ? error.message : String(error),
+    };
+  }
+
+  return {
+    responseStatus: error.response?.status ?? null,
+    note: error.message,
+  };
 }
 
 export async function getSocialValidationSignals(
@@ -249,9 +233,13 @@ export async function getSocialValidationSignals(
   const redditUserAgent = process.env.REDDIT_USER_AGENT?.trim() ?? 'ebay-mcp-validation/1.0';
 
   if (twitterToken) {
-    const queryCandidates = buildTwitterQueryCandidates(request);
+    const queryPlan = buildTwitterQueryPlan(request);
+    const queryCandidates = queryPlan.map((candidate) => candidate.query);
     let selectedQuery = queryCandidates[0];
     let totalTweetCount: number | null = null;
+    const queryDiagnostics: NonNullable<
+      NonNullable<NonNullable<SocialValidationSignals['debug']>['twitter']>['queryDiagnostics']
+    > = [];
 
     debug.twitter = {
       checked: true,
@@ -262,8 +250,8 @@ export async function getSocialValidationSignals(
       granularity: TWITTER_COUNTS_GRANULARITY,
     };
 
-    try {
-      for (const query of queryCandidates) {
+    for (const [index, query] of queryCandidates.entries()) {
+      try {
         const response = await axios.get<TwitterRecentCountsResponse>(
           buildTwitterCountsUrl(query),
           {
@@ -274,12 +262,29 @@ export async function getSocialValidationSignals(
         );
 
         const candidateTotal = response.data.meta?.total_tweet_count ?? 0;
+        queryDiagnostics.push({
+          query,
+          family: queryPlan[index]?.family,
+          totalTweetCount: candidateTotal,
+          responseStatus: 200,
+        });
         if (totalTweetCount === null || candidateTotal > totalTweetCount) {
           totalTweetCount = candidateTotal;
           selectedQuery = query;
         }
+      } catch (error) {
+        const failure = getAxiosFailureDebug(error);
+        queryDiagnostics.push({
+          query,
+          family: queryPlan[index]?.family,
+          totalTweetCount: null,
+          responseStatus: failure.responseStatus,
+          note: failure.note,
+        });
       }
+    }
 
+    if (totalTweetCount !== null) {
       result.twitterTrending = (totalTweetCount ?? 0) >= TWITTER_TRENDING_THRESHOLD;
       debug.twitter = {
         checked: true,
@@ -289,10 +294,11 @@ export async function getSocialValidationSignals(
         searchUrl: selectedQuery ? buildTwitterCountsUrl(selectedQuery) : undefined,
         totalTweetCount,
         granularity: TWITTER_COUNTS_GRANULARITY,
+        queryDiagnostics,
         confidence: getConfidenceFromCount(totalTweetCount ?? 0),
         note: 'Recent X post count over the last 7 days used as a conversation-volume proxy.',
       };
-    } catch (error) {
+    } else {
       debug.twitter = {
         checked: true,
         queryCandidates,
@@ -301,17 +307,23 @@ export async function getSocialValidationSignals(
         searchUrl: selectedQuery ? buildTwitterCountsUrl(selectedQuery) : undefined,
         totalTweetCount: null,
         granularity: TWITTER_COUNTS_GRANULARITY,
+        queryDiagnostics,
         confidence: 'Low',
-        note: error instanceof Error ? error.message : String(error),
+        note: 'All X recent-count query candidates failed or returned no usable count response.',
       };
     }
   }
 
   if (youtubeApiKey) {
     const primaryArtist = getPrimaryArtist(request);
-    const albumKeywords = tokenizeKeywords(getPrimaryAlbum(request));
-    const queryCandidates = buildYouTubeQueryCandidates(request);
+    const albumPhrase = getPrimaryAlbumPhrase(request);
+    const albumKeywords = extractSemanticTokens(albumPhrase);
+    const queryPlan = buildYouTubeQueryPlan(request);
+    const queryCandidates = queryPlan.map((candidate) => candidate.query);
     const searchCandidateMap = new Map<string, YouTubeSearchCandidate>();
+    const queryDiagnostics: NonNullable<
+      NonNullable<NonNullable<SocialValidationSignals['debug']>['youtube']>['queryDiagnostics']
+    > = [];
 
     debug.youtube = {
       checked: true,
@@ -323,7 +335,7 @@ export async function getSocialValidationSignals(
     };
 
     try {
-      for (const query of queryCandidates) {
+      for (const [index, query] of queryCandidates.entries()) {
         const searchResponse = await axios.get<YouTubeSearchResponse>(
           buildYouTubeSearchUrl(query),
           {
@@ -339,7 +351,18 @@ export async function getSocialValidationSignals(
           }
         );
 
-        for (const item of searchResponse.data.items ?? []) {
+        const items = searchResponse.data.items ?? [];
+        queryDiagnostics.push({
+          query,
+          family: queryPlan[index]?.family,
+          resultCount: items.length,
+          topVideoTitles: items
+            .slice(0, 3)
+            .map((item) => item.snippet?.title ?? null)
+            .filter((title): title is string => Boolean(title)),
+        });
+
+        for (const item of items) {
           const videoId = item.id?.videoId?.trim();
           if (!videoId) continue;
 
@@ -401,12 +424,42 @@ export async function getSocialValidationSignals(
               daysLive,
               avgDailyViews,
               relevanceScore: 0,
+              rankingSignals: {
+                officialTitleSignal: false,
+                officialChannelSignal: false,
+                brandedChannelSignal: false,
+                demotedTitleSignal: false,
+                demotedChannelSignal: false,
+                shortsPenalty: false,
+                artistAlignment: false,
+                albumPhraseAlignment: false,
+                albumKeywordMatches: 0,
+                queryMatchCount: searchCandidate?.matchedQueries.length ?? 0,
+              },
             };
           }
         );
 
         for (const candidate of rankedCandidates) {
-          candidate.relevanceScore = scoreYouTubeCandidate(candidate, primaryArtist, albumKeywords);
+          const ranking = scoreYouTubeCandidate(
+            candidate,
+            primaryArtist,
+            albumPhrase,
+            albumKeywords
+          );
+          candidate.relevanceScore = ranking.score;
+          candidate.rankingSignals = {
+            officialTitleSignal: ranking.officialTitleSignal,
+            officialChannelSignal: ranking.officialChannelSignal,
+            brandedChannelSignal: ranking.brandedChannelSignal,
+            demotedTitleSignal: ranking.demotedTitleSignal,
+            demotedChannelSignal: ranking.demotedChannelSignal,
+            shortsPenalty: ranking.shortsPenalty,
+            artistAlignment: ranking.artistAlignment,
+            albumPhraseAlignment: ranking.albumPhraseAlignment,
+            albumKeywordMatches: ranking.albumKeywordMatches,
+            queryMatchCount: ranking.queryMatchCount,
+          };
         }
 
         rankedCandidates.sort((left, right) => {
@@ -435,6 +488,7 @@ export async function getSocialValidationSignals(
           query: selectedQuery,
           searchUrl: selectedQuery ? buildYouTubeSearchUrl(selectedQuery) : undefined,
           resultsExamined: rankedCandidates.length,
+          queryDiagnostics,
           selectedVideoId: selectedCandidate?.videoId ?? null,
           selectedVideoTitle: selectedCandidate?.title ?? null,
           selectedVideoUrl,
@@ -453,6 +507,16 @@ export async function getSocialValidationSignals(
               candidate.avgDailyViews !== null ? Math.round(candidate.avgDailyViews) : null,
             relevanceScore: candidate.relevanceScore,
             matchedQueries: candidate.matchedQueries,
+            officialTitleSignal: candidate.rankingSignals.officialTitleSignal,
+            officialChannelSignal: candidate.rankingSignals.officialChannelSignal,
+            brandedChannelSignal: candidate.rankingSignals.brandedChannelSignal,
+            demotedTitleSignal: candidate.rankingSignals.demotedTitleSignal,
+            demotedChannelSignal: candidate.rankingSignals.demotedChannelSignal,
+            shortsPenalty: candidate.rankingSignals.shortsPenalty,
+            artistAlignment: candidate.rankingSignals.artistAlignment,
+            albumPhraseAlignment: candidate.rankingSignals.albumPhraseAlignment,
+            albumKeywordMatches: candidate.rankingSignals.albumKeywordMatches,
+            queryMatchCount: candidate.rankingSignals.queryMatchCount,
           })),
           topVideoTitle: selectedCandidate?.title ?? null,
           topVideoUrl: selectedVideoUrl,
@@ -471,6 +535,7 @@ export async function getSocialValidationSignals(
           query: queryCandidates[0],
           searchUrl: queryCandidates[0] ? buildYouTubeSearchUrl(queryCandidates[0]) : undefined,
           resultsExamined: 0,
+          queryDiagnostics,
           selectedVideoId: null,
           selectedVideoTitle: null,
           selectedVideoUrl: null,
@@ -497,6 +562,7 @@ export async function getSocialValidationSignals(
         query: queryCandidates[0],
         searchUrl: queryCandidates[0] ? buildYouTubeSearchUrl(queryCandidates[0]) : undefined,
         resultsExamined: 0,
+        queryDiagnostics,
         selectedVideoId: null,
         selectedVideoTitle: null,
         selectedVideoUrl: null,
@@ -518,40 +584,90 @@ export async function getSocialValidationSignals(
   }
 
   {
-    const query = buildRedditQuery(request);
+    const queryPlan = buildRedditQueryPlan(request);
+    const queryCandidates = queryPlan.map((candidate) => candidate.query);
+    const query = queryCandidates[0] ?? '';
     const pageLimit = REDDIT_PAGE_LIMIT;
-    const searchUrl = buildRedditSearchUrl(query, pageLimit);
-    debug.reddit = { checked: true, query, searchUrl, pageLimit };
+    const queryDiagnostics: NonNullable<
+      NonNullable<NonNullable<SocialValidationSignals['debug']>['reddit']>['queryDiagnostics']
+    > = [];
+    let selectedQuery = query;
+    let selectedSearchUrl = query ? buildRedditSearchUrl(query, pageLimit) : undefined;
+    let recentResultCount: number | null = null;
+    let pageLimitReached: boolean | null = null;
 
-    try {
-      const response = await axios.get<RedditSearchResponse>(searchUrl, {
-        headers: { 'User-Agent': redditUserAgent },
-        params: { limit: pageLimit },
-        timeout: 15000,
-      });
-      const recentResultCount = response.data.data?.children?.length ?? 0;
-      const pageLimitReached = recentResultCount === pageLimit;
+    debug.reddit = {
+      checked: true,
+      query,
+      queryCandidates,
+      selectedQuery,
+      searchUrl: selectedSearchUrl,
+      pageLimit,
+    };
+
+    for (const [index, candidate] of queryCandidates.entries()) {
+      const searchUrl = buildRedditSearchUrl(candidate, pageLimit);
+      try {
+        const response = await axios.get<RedditSearchResponse>(searchUrl, {
+          headers: { 'User-Agent': redditUserAgent },
+          params: { limit: pageLimit },
+          timeout: 15000,
+        });
+        const candidateCount = response.data.data?.children?.length ?? 0;
+        const candidateLimitReached = candidateCount === pageLimit;
+        queryDiagnostics.push({
+          query: candidate,
+          family: queryPlan[index]?.family,
+          recentResultCount: candidateCount,
+          pageLimitReached: candidateLimitReached,
+        });
+
+        if (recentResultCount === null || candidateCount > recentResultCount) {
+          recentResultCount = candidateCount;
+          pageLimitReached = candidateLimitReached;
+          selectedQuery = candidate;
+          selectedSearchUrl = searchUrl;
+        }
+      } catch (error) {
+        const failure = getAxiosFailureDebug(error);
+        queryDiagnostics.push({
+          query: candidate,
+          family: queryPlan[index]?.family,
+          recentResultCount: null,
+          pageLimitReached: null,
+          note: failure.note,
+        });
+      }
+    }
+
+    if (recentResultCount !== null) {
       result.redditPostsCount7d = recentResultCount;
       debug.reddit = {
         checked: true,
-        query,
-        searchUrl,
+        query: selectedQuery,
+        queryCandidates,
+        selectedQuery,
+        searchUrl: selectedSearchUrl,
+        queryDiagnostics,
         recentResultCount,
         pageLimit,
         pageLimitReached,
         confidence: getConfidenceFromCount(recentResultCount),
         note: 'Recent Reddit post sample count from the first page of weekly results, not total weekly discussion volume.',
       };
-    } catch (error) {
+    } else {
       debug.reddit = {
         checked: true,
-        query,
-        searchUrl,
+        query: selectedQuery,
+        queryCandidates,
+        selectedQuery,
+        searchUrl: selectedSearchUrl,
+        queryDiagnostics,
         recentResultCount: null,
         pageLimit,
         pageLimitReached: null,
         confidence: 'Low',
-        note: error instanceof Error ? error.message : String(error),
+        note: 'All Reddit discussion-oriented query candidates failed before a usable sample count was returned.',
       };
     }
   }

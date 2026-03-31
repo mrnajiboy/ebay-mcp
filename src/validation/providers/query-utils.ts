@@ -1,5 +1,10 @@
 import type { ValidationRunRequest } from '../types.js';
 
+export interface ProviderQueryCandidate {
+  family: string;
+  query: string;
+}
+
 const NOISY_VERSION_PATTERNS = [
   /\((?:weverse albums?|weverse|digipack|platform|photobook|poca|poca album|kit)\s+ver\.?\)/gi,
   /\((?:weverse albums?|weverse|digipack|platform|photobook|poca|poca album|kit)\s+version\)/gi,
@@ -27,6 +32,13 @@ const GENERIC_QUERY_TOKENS = new Set([
   'order',
 ]);
 
+const POB_LIKE_PATTERN = /\bpob\b|pre\s*order|preorder|benefit|photocard/i;
+const LISTING_NOISE_PATTERN = /\bset\b|\blot\b|\bbundle\b|fanmade|replica|unofficial/gi;
+const GENERIC_DESCRIPTOR_PATTERN =
+  /^(?:album|albums|standard album|standard|cd|music|release|kpop|version|ver)\b/i;
+const BROWSE_DESCRIPTOR_HINT_PATTERN =
+  /\blimited\b|\bdeluxe\b|\bdigipack\b|\bplatform\b|\bjewel\b|\bphotobook\b|\bkit\b|\bpoca\b|\bweverse\b|\bcompact\b|\btarget\b|\bexclusive\b|\bsigned\b|\bvinyl\b|\blp\b|\bstandard\b/i;
+
 export function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
@@ -51,7 +63,7 @@ function tokenizeQuery(value: string): string[] {
     .filter((token) => token.length > 0);
 }
 
-function getSemanticTokens(value: string): string[] {
+export function extractSemanticTokens(value: string): string[] {
   return tokenizeQuery(value).filter(
     (token) =>
       token.length >= 3 &&
@@ -125,30 +137,30 @@ function getPrimaryArtist(request: ValidationRunRequest): string {
   return request.item.canonicalArtists[0]?.trim() ?? '';
 }
 
-function getPrimaryAlbumPhrase(request: ValidationRunRequest): string {
+export function getPrimaryAlbumPhrase(request: ValidationRunRequest): string {
   const relatedAlbum = sanitizeQueryCandidate(request.item.relatedAlbums[0]?.trim() ?? '');
-  if (relatedAlbum && getSemanticTokens(relatedAlbum).length > 0) {
+  if (relatedAlbum && extractSemanticTokens(relatedAlbum).length > 0) {
     return relatedAlbum;
   }
 
   const simplifiedTitle = simplifyItemTitle(request.item.name);
   const withoutArtist = stripArtistsFromText(simplifiedTitle, request.item.canonicalArtists);
   const cleanedWithoutArtist = sanitizeQueryCandidate(removeBracketedContent(withoutArtist));
-  if (getSemanticTokens(cleanedWithoutArtist).length > 0) {
+  if (extractSemanticTokens(cleanedWithoutArtist).length > 0) {
     return cleanedWithoutArtist;
   }
 
   const cleanedTitle = sanitizeQueryCandidate(removeBracketedContent(simplifiedTitle));
-  return getSemanticTokens(cleanedTitle).length > 0 ? cleanedTitle : relatedAlbum;
+  return extractSemanticTokens(cleanedTitle).length > 0 ? cleanedTitle : relatedAlbum;
 }
 
 function extractMeaningfulTitleToken(value: string): string {
-  const tokens = getSemanticTokens(value);
+  const tokens = extractSemanticTokens(value);
 
   return tokens[0] ?? '';
 }
 
-function ensureArtistRetention(candidate: string, primaryArtist: string): string {
+export function ensureArtistRetention(candidate: string, primaryArtist: string): string {
   if (!primaryArtist) {
     return sanitizeQueryCandidate(candidate);
   }
@@ -171,11 +183,11 @@ function isValidCandidate(candidate: string, primaryArtist: string, albumPhrase:
     return false;
   }
 
-  if (!/[a-zA-Z]/.test(sanitized)) {
+  if (!/[\p{L}\p{N}]/u.test(sanitized)) {
     return false;
   }
 
-  const semanticTokens = getSemanticTokens(sanitized);
+  const semanticTokens = extractSemanticTokens(sanitized);
   if (semanticTokens.length === 0) {
     return false;
   }
@@ -190,46 +202,275 @@ function isValidCandidate(candidate: string, primaryArtist: string, albumPhrase:
     return hasAlbumToken || semanticTokens.length > 0;
   }
 
-  const nonArtistSemanticTokens = getSemanticTokens(stripPrimaryArtist(sanitized, primaryArtist));
+  const nonArtistSemanticTokens = extractSemanticTokens(
+    stripPrimaryArtist(sanitized, primaryArtist)
+  );
 
   return hasAlbumToken || (hasArtist && nonArtistSemanticTokens.length > 0);
 }
 
-export function buildValidationQueryCandidates(request: ValidationRunRequest): string[] {
-  const title = normalizeWhitespace(request.item.name);
-  const simplifiedTitle = simplifyItemTitle(title);
-  const titleWithoutParens = removeBracketedContent(simplifiedTitle);
+function buildCompactPhrase(...parts: string[]): string {
+  return sanitizeQueryCandidate(
+    parts
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .join(' ')
+      .replace(/[,:;/\\|]+/g, ' ')
+      .replace(/[-–—]+/g, ' ')
+      .replace(/\s+/g, ' ')
+  );
+}
+
+function normalizeDescriptorPhrase(value: string): string {
+  return sanitizeQueryCandidate(
+    removeBracketedContent(simplifyItemTitle(value))
+      .replace(/\bpob\b|pre\s*order|preorder|benefit|photocard/gi, ' ')
+      .replace(LISTING_NOISE_PATTERN, ' ')
+      .replace(/\b(?:sealed|new|official)\b/gi, ' ')
+  );
+}
+
+function collectDescriptorPhrases(
+  request: ValidationRunRequest,
+  options: {
+    allowPobLike: boolean;
+    includeValidationType: boolean;
+    browseFocused: boolean;
+  }
+): string[] {
+  const rawValues = [
+    ...request.item.variation,
+    ...request.item.itemType,
+    ...request.item.releaseType,
+    ...(options.includeValidationType ? [request.validation.validationType] : []),
+  ];
+
+  const descriptors = rawValues
+    .map((value) => normalizeDescriptorPhrase(value))
+    .filter(Boolean)
+    .filter((value) => !GENERIC_DESCRIPTOR_PATTERN.test(value.toLowerCase()))
+    .filter((value) => (options.allowPobLike ? true : !POB_LIKE_PATTERN.test(value)));
+
+  const uniqueDescriptors = dedupeQueries(descriptors).filter((descriptor) => {
+    const semanticTokens = extractSemanticTokens(descriptor);
+    if (semanticTokens.length === 0) {
+      return false;
+    }
+
+    if (!options.browseFocused) {
+      return true;
+    }
+
+    return (
+      BROWSE_DESCRIPTOR_HINT_PATTERN.test(descriptor.toLowerCase()) || semanticTokens.length >= 2
+    );
+  });
+
+  return uniqueDescriptors.slice(0, 3);
+}
+
+function dedupeQueryPlan(candidates: ProviderQueryCandidate[]): ProviderQueryCandidate[] {
+  const seen = new Set<string>();
+  const result: ProviderQueryCandidate[] = [];
+
+  for (const candidate of candidates) {
+    const normalized = sanitizeQueryCandidate(candidate.query);
+    if (!normalized) {
+      continue;
+    }
+
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    result.push({
+      family: candidate.family,
+      query: normalized,
+    });
+  }
+
+  return result;
+}
+
+function finalizeQueryPlan(
+  candidates: ProviderQueryCandidate[],
+  primaryArtist: string,
+  albumPhrase: string
+): ProviderQueryCandidate[] {
+  return dedupeQueryPlan(candidates).filter((candidate) =>
+    isValidCandidate(candidate.query, primaryArtist, albumPhrase)
+  );
+}
+
+function buildCorePhrases(request: ValidationRunRequest): {
+  primaryArtist: string;
+  albumPhrase: string;
+  simplifiedTitle: string;
+  artistAlbumPhrase: string;
+  titleWithArtist: string;
+} {
   const primaryArtist = getPrimaryArtist(request);
-  const primaryAlbumPhrase = getPrimaryAlbumPhrase(request);
-  const validationType = request.validation.validationType.trim();
+  const albumPhrase = getPrimaryAlbumPhrase(request);
+  const simplifiedTitle = sanitizeQueryCandidate(
+    removeBracketedContent(simplifyItemTitle(request.item.name))
+  );
+  const artistAlbumPhrase = ensureArtistRetention(
+    buildCompactPhrase(primaryArtist, albumPhrase),
+    primaryArtist
+  );
+  const titleWithArtist = ensureArtistRetention(simplifiedTitle, primaryArtist);
 
-  const tier1 = ensureArtistRetention(simplifiedTitle || title, primaryArtist);
-  const tier2 = ensureArtistRetention(titleWithoutParens || tier1, primaryArtist);
-  const tier3 = ensureArtistRetention(
-    normalizeWhitespace(
-      [
-        titleAlreadyContainsArtist(tier2, primaryArtist) ? '' : primaryArtist,
-        primaryAlbumPhrase,
-        validationType,
-      ].join(' ')
-    ),
-    primaryArtist
-  );
-  const tier4 = ensureArtistRetention(
-    normalizeWhitespace(
-      [
-        titleAlreadyContainsArtist(primaryAlbumPhrase, primaryArtist) ? '' : primaryArtist,
-        primaryAlbumPhrase,
-      ].join(' ')
-    ),
-    primaryArtist
-  );
-  const tier5 = ensureArtistRetention(
-    [primaryArtist, request.item.releaseType[0] ?? '', primaryAlbumPhrase].join(' '),
-    primaryArtist
-  );
+  return {
+    primaryArtist,
+    albumPhrase,
+    simplifiedTitle,
+    artistAlbumPhrase,
+    titleWithArtist,
+  };
+}
 
-  return dedupeQueries([tier1, tier2, tier3, tier4, tier5]).filter((candidate) =>
-    isValidCandidate(candidate, primaryArtist, primaryAlbumPhrase)
+export function buildBrowseQueryPlan(request: ValidationRunRequest): ProviderQueryCandidate[] {
+  const { primaryArtist, albumPhrase, simplifiedTitle, artistAlbumPhrase, titleWithArtist } =
+    buildCorePhrases(request);
+  const browseDescriptors = collectDescriptorPhrases(request, {
+    allowPobLike: false,
+    includeValidationType: false,
+    browseFocused: true,
+  });
+
+  return finalizeQueryPlan(
+    [
+      { family: 'artist_album_core', query: artistAlbumPhrase },
+      ...browseDescriptors.map((descriptor) => ({
+        family: 'artist_album_descriptor',
+        query: buildCompactPhrase(artistAlbumPhrase, descriptor),
+      })),
+      { family: 'artist_title_listing', query: titleWithArtist },
+      {
+        family: 'artist_release_album',
+        query: buildCompactPhrase(primaryArtist, request.item.releaseType[0] ?? '', albumPhrase),
+      },
+      { family: 'album_core', query: buildCompactPhrase(albumPhrase) },
+      { family: 'simplified_title', query: simplifiedTitle },
+    ],
+    primaryArtist,
+    albumPhrase
   );
+}
+
+export function buildBrowseQueryCandidates(request: ValidationRunRequest): string[] {
+  return buildBrowseQueryPlan(request).map((candidate) => candidate.query);
+}
+
+export function buildSoldQueryPlan(request: ValidationRunRequest): ProviderQueryCandidate[] {
+  const { primaryArtist, albumPhrase, titleWithArtist, artistAlbumPhrase } =
+    buildCorePhrases(request);
+  const soldDescriptors = collectDescriptorPhrases(request, {
+    allowPobLike: true,
+    includeValidationType: true,
+    browseFocused: false,
+  });
+  const validationType = sanitizeQueryCandidate(request.validation.validationType);
+
+  return finalizeQueryPlan(
+    [
+      { family: 'artist_album_core', query: artistAlbumPhrase },
+      ...soldDescriptors.map((descriptor) => ({
+        family: 'artist_album_descriptor',
+        query: buildCompactPhrase(artistAlbumPhrase, descriptor),
+      })),
+      {
+        family: 'artist_album_validation_type',
+        query: buildCompactPhrase(primaryArtist, albumPhrase, validationType),
+      },
+      { family: 'artist_title_listing', query: titleWithArtist },
+      { family: 'album_descriptor_only', query: buildCompactPhrase(albumPhrase, validationType) },
+    ],
+    primaryArtist,
+    albumPhrase
+  );
+}
+
+export function buildSoldQueryCandidates(request: ValidationRunRequest): string[] {
+  return buildSoldQueryPlan(request).map((candidate) => candidate.query);
+}
+
+export function buildTwitterQueryPlan(request: ValidationRunRequest): ProviderQueryCandidate[] {
+  const { primaryArtist, albumPhrase } = buildCorePhrases(request);
+  const compactArtist = buildCompactPhrase(primaryArtist);
+  const compactAlbum = buildCompactPhrase(albumPhrase);
+
+  return finalizeQueryPlan(
+    [
+      {
+        family: 'artist_album_conversation',
+        query: buildCompactPhrase(compactArtist, compactAlbum),
+      },
+      {
+        family: 'quoted_artist_album',
+        query: compactArtist && compactAlbum ? `"${compactArtist}" "${compactAlbum}"` : '',
+      },
+      {
+        family: 'artist_album_keyword',
+        query: buildCompactPhrase(compactArtist, 'album', compactAlbum),
+      },
+      { family: 'album_artist_reversed', query: buildCompactPhrase(compactAlbum, compactArtist) },
+    ],
+    primaryArtist,
+    albumPhrase
+  );
+}
+
+export function buildTwitterQueryCandidates(request: ValidationRunRequest): string[] {
+  return buildTwitterQueryPlan(request).map((candidate) => candidate.query);
+}
+
+export function buildYouTubeQueryPlan(request: ValidationRunRequest): ProviderQueryCandidate[] {
+  const { primaryArtist, albumPhrase } = buildCorePhrases(request);
+  const artistAlbum = buildCompactPhrase(primaryArtist, albumPhrase);
+
+  return finalizeQueryPlan(
+    [
+      { family: 'artist_album_media_core', query: artistAlbum },
+      { family: 'artist_album_official', query: buildCompactPhrase(artistAlbum, 'official') },
+      { family: 'artist_album_mv', query: buildCompactPhrase(artistAlbum, 'mv') },
+      { family: 'artist_album_music_video', query: buildCompactPhrase(artistAlbum, 'music video') },
+      { family: 'artist_album_teaser', query: buildCompactPhrase(artistAlbum, 'teaser') },
+      { family: 'artist_album_performance', query: buildCompactPhrase(artistAlbum, 'performance') },
+    ],
+    primaryArtist,
+    albumPhrase
+  );
+}
+
+export function buildYouTubeQueryCandidates(request: ValidationRunRequest): string[] {
+  return buildYouTubeQueryPlan(request).map((candidate) => candidate.query);
+}
+
+export function buildRedditQueryPlan(request: ValidationRunRequest): ProviderQueryCandidate[] {
+  const { primaryArtist, albumPhrase } = buildCorePhrases(request);
+  const artistAlbum = buildCompactPhrase(primaryArtist, albumPhrase);
+
+  return finalizeQueryPlan(
+    [
+      { family: 'artist_album_discussion', query: artistAlbum },
+      { family: 'album_artist_discussion', query: buildCompactPhrase(albumPhrase, primaryArtist) },
+      {
+        family: 'artist_album_comeback',
+        query: buildCompactPhrase(primaryArtist, albumPhrase, 'discussion'),
+      },
+    ],
+    primaryArtist,
+    albumPhrase
+  );
+}
+
+export function buildRedditQueryCandidates(request: ValidationRunRequest): string[] {
+  return buildRedditQueryPlan(request).map((candidate) => candidate.query);
+}
+
+export function buildValidationQueryCandidates(request: ValidationRunRequest): string[] {
+  return buildSoldQueryCandidates(request);
 }

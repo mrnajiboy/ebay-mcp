@@ -6,7 +6,7 @@ import type {
   ValidationSignalConfidence,
   ValidationSoldVelocity,
 } from '../types.js';
-import { buildValidationQueryCandidates } from './query-utils.js';
+import { buildSoldQueryPlan } from './query-utils.js';
 
 interface SoldProviderProduct {
   title?: string;
@@ -43,10 +43,6 @@ function normalizePrice(value: number | string | undefined): number | null {
   }
 
   return null;
-}
-
-function buildSoldKeywords(request: ValidationRunRequest): string[] {
-  return buildValidationQueryCandidates(request);
 }
 
 function parseSoldDate(value: string | undefined): string | null {
@@ -172,11 +168,16 @@ export async function getEbaySoldValidationSignals(
 ): Promise<EbaySoldValidationSignals> {
   const soldApiUrl = process.env.SOLD_ITEMS_API_URL?.trim();
   const soldApiKey = process.env.SOLD_ITEMS_API_KEY?.trim();
-  const queryCandidates = buildSoldKeywords(request);
+  const queryPlan = buildSoldQueryPlan(request);
+  const queryCandidates = queryPlan.map((candidate) => candidate.query);
   const query = queryCandidates[0] ?? null;
+  const queryDiagnostics: NonNullable<EbaySoldValidationSignals['queryDiagnostics']> = [];
 
   if (!soldApiUrl || !soldApiKey || !query) {
-    return createEmptySoldSignals(query, queryCandidates, 'unavailable');
+    return {
+      ...createEmptySoldSignals(query, queryCandidates, 'unavailable'),
+      queryDiagnostics,
+    };
   }
 
   try {
@@ -185,64 +186,99 @@ export async function getEbaySoldValidationSignals(
       : `${soldApiUrl.replace(/\/$/, '')}/findCompletedItems`;
     const host = new URL(endpoint).host;
 
-    let selectedResult = createEmptySoldSignals(query, queryCandidates, 'unavailable');
+    let selectedResult = {
+      ...createEmptySoldSignals(query, queryCandidates, 'unavailable'),
+      queryDiagnostics,
+    };
+    let lastErrorMessage: string | undefined;
 
     for (const [index, candidate] of queryCandidates.entries()) {
-      const response = await axios.post<SoldProviderResponse>(
-        endpoint,
-        {
-          keywords: candidate,
-          excluded_keywords: 'set lot bundle photocard fanmade replica unofficial',
-          max_search_results: 120,
-          remove_outliers: true,
-          site_id: '0',
-        },
-        {
-          timeout: 30000,
-          headers: {
-            'Content-Type': 'application/json',
-            'x-rapidapi-key': soldApiKey,
-            'x-rapidapi-host': host,
+      try {
+        const response = await axios.post<SoldProviderResponse>(
+          endpoint,
+          {
+            keywords: candidate,
+            excluded_keywords: 'set lot bundle photocard fanmade replica unofficial',
+            max_search_results: 120,
+            remove_outliers: true,
+            site_id: '0',
           },
+          {
+            timeout: 30000,
+            headers: {
+              'Content-Type': 'application/json',
+              'x-rapidapi-key': soldApiKey,
+              'x-rapidapi-host': host,
+            },
+          }
+        );
+
+        const data = response.data;
+        const soldItemsSample = normalizeProducts(data.products);
+        const soldVelocity = bucketSoldVelocity(soldItemsSample, request.timestamp);
+        const soldResultsCount =
+          typeof data.results === 'number' && Number.isFinite(data.results) ? data.results : null;
+
+        queryDiagnostics.push({
+          query: candidate,
+          tier: index + 1,
+          family: queryPlan[index]?.family,
+          soldResultsCount,
+          status: data.success === false ? 'error' : 'ok',
+        });
+
+        selectedResult = {
+          provider: 'third_party_sold_api',
+          confidence: scoreSoldConfidence(soldResultsCount, soldItemsSample),
+          soldResultsCount,
+          soldAveragePriceUsd: normalizePrice(data.average_price),
+          soldMedianPriceUsd: normalizePrice(data.median_price),
+          soldMinPriceUsd: normalizePrice(data.min_price),
+          soldMaxPriceUsd: normalizePrice(data.max_price),
+          soldItemsSample,
+          soldVelocity,
+          query: candidate,
+          queryCandidates,
+          queryDiagnostics: [...queryDiagnostics],
+          selectedQuery: candidate,
+          selectedQueryTier: index + 1,
+          responseUrl: typeof data.response_url === 'string' ? data.response_url : null,
+          status: data.success === false ? 'error' : 'ok',
+        };
+
+        if ((soldResultsCount ?? 0) >= 5) {
+          break;
         }
-      );
-
-      const data = response.data;
-      const soldItemsSample = normalizeProducts(data.products);
-      const soldVelocity = bucketSoldVelocity(soldItemsSample, request.timestamp);
-      const soldResultsCount =
-        typeof data.results === 'number' && Number.isFinite(data.results) ? data.results : null;
-
-      selectedResult = {
-        provider: 'third_party_sold_api',
-        confidence: scoreSoldConfidence(soldResultsCount, soldItemsSample),
-        soldResultsCount,
-        soldAveragePriceUsd: normalizePrice(data.average_price),
-        soldMedianPriceUsd: normalizePrice(data.median_price),
-        soldMinPriceUsd: normalizePrice(data.min_price),
-        soldMaxPriceUsd: normalizePrice(data.max_price),
-        soldItemsSample,
-        soldVelocity,
-        query: candidate,
-        queryCandidates,
-        selectedQuery: candidate,
-        selectedQueryTier: index + 1,
-        responseUrl: typeof data.response_url === 'string' ? data.response_url : null,
-        status: data.success === false ? 'error' : 'ok',
-      };
-
-      if ((soldResultsCount ?? 0) >= 5) {
-        break;
+      } catch (error) {
+        lastErrorMessage = error instanceof Error ? error.message : String(error);
+        queryDiagnostics.push({
+          query: candidate,
+          tier: index + 1,
+          family: queryPlan[index]?.family,
+          soldResultsCount: null,
+          status: 'error',
+          note: lastErrorMessage,
+        });
       }
+    }
+
+    if (selectedResult.status === 'unavailable' && queryDiagnostics.length > 0) {
+      return {
+        ...createEmptySoldSignals(query, queryCandidates, 'error', lastErrorMessage),
+        queryDiagnostics,
+      };
     }
 
     return selectedResult;
   } catch (error) {
-    return createEmptySoldSignals(
-      query,
-      queryCandidates,
-      'error',
-      error instanceof Error ? error.message : String(error)
-    );
+    return {
+      ...createEmptySoldSignals(
+        query,
+        queryCandidates,
+        'error',
+        error instanceof Error ? error.message : String(error)
+      ),
+      queryDiagnostics,
+    };
   }
 }
