@@ -116,7 +116,9 @@ function bucketSoldVelocity(
       continue;
     }
 
-    const diffDays = Math.floor((requestDate.getTime() - soldDate.getTime()) / (24 * 60 * 60 * 1000));
+    const diffDays = Math.floor(
+      (requestDate.getTime() - soldDate.getTime()) / (24 * 60 * 60 * 1000)
+    );
     if (diffDays >= 0 && diffDays < 5) {
       buckets[diffDays] += 1;
       maxTrackedDay = Math.max(maxTrackedDay, diffDays + 1);

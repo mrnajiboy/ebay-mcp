@@ -105,8 +105,7 @@ function getAxiosFailureDebug(error: unknown): {
     };
   }
 
-  const bodyText =
-    typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody, null, 2);
+  const bodyText = typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody, null, 2);
 
   return {
     responseStatus,
@@ -523,28 +522,26 @@ function mountEnvRouter(
     let authenticated = false;
     let authError: string | null = null;
     let tokenStatus: ReturnType<EbaySellerApi['getTokenInfo']> | null = null;
-    let authDebug:
-      | {
-          tokenEndpoint: string;
-          environment: 'production' | 'sandbox';
-          hasClientId: boolean;
-          hasClientSecret: boolean;
-          hasRefreshToken: boolean;
-          hasAccessToken: boolean;
-          hasRedirectUri: boolean;
-          configuredMarketplaceId: string;
-          configuredContentLanguage: string;
-          refreshTokenExpiry?: number;
-          accessTokenExpiry?: number;
-          source?:
-            | 'stored_user_tokens'
-            | 'env_refresh_token_fallback'
-            | 'authorization_code_exchange'
-            | 'manual_set_user_tokens';
-          responseStatus?: number | null;
-          responseBodyExcerpt?: string | null;
-        }
-      | null = null;
+    let authDebug: {
+      tokenEndpoint: string;
+      environment: 'production' | 'sandbox';
+      hasClientId: boolean;
+      hasClientSecret: boolean;
+      hasRefreshToken: boolean;
+      hasAccessToken: boolean;
+      hasRedirectUri: boolean;
+      configuredMarketplaceId: string;
+      configuredContentLanguage: string;
+      refreshTokenExpiry?: number;
+      accessTokenExpiry?: number;
+      source?:
+        | 'stored_user_tokens'
+        | 'env_refresh_token_fallback'
+        | 'authorization_code_exchange'
+        | 'manual_set_user_tokens';
+      responseStatus?: number | null;
+      responseBodyExcerpt?: string | null;
+    } | null = null;
 
     if (validationRunnerUserId && storedTokens?.tokenData) {
       try {
