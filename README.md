@@ -546,7 +546,7 @@ Runs the validation pipeline for the target environment.
 
 The request/response contract is defined in [`src/validation/types.ts`](src/validation/types.ts), and the orchestration behavior is implemented in [`src/validation/run-validation.ts`](src/validation/run-validation.ts).
 
-The `writes` payload is intentionally non-destructive for supportive social fields: if a social provider cannot resolve data, the orchestration omits those writes instead of overwriting existing downstream values with empty placeholders.
+The `writes` payload is intentionally non-destructive for supportive and placeholder-backed optional fields: if a social, Terapeak placeholder, or research placeholder provider cannot resolve data, the orchestration omits those optional writes instead of overwriting existing downstream values with empty placeholders.
 
 #### `GET /validation/health`
 
@@ -599,6 +599,7 @@ Current backend status:
 Provider behavior:
 
 - **Browse/eBay provider:** [`src/validation/providers/ebay.ts`](src/validation/providers/ebay.ts) uses the eBay Browse API plus shared query fallback logic from [`src/validation/providers/query-utils.ts`](src/validation/providers/query-utils.ts). It walks multiple query candidates, records the selected query and tier in debug output, and uses heuristic matching rather than a strict catalog identity join.
+- **Browse debug semantics:** validation debug now keeps browse candidate generation, selected query/tier, browse-specific sample size, and per-candidate result counts separate from sold-provider result counts so operators can tell whether the browse layer contributed a field, fell back to a weaker query, or returned no usable match.
 - **Sold provider:** [`src/validation/providers/ebay-sold.ts`](src/validation/providers/ebay-sold.ts) uses a temporary external sold-data source configured by `SOLD_ITEMS_API_URL` and `SOLD_ITEMS_API_KEY`. It uses the same query-fallback strategy as the browse provider and returns sold-price ranges, sample sold items, and recent sold-velocity buckets when available.
 - **Terapeak / eBay research provider:** [`src/validation/providers/terapeak.ts`](src/validation/providers/terapeak.ts) is currently a stable placeholder contract. It already defines the query/debug shape and output fields used by orchestration, including `previousPobAvgPriceUsd` and `previousPobSellThroughPct`, but live authenticated Terapeak/eBay research retrieval is not implemented yet.
 - **Social provider:** [`src/validation/providers/social.ts`](src/validation/providers/social.ts) supports phase-1 Twitter/X recent activity, YouTube average-daily-views proxy data exposed through the `youtubeViews24hMillions` field, and Reddit recent post counts. These signals degrade gracefully on provider/API failure and are used as supportive indicators rather than authoritative demand truth.

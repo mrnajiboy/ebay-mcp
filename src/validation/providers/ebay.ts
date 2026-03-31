@@ -62,6 +62,10 @@ export async function getEbayValidationSignals(
     queryCandidates,
     selectedQuery: ebayQuery || undefined,
     selectedQueryTier: ebayQuery ? 1 : null,
+    queryDiagnostics: [],
+    selectionReason: queryCandidates.length
+      ? 'Cleaned browse candidates were generated, but none have been evaluated yet.'
+      : 'No valid browse query candidates were generated after sanitization and semantic filtering.',
     sampleSize: 0,
     soldVelocity: {
       day1Sold: request.validation.currentMetrics.day1Sold,
@@ -81,6 +85,8 @@ export async function getEbayValidationSignals(
     const environment = api.getAuthClient().getConfig().environment;
     const browseUrl = `${getBaseUrl(environment)}/buy/browse/v1/item_summary/search`;
     let selectedResult = emptyResult;
+    let bestScore = -1;
+    const queryDiagnostics: NonNullable<EbayValidationSignals['queryDiagnostics']> = [];
 
     for (const [index, query] of queryCandidates.entries()) {
       const response = await api.getAuthClient().getWithFullUrl<BrowseSearchResponse>(browseUrl, {
@@ -106,6 +112,23 @@ export async function getEbayValidationSignals(
         typeof response.total === 'number' && Number.isFinite(response.total)
           ? response.total
           : itemSummaries.length;
+      const attemptScore = Math.max(itemSummaries.length, totalListings);
+
+      queryDiagnostics.push({
+        query,
+        tier: index + 1,
+        itemSummaryCount: itemSummaries.length,
+        totalListings,
+      });
+
+      if (attemptScore <= bestScore) {
+        if (itemSummaries.length >= 5 || totalListings >= 5) {
+          break;
+        }
+        continue;
+      }
+
+      bestScore = attemptScore;
 
       selectedResult = {
         avgWatchersPerListing: null,
@@ -122,6 +145,13 @@ export async function getEbayValidationSignals(
         queryCandidates,
         selectedQuery: query,
         selectedQueryTier: index + 1,
+        queryDiagnostics: [...queryDiagnostics],
+        selectionReason:
+          itemSummaries.length >= 5 || totalListings >= 5
+            ? 'Selected because this cleaned browse candidate produced sufficient listing depth.'
+            : attemptScore > 0
+              ? 'Selected as the strongest cleaned browse fallback after higher-priority candidates returned weaker results.'
+              : 'All cleaned browse candidates seen so far returned zero results; keeping the highest-priority candidate for traceability.',
         sampleSize: itemSummaries.length,
         soldVelocity: emptyResult.soldVelocity,
       };
@@ -131,8 +161,18 @@ export async function getEbayValidationSignals(
       }
     }
 
-    return selectedResult;
+    return {
+      ...selectedResult,
+      queryDiagnostics,
+      selectionReason:
+        selectedResult.selectionReason ??
+        'Browse selection completed without a stronger candidate than the highest-priority cleaned query.',
+    };
   } catch {
-    return emptyResult;
+    return {
+      ...emptyResult,
+      selectionReason:
+        'Browse query execution failed before result selection could complete; returning the cleaned fallback candidate set for debug traceability.',
+    };
   }
 }

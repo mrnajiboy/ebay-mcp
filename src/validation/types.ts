@@ -72,6 +72,13 @@ export interface EbayValidationSignals {
   queryCandidates?: string[];
   selectedQuery?: string;
   selectedQueryTier?: number | null;
+  queryDiagnostics?: Array<{
+    query: string;
+    tier: number;
+    itemSummaryCount: number;
+    totalListings: number;
+  }>;
+  selectionReason?: string;
   sampleSize: number;
   soldVelocity: ValidationSoldVelocity;
 }

@@ -7,8 +7,32 @@ const NOISY_VERSION_PATTERNS = [
   /\b(?:weverse albums?|weverse|digipack|platform|photobook|poca|poca album|kit)\s+version\b/gi,
 ];
 
+const GENERIC_QUERY_TOKENS = new Set([
+  'album',
+  'albums',
+  'ep',
+  'single',
+  'mini',
+  'the',
+  'and',
+  'ver',
+  'version',
+  'release',
+  'repackage',
+  'pob',
+  'benefit',
+  'photocard',
+  'preorder',
+  'pre',
+  'order',
+]);
+
 export function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 export function sanitizeQueryCandidate(query: string): string {
@@ -17,6 +41,24 @@ export function sanitizeQueryCandidate(query: string): string {
     .replace(/[\s\-–—:;,./]+$/, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function tokenizeQuery(value: string): string[] {
+  return sanitizeQueryCandidate(value)
+    .toLowerCase()
+    .split(/\s+/)
+    .map((token) => token.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, ''))
+    .filter((token) => token.length > 0);
+}
+
+function getSemanticTokens(value: string): string[] {
+  return tokenizeQuery(value).filter(
+    (token) =>
+      token.length >= 3 &&
+      !GENERIC_QUERY_TOKENS.has(token) &&
+      !/^\d+$/.test(token) &&
+      !/^\d+(?:st|nd|rd|th)$/.test(token)
+  );
 }
 
 export function simplifyItemTitle(title: string): string {
@@ -35,6 +77,26 @@ export function titleAlreadyContainsArtist(title: string, artist: string): boole
 
 function removeBracketedContent(value: string): string {
   return normalizeWhitespace(value.replace(/\([^)]*\)/g, ' '));
+}
+
+function stripArtistsFromText(value: string, artists: string[]): string {
+  return artists.reduce((result, artist) => {
+    const sanitizedArtist = sanitizeQueryCandidate(artist);
+    if (!sanitizedArtist) {
+      return result;
+    }
+
+    return result.replace(new RegExp(escapeRegExp(sanitizedArtist), 'ig'), ' ');
+  }, value);
+}
+
+function stripPrimaryArtist(candidate: string, primaryArtist: string): string {
+  const sanitizedArtist = sanitizeQueryCandidate(primaryArtist);
+  if (!sanitizedArtist) {
+    return sanitizeQueryCandidate(candidate);
+  }
+
+  return sanitizeQueryCandidate(candidate.replace(new RegExp(escapeRegExp(sanitizedArtist), 'ig'), ' '));
 }
 
 function dedupeQueries(candidates: string[]): string[] {
@@ -62,26 +124,24 @@ function getPrimaryArtist(request: ValidationRunRequest): string {
 }
 
 function getPrimaryAlbumPhrase(request: ValidationRunRequest): string {
-  const relatedAlbum = request.item.relatedAlbums[0]?.trim();
-  if (relatedAlbum) {
+  const relatedAlbum = sanitizeQueryCandidate(request.item.relatedAlbums[0]?.trim() ?? '');
+  if (relatedAlbum && getSemanticTokens(relatedAlbum).length > 0) {
     return relatedAlbum;
   }
 
   const simplifiedTitle = simplifyItemTitle(request.item.name);
-  const withoutArtist = request.item.canonicalArtists.reduce(
-    (acc, artist) =>
-      acc.replace(new RegExp(artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig'), ' '),
-    simplifiedTitle
-  );
+  const withoutArtist = stripArtistsFromText(simplifiedTitle, request.item.canonicalArtists);
+  const cleanedWithoutArtist = sanitizeQueryCandidate(removeBracketedContent(withoutArtist));
+  if (getSemanticTokens(cleanedWithoutArtist).length > 0) {
+    return cleanedWithoutArtist;
+  }
 
-  return normalizeWhitespace(removeBracketedContent(withoutArtist));
+  const cleanedTitle = sanitizeQueryCandidate(removeBracketedContent(simplifiedTitle));
+  return getSemanticTokens(cleanedTitle).length > 0 ? cleanedTitle : relatedAlbum;
 }
 
 function extractMeaningfulTitleToken(value: string): string {
-  const tokens = sanitizeQueryCandidate(value)
-    .split(' ')
-    .map((token) => token.replace(/[^a-zA-Z0-9]+/g, ''))
-    .filter((token) => token.length >= 3);
+  const tokens = getSemanticTokens(value);
 
   return tokens[0] ?? '';
 }
@@ -113,13 +173,24 @@ function isValidCandidate(candidate: string, primaryArtist: string, albumPhrase:
     return false;
   }
 
+  const semanticTokens = getSemanticTokens(sanitized);
+  if (semanticTokens.length === 0) {
+    return false;
+  }
+
   const meaningfulAlbumToken = extractMeaningfulTitleToken(albumPhrase);
   const hasArtist = primaryArtist ? titleAlreadyContainsArtist(sanitized, primaryArtist) : false;
   const hasAlbumToken = meaningfulAlbumToken
-    ? sanitized.toLowerCase().includes(meaningfulAlbumToken.toLowerCase())
+    ? semanticTokens.includes(meaningfulAlbumToken.toLowerCase())
     : false;
 
-  return hasArtist || hasAlbumToken;
+  if (!primaryArtist) {
+    return hasAlbumToken || semanticTokens.length > 0;
+  }
+
+  const nonArtistSemanticTokens = getSemanticTokens(stripPrimaryArtist(sanitized, primaryArtist));
+
+  return hasAlbumToken || (hasArtist && nonArtistSemanticTokens.length > 0);
 }
 
 export function buildValidationQueryCandidates(request: ValidationRunRequest): string[] {
