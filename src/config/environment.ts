@@ -370,6 +370,10 @@ export function getBaseUrl(environment: EbayEnvironment): string {
   return environment === 'production' ? 'https://api.ebay.com' : 'https://api.sandbox.ebay.com';
 }
 
+export function getOAuthTokenBaseUrl(environment: EbayEnvironment): string {
+  return environment === 'production' ? 'https://api.ebay.com' : 'https://api.sandbox.ebay.com';
+}
+
 export function getIdentityBaseUrl(environment: EbayEnvironment): string {
   return environment === 'production' ? 'https://apiz.ebay.com' : 'https://apiz.sandbox.ebay.com';
 }

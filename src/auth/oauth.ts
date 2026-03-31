@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getIdentityBaseUrl } from '@/config/environment.js';
+import { getOAuthTokenBaseUrl } from '@/config/environment.js';
 import type {
   EbayAppAccessTokenResponse,
   EbayConfig,
@@ -26,7 +26,7 @@ export class EbayOAuthClient {
   ) {}
 
   private getTokenEndpoint(): string {
-    return `${getIdentityBaseUrl(this.config.environment)}/identity/v1/oauth2/token`;
+    return `${getOAuthTokenBaseUrl(this.config.environment)}/identity/v1/oauth2/token`;
   }
 
   async initialize(): Promise<void> {
