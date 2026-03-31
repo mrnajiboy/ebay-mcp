@@ -305,7 +305,9 @@ function isValidConversationQuery(candidate: string): boolean {
 function finalizeConversationQueryPlan(
   candidates: ProviderQueryCandidate[]
 ): ProviderQueryCandidate[] {
-  return dedupeQueryPlan(candidates).filter((candidate) => isValidConversationQuery(candidate.query));
+  return dedupeQueryPlan(candidates).filter((candidate) =>
+    isValidConversationQuery(candidate.query)
+  );
 }
 
 function buildConversationAlbumPhrase(albumPhrase: string): string {
@@ -422,24 +424,22 @@ export function buildTwitterQueryPlan(request: ValidationRunRequest): ProviderQu
   const compactArtist = buildCompactPhrase(primaryArtist);
   const compactAlbum = buildCompactPhrase(buildConversationAlbumPhrase(albumPhrase));
 
-  return finalizeConversationQueryPlan(
-    [
-      {
-        family: 'artist_album_conversation',
-        query: buildCompactPhrase(compactArtist, compactAlbum),
-      },
-      {
-        family: 'quoted_artist_album',
-        query: compactArtist && compactAlbum ? `"${compactArtist}" "${compactAlbum}"` : '',
-      },
-      {
-        family: 'artist_album_keyword',
-        query: buildCompactPhrase(compactArtist, 'album'),
-      },
-      { family: 'artist_only_fallback', query: compactArtist },
-      { family: 'album_only_fallback', query: compactAlbum },
-    ]
-  );
+  return finalizeConversationQueryPlan([
+    {
+      family: 'artist_album_conversation',
+      query: buildCompactPhrase(compactArtist, compactAlbum),
+    },
+    {
+      family: 'quoted_artist_album',
+      query: compactArtist && compactAlbum ? `"${compactArtist}" "${compactAlbum}"` : '',
+    },
+    {
+      family: 'artist_album_keyword',
+      query: buildCompactPhrase(compactArtist, 'album'),
+    },
+    { family: 'artist_only_fallback', query: compactArtist },
+    { family: 'album_only_fallback', query: compactAlbum },
+  ]);
 }
 
 export function buildTwitterQueryCandidates(request: ValidationRunRequest): string[] {
