@@ -87,10 +87,10 @@ interface SocialValidationDebugState {
 }
 
 const REDDIT_PAGE_LIMIT = 100;
-const YOUTUBE_SEARCH_MAX_RESULTS = 10;
-const YOUTUBE_MAX_CANDIDATE_VIDEOS = 30;
+const YOUTUBE_SEARCH_MAX_RESULTS = 50;
+const YOUTUBE_MAX_CANDIDATE_VIDEOS = 50;
 const TWITTER_COUNTS_GRANULARITY = 'day' as const;
-const TWITTER_TRENDING_THRESHOLD = 10;
+const TWITTER_TRENDING_THRESHOLD = 100;
 const YOUTUBE_OFFICIAL_TITLE_PATTERN =
   /\bofficial\b|\bmv\b|music video|official audio|teaser|concept|highlight medley|performance|special video|visualizer/;
 const YOUTUBE_DEMOTED_TITLE_PATTERN =
