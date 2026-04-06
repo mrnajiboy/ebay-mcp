@@ -458,6 +458,7 @@ The hosted backend now includes a deployment-oriented validation pipeline for no
 Current module layout:
 
 - [`src/validation/types.ts`](src/validation/types.ts) — request/response contracts for validation runs, decision payloads, debug payloads, and provider signal types
+- [`src/validation/effective-context.ts`](src/validation/effective-context.ts) — source-aware normalization layer that converts raw request payloads into a first-class effective validation context for item and event runs
 - [`src/validation/run-validation.ts`](src/validation/run-validation.ts) — orchestration entrypoint that validates input, queries providers, merges signals, and returns writes/decision/debug output
 - [`src/validation/recommendation.ts`](src/validation/recommendation.ts) — recommendation and automation decision logic
 - [`src/validation/providers/ebay.ts`](src/validation/providers/ebay.ts) — live eBay browse-market snapshot provider using the server's existing user-scoped eBay API client
@@ -489,8 +490,26 @@ Operationally, validation works like this:
 3. The route looks up the configured validation runner user ID for that environment.
 4. The server loads that user's stored refresh-token-backed credentials from the existing hosted auth store.
 5. The validation orchestrator calls all six provider domains and gathers browse/current-market, sold enrichment, Terapeak/research contract data, social support signals, chart stub output, and previous-comeback research output.
-6. [`runValidation()`](src/validation/run-validation.ts:106) deterministically merges the provider outputs into normalized field writes.
-7. The response returns those writes, a conservative buy/track decision block, and provider debug metadata for downstream systems.
+6. Before provider execution, [`runValidation()`](src/validation/run-validation.ts) builds a normalized `effectiveContext` so downstream logic consumes a source-aware model (`item` or `event`) instead of relying on empty item placeholders.
+7. [`runValidation()`](src/validation/run-validation.ts) deterministically merges the provider outputs into normalized field writes.
+8. The response returns those writes, a conservative buy/track decision block, and provider debug metadata for downstream systems.
+
+#### Effective validation context
+
+Validation runs now normalize incoming request data into an internal effective context before provider query planning and recommendation logic execute.
+
+- **Item-scope runs** normalize to an item-oriented context with the resolved artist, album/item phrase, location, and resolved search query.
+- **Event-scope runs** normalize to an event-oriented context with `searchArtist`, `searchEvent`, `searchItem`, `searchLocation`, timing metadata, and a derived `effectiveSearchQuery` when no direct resolved query is present.
+- Providers and recommendation logic consume that normalized context rather than reasoning about blank `item.recordId` or `item.name` fields.
+- Debug output now exposes `effectiveSourceType`, `effectiveContextMode`, `effectiveSearchQuery`, `hasItem`, and `hasEvent` so operators can confirm whether an event run was normalized correctly.
+
+The request schema also now accepts source-aware query-context fields for hosted validation runs:
+
+- `resolvedSearchArtist`
+- `resolvedSearchItem`
+- `resolvedSearchEvent`
+- `resolvedSearchLocation`
+- `resolvedSearchQuery`
 
 The validation contract is intentionally split between stable route orchestration and swappable providers. That is why the current sold-data source can be replaced later without changing downstream orchestration or the hosted route contract implemented in [`src/validation/run-validation.ts`](src/validation/run-validation.ts).
 
@@ -595,10 +614,11 @@ Current backend status:
 - Social support signals are implemented in phase 1.
 - Chart data remains a stub.
 - Validation is currently an **admin-operated hosted backend workflow**, not an MCP tool surface.
+- Event-scope validations are now handled as first-class normalized runs instead of as item-shaped requests with null item identity tolerated for compatibility.
 
 Provider behavior:
 
-- **Browse/eBay provider:** [`src/validation/providers/ebay.ts`](src/validation/providers/ebay.ts) uses the eBay Browse API plus shared query fallback logic from [`src/validation/providers/query-utils.ts`](src/validation/providers/query-utils.ts). It walks multiple query candidates, records the selected query and tier in debug output, and uses heuristic matching rather than a strict catalog identity join.
+- **Browse/eBay provider:** [`src/validation/providers/ebay.ts`](src/validation/providers/ebay.ts) uses the eBay Browse API plus shared query fallback logic from [`src/validation/providers/query-utils.ts`](src/validation/providers/query-utils.ts). It walks multiple query candidates, records the selected query and tier in debug output, and uses heuristic matching rather than a strict catalog identity join. Event-driven runs now build those fallback queries from normalized event context instead of raw item title assumptions.
 - **Browse debug semantics:** validation debug now keeps browse candidate generation, selected query/tier, browse-specific sample size, and per-candidate result counts separate from sold-provider result counts so operators can tell whether the browse layer contributed a field, fell back to a weaker query, or returned no usable match.
 - **Sold provider:** [`src/validation/providers/ebay-sold.ts`](src/validation/providers/ebay-sold.ts) uses a temporary external sold-data source configured by `SOLD_ITEMS_API_URL` and `SOLD_ITEMS_API_KEY`. It uses the same query-fallback strategy as the browse provider and returns sold-price ranges, sample sold items, and recent sold-velocity buckets when available.
 - **Terapeak / eBay research provider:** [`src/validation/providers/terapeak.ts`](src/validation/providers/terapeak.ts) is currently a stable placeholder contract. It already defines the query/debug shape and output fields used by orchestration, including `previousPobAvgPriceUsd` and `previousPobSellThroughPct`, but live authenticated Terapeak/eBay research retrieval is not implemented yet.
@@ -609,6 +629,7 @@ Provider behavior:
 Recommendation behavior:
 
 - [`src/validation/recommendation.ts`](src/validation/recommendation.ts) now accepts Terapeak and research inputs alongside browse, sold, social, and chart signals.
+- Recommendation generation also consumes the normalized effective context so event runs can carry source-aware monitoring notes and avoid item-only assumptions when no usable item identity exists.
 - The decisioning remains intentionally conservative: Terapeak and research data can improve monitoring notes and confidence context, but the system still avoids aggressive automatic buy-state changes from partial or proxy signals alone.
 
 Known limitations in the current implementation:

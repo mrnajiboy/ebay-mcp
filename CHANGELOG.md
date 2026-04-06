@@ -325,6 +325,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `package.json` — `prepare` script now uses `pnpm run build`; author updated to original creator with fork contributor listed; added `pnpm>=9.0.0` engine requirement
 - **Prettier formatting** applied to all `src/` and `tests/` TypeScript files
 - `publish.yml` repurposed — npm publishing disabled out of respect for original creator; now runs build verification on release tags
+- Validation orchestration now builds a source-aware `effectiveContext` before provider execution so event-scope runs are modeled as first-class event validations instead of null-item compatibility shims
+- Hosted validation query context now accepts `resolvedSearchArtist`, `resolvedSearchItem`, `resolvedSearchEvent`, and `resolvedSearchLocation`, and validation debug exposes `effectiveSourceType`, `effectiveContextMode`, `effectiveSearchQuery`, `hasItem`, and `hasEvent`
 
 ### Fixed
 
