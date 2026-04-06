@@ -32,6 +32,7 @@ export interface ValidationCurrentMetrics {
 }
 
 export interface ValidationQueryContext {
+  directQueryActive?: boolean | null;
   resolvedSearchQuery?: string | null;
   validationScope?: string | null;
   queryScope?: string | null;

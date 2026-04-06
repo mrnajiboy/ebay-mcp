@@ -363,6 +363,15 @@ export function getResolvedSearchQuery(request: ValidationRunRequest): string | 
   return sanitizeQueryContextValue(getQueryContext(request)?.resolvedSearchQuery);
 }
 
+function hasExclusiveDirectQueryOverride(request: ValidationRunRequest): boolean {
+  const queryContext = getQueryContext(request);
+
+  return (
+    queryContext?.directQueryActive === true &&
+    sanitizeQueryContextValue(queryContext.queryScope)?.toLowerCase() === 'direct query'
+  );
+}
+
 export function buildProviderQueryResolutionDebug(
   request: ValidationRunRequest,
   queryContextUsed: boolean
@@ -389,10 +398,12 @@ export function prependResolvedQueryCandidate(
       ? resolvedSearchQuery
       : null;
   const queryPlan = usableResolvedQuery
-    ? dedupeQueryPlan([
-        { family: 'resolved_query_context', query: usableResolvedQuery },
-        ...fallbackPlan,
-      ])
+    ? hasExclusiveDirectQueryOverride(request)
+      ? [{ family: 'resolved_query_context', query: usableResolvedQuery }]
+      : dedupeQueryPlan([
+          { family: 'resolved_query_context', query: usableResolvedQuery },
+          ...fallbackPlan,
+        ])
     : fallbackPlan;
 
   return {

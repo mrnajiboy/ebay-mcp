@@ -21,6 +21,7 @@ export const validationCurrentMetricsSchema = z.object({
 });
 
 export const validationQueryContextSchema = z.object({
+  directQueryActive: z.boolean().nullable().optional(),
   resolvedSearchQuery: z.string().nullable().optional(),
   validationScope: z.string().nullable().optional(),
   queryScope: z.string().nullable().optional(),

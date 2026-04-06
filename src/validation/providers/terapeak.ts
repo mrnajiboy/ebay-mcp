@@ -11,7 +11,7 @@ export async function getTerapeakValidationSignals(
   const { queryPlan, queryResolution } = buildResolvedValidationQueryPlan(request);
   const queryCandidates = queryPlan.map((candidate) => candidate.query);
   const currentQuery = queryCandidates[0] ?? null;
-  const previousPobQuery = queryCandidates[1] ?? currentQuery;
+  const previousPobQuery = queryCandidates[1] ?? null;
 
   return {
     avgWatchersPerListing: null,
