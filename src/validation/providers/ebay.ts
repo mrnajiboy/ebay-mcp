@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getBaseUrl } from '@/config/environment.js';
 import type { EbaySellerApi } from '@/api/index.js';
 import type { EbayValidationSignals, ValidationRunRequest } from '../types.js';
-import { buildBrowseQueryPlan } from './query-utils.js';
+import { buildResolvedBrowseQueryPlan } from './query-utils.js';
 
 interface BrowseItemSummary {
   title?: string;
@@ -20,7 +20,7 @@ function round(value: number): number {
 }
 
 export function buildEbayValidationQueries(request: ValidationRunRequest): string[] {
-  return buildBrowseQueryPlan(request).map((candidate) => candidate.query);
+  return buildResolvedBrowseQueryPlan(request).queryPlan.map((candidate) => candidate.query);
 }
 
 function deriveTrend(current: number | null, previous: number | null, fallback: string): string {
@@ -77,7 +77,7 @@ export async function getEbayValidationSignals(
   api: EbaySellerApi,
   request: ValidationRunRequest
 ): Promise<EbayValidationSignals> {
-  const queryPlan = buildBrowseQueryPlan(request);
+  const { queryPlan, queryResolution } = buildResolvedBrowseQueryPlan(request);
   const queryCandidates = queryPlan.map((candidate) => candidate.query);
   const ebayQuery = queryCandidates[0] ?? '';
   const fallbackTrend = request.validation.currentMetrics.marketPriceTrend || 'Stable';
@@ -106,6 +106,7 @@ export async function getEbayValidationSignals(
       day5Sold: request.validation.currentMetrics.day5Sold,
       daysTracked: request.validation.currentMetrics.daysTracked,
     },
+    queryResolution,
   };
 
   if (queryCandidates.length === 0) {
@@ -114,7 +115,10 @@ export async function getEbayValidationSignals(
 
   try {
     const environment = api.getAuthClient().getConfig().environment;
-    const browseUrl = `${getBaseUrl(environment)}/buy/browse/v1/item_summary/search`;
+    const browseUrl = new URL(
+      '/buy/browse/v1/item_summary/search',
+      getBaseUrl(environment)
+    ).toString();
     let selectedResult = emptyResult;
     let bestScore = -1;
     const queryDiagnostics: NonNullable<EbayValidationSignals['queryDiagnostics']> = [];
@@ -186,6 +190,7 @@ export async function getEbayValidationSignals(
               : 'All cleaned browse candidates seen so far returned zero results; keeping the highest-priority candidate for traceability.',
         sampleSize: itemSummaries.length,
         soldVelocity: emptyResult.soldVelocity,
+        queryResolution,
       };
 
       if (itemSummaries.length >= 5 || totalListings >= 5) {
@@ -209,6 +214,7 @@ export async function getEbayValidationSignals(
       errorMessage: error instanceof Error ? error.message : String(error),
       responseStatus: failureDebug.responseStatus,
       responseBodyExcerpt: failureDebug.responseBodyExcerpt,
+      queryResolution,
     };
   }
 }

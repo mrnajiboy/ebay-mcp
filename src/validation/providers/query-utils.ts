@@ -1,8 +1,17 @@
-import type { ValidationRunRequest } from '../types.js';
+import type {
+  ProviderQueryResolutionDebug,
+  ValidationQueryContext,
+  ValidationRunRequest,
+} from '../types.js';
 
 export interface ProviderQueryCandidate {
   family: string;
   query: string;
+}
+
+export interface ResolvedProviderQueryPlan {
+  queryPlan: ProviderQueryCandidate[];
+  queryResolution: ProviderQueryResolutionDebug;
 }
 
 const NOISY_VERSION_PATTERNS = [
@@ -162,6 +171,22 @@ export function getPrimaryAlbumPhrase(request: ValidationRunRequest): string {
   return extractSemanticTokens(cleanedTitle).length > 0 ? cleanedTitle : relatedAlbum;
 }
 
+export function getPrimarySocialAlbumPhrase(request: ValidationRunRequest): string {
+  for (const relatedAlbum of request.item.relatedAlbums) {
+    const sanitizedRelatedAlbum = sanitizeQueryCandidate(relatedAlbum?.trim() ?? '');
+    if (!sanitizedRelatedAlbum) {
+      continue;
+    }
+
+    const conversationAlbum = buildConversationAlbumPhrase(sanitizedRelatedAlbum);
+    if (extractSemanticTokens(conversationAlbum).length > 0) {
+      return conversationAlbum;
+    }
+  }
+
+  return buildConversationAlbumPhrase(getPrimaryAlbumPhrase(request));
+}
+
 function extractMeaningfulTitleToken(value: string): string {
   const tokens = extractSemanticTokens(value);
 
@@ -317,6 +342,65 @@ function dedupeQueryPlan(candidates: ProviderQueryCandidate[]): ProviderQueryCan
   return result;
 }
 
+function sanitizeQueryContextValue(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const sanitized = sanitizeQueryCandidate(value);
+  return sanitized.length > 0 ? sanitized : null;
+}
+
+function isRejectedResolvedQuery(value: string | null): boolean {
+  return value !== null && /^error\s*:/i.test(value);
+}
+
+export function getQueryContext(request: ValidationRunRequest): ValidationQueryContext | undefined {
+  return request.validation.queryContext;
+}
+
+export function getResolvedSearchQuery(request: ValidationRunRequest): string | null {
+  return sanitizeQueryContextValue(getQueryContext(request)?.resolvedSearchQuery);
+}
+
+export function buildProviderQueryResolutionDebug(
+  request: ValidationRunRequest,
+  queryContextUsed: boolean
+): ProviderQueryResolutionDebug {
+  const queryContext = getQueryContext(request);
+  const resolvedSearchQuery = getResolvedSearchQuery(request);
+
+  return {
+    queryContextUsed,
+    querySource: queryContextUsed ? 'resolved_query_context' : 'provider_fallback',
+    resolvedSearchQuery,
+    validationScope: sanitizeQueryContextValue(queryContext?.validationScope),
+    queryScope: sanitizeQueryContextValue(queryContext?.queryScope),
+  };
+}
+
+export function prependResolvedQueryCandidate(
+  request: ValidationRunRequest,
+  fallbackPlan: ProviderQueryCandidate[]
+): ResolvedProviderQueryPlan {
+  const resolvedSearchQuery = getResolvedSearchQuery(request);
+  const usableResolvedQuery =
+    resolvedSearchQuery && !isRejectedResolvedQuery(resolvedSearchQuery)
+      ? resolvedSearchQuery
+      : null;
+  const queryPlan = usableResolvedQuery
+    ? dedupeQueryPlan([
+        { family: 'resolved_query_context', query: usableResolvedQuery },
+        ...fallbackPlan,
+      ])
+    : fallbackPlan;
+
+  return {
+    queryPlan,
+    queryResolution: buildProviderQueryResolutionDebug(request, usableResolvedQuery !== null),
+  };
+}
+
 function isValidConversationQuery(candidate: string): boolean {
   const sanitized = sanitizeQueryCandidate(candidate);
 
@@ -407,6 +491,12 @@ export function buildBrowseQueryPlan(request: ValidationRunRequest): ProviderQue
   );
 }
 
+export function buildResolvedBrowseQueryPlan(
+  request: ValidationRunRequest
+): ResolvedProviderQueryPlan {
+  return prependResolvedQueryCandidate(request, buildBrowseQueryPlan(request));
+}
+
 export function buildBrowseQueryCandidates(request: ValidationRunRequest): string[] {
   return buildBrowseQueryPlan(request).map((candidate) => candidate.query);
 }
@@ -440,31 +530,50 @@ export function buildSoldQueryPlan(request: ValidationRunRequest): ProviderQuery
   );
 }
 
+export function buildResolvedSoldQueryPlan(
+  request: ValidationRunRequest
+): ResolvedProviderQueryPlan {
+  return prependResolvedQueryCandidate(request, buildSoldQueryPlan(request));
+}
+
 export function buildSoldQueryCandidates(request: ValidationRunRequest): string[] {
   return buildSoldQueryPlan(request).map((candidate) => candidate.query);
 }
 
 export function buildTwitterQueryPlan(request: ValidationRunRequest): ProviderQueryCandidate[] {
-  const { primaryArtist, albumPhrase } = buildCorePhrases(request);
+  const { primaryArtist } = buildCorePhrases(request);
   const compactArtist = normalizeSocialSearchPhrase(primaryArtist);
   const compactAlbum = stripPrimaryArtist(
-    buildConversationAlbumPhrase(albumPhrase),
+    getPrimarySocialAlbumPhrase(request),
     compactArtist || primaryArtist
   );
   const artistAlbum = buildCompactPhrase(compactArtist, compactAlbum);
 
-  return finalizeConversationQueryPlan([
-    {
-      family: 'artist_album_conversation',
-      query: artistAlbum,
-    },
-    {
-      family: 'quoted_artist_album',
-      query: artistAlbum ? `"${artistAlbum}"` : '',
-    },
+  const candidates: ProviderQueryCandidate[] = compactAlbum
+    ? [
+        {
+          family: 'artist_album_conversation',
+          query: artistAlbum,
+        },
+        {
+          family: 'quoted_artist_album',
+          query: artistAlbum ? `"${artistAlbum}"` : '',
+        },
+      ]
+    : [];
+
+  candidates.push(
     { family: 'artist_only_fallback', query: compactArtist },
-    { family: 'album_only_fallback', query: compactAlbum },
-  ]);
+    { family: 'album_only_fallback', query: compactAlbum }
+  );
+
+  return finalizeConversationQueryPlan(candidates);
+}
+
+export function buildResolvedTwitterQueryPlan(
+  request: ValidationRunRequest
+): ResolvedProviderQueryPlan {
+  return prependResolvedQueryCandidate(request, buildTwitterQueryPlan(request));
 }
 
 export function buildTwitterQueryCandidates(request: ValidationRunRequest): string[] {
@@ -472,23 +581,34 @@ export function buildTwitterQueryCandidates(request: ValidationRunRequest): stri
 }
 
 export function buildYouTubeQueryPlan(request: ValidationRunRequest): ProviderQueryCandidate[] {
-  const { primaryArtist, albumPhrase } = buildCorePhrases(request);
+  const { primaryArtist } = buildCorePhrases(request);
   const compactArtist = normalizeSocialSearchPhrase(primaryArtist);
   const compactAlbum = stripPrimaryArtist(
-    buildConversationAlbumPhrase(albumPhrase),
+    getPrimarySocialAlbumPhrase(request),
     compactArtist || primaryArtist
   );
   const artistAlbum = buildCompactPhrase(compactArtist, compactAlbum);
 
   return finalizeConversationQueryPlan(
-    [
-      { family: 'artist_album_media_core', query: artistAlbum },
-      { family: 'artist_album_official', query: buildCompactPhrase(artistAlbum, 'official') },
-      { family: 'artist_album_mv', query: buildCompactPhrase(artistAlbum, 'mv') },
-      { family: 'artist_album_music_video', query: buildCompactPhrase(artistAlbum, 'music video') },
-      { family: 'artist_album_teaser', query: buildCompactPhrase(artistAlbum, 'teaser') },
-    ]
+    compactAlbum
+      ? [
+          { family: 'artist_album_media_core', query: artistAlbum },
+          { family: 'artist_album_official', query: buildCompactPhrase(artistAlbum, 'official') },
+          { family: 'artist_album_mv', query: buildCompactPhrase(artistAlbum, 'mv') },
+          {
+            family: 'artist_album_music_video',
+            query: buildCompactPhrase(artistAlbum, 'music video'),
+          },
+          { family: 'artist_album_teaser', query: buildCompactPhrase(artistAlbum, 'teaser') },
+        ]
+      : [{ family: 'artist_only_media_fallback', query: compactArtist }]
   );
+}
+
+export function buildResolvedYouTubeQueryPlan(
+  request: ValidationRunRequest
+): ResolvedProviderQueryPlan {
+  return prependResolvedQueryCandidate(request, buildYouTubeQueryPlan(request));
 }
 
 export function buildYouTubeQueryCandidates(request: ValidationRunRequest): string[] {
@@ -496,21 +616,31 @@ export function buildYouTubeQueryCandidates(request: ValidationRunRequest): stri
 }
 
 export function buildRedditQueryPlan(request: ValidationRunRequest): ProviderQueryCandidate[] {
-  const { primaryArtist, albumPhrase } = buildCorePhrases(request);
-  const artistAlbum = buildCompactPhrase(primaryArtist, albumPhrase);
+  const { primaryArtist } = buildCorePhrases(request);
+  const compactAlbum = stripPrimaryArtist(
+    getPrimarySocialAlbumPhrase(request),
+    normalizeSocialSearchPhrase(primaryArtist) || primaryArtist
+  );
+  const artistAlbum = buildCompactPhrase(primaryArtist, compactAlbum);
 
   return finalizeQueryPlan(
     [
       { family: 'artist_album_discussion', query: artistAlbum },
-      { family: 'album_artist_discussion', query: buildCompactPhrase(albumPhrase, primaryArtist) },
+      { family: 'album_artist_discussion', query: buildCompactPhrase(compactAlbum, primaryArtist) },
       {
         family: 'artist_album_comeback',
-        query: buildCompactPhrase(primaryArtist, albumPhrase, 'discussion'),
+        query: buildCompactPhrase(primaryArtist, compactAlbum, 'discussion'),
       },
     ],
     primaryArtist,
-    albumPhrase
+    compactAlbum
   );
+}
+
+export function buildResolvedRedditQueryPlan(
+  request: ValidationRunRequest
+): ResolvedProviderQueryPlan {
+  return prependResolvedQueryCandidate(request, buildRedditQueryPlan(request));
 }
 
 export function buildRedditQueryCandidates(request: ValidationRunRequest): string[] {
@@ -519,4 +649,10 @@ export function buildRedditQueryCandidates(request: ValidationRunRequest): strin
 
 export function buildValidationQueryCandidates(request: ValidationRunRequest): string[] {
   return buildSoldQueryCandidates(request);
+}
+
+export function buildResolvedValidationQueryPlan(
+  request: ValidationRunRequest
+): ResolvedProviderQueryPlan {
+  return prependResolvedQueryCandidate(request, buildSoldQueryPlan(request));
 }

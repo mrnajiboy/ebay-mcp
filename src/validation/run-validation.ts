@@ -7,6 +7,7 @@ import { getTerapeakValidationSignals } from './providers/terapeak.js';
 import { getSocialValidationSignals } from './providers/social.js';
 import { getChartValidationSignals } from './providers/chart.js';
 import { getPreviousComebackResearchSignals } from './providers/research.js';
+import { buildProviderQueryResolutionDebug } from './providers/query-utils.js';
 import { buildValidationRecommendation } from './recommendation.js';
 
 type ResolvedSocialSignals = Awaited<ReturnType<typeof getSocialValidationSignals>>;
@@ -70,6 +71,7 @@ function getWriteSource(value: unknown, source: string): string {
 }
 
 function buildProviderDebug(
+  request: ValidationRunRequest,
   ebay: Awaited<ReturnType<typeof getEbayValidationSignals>>,
   sold: Awaited<ReturnType<typeof getEbaySoldValidationSignals>>,
   terapeak: ResolvedTerapeakSignals,
@@ -77,6 +79,10 @@ function buildProviderDebug(
   chart: ReturnType<typeof getChartValidationSignals>,
   research: ResolvedResearchSignals
 ): Record<string, unknown> {
+  const requestQueryResolution = buildProviderQueryResolutionDebug(
+    request,
+    Boolean(ebay.queryResolution?.queryContextUsed)
+  );
   const ebayFields = getFieldPresence({
     avgWatchersPerListing: ebay.avgWatchersPerListing,
     preOrderListingsCount: ebay.preOrderListingsCount,
@@ -143,6 +149,14 @@ function buildProviderDebug(
       selectedQuery: ebay.selectedQuery,
       selectedQueryTier: ebay.selectedQueryTier,
       queryDiagnostics: ebay.queryDiagnostics ?? [],
+      queryContextUsed:
+        ebay.queryResolution?.queryContextUsed ?? requestQueryResolution.queryContextUsed,
+      querySource: ebay.queryResolution?.querySource ?? requestQueryResolution.querySource,
+      resolvedSearchQuery:
+        ebay.queryResolution?.resolvedSearchQuery ?? requestQueryResolution.resolvedSearchQuery,
+      validationScope:
+        ebay.queryResolution?.validationScope ?? requestQueryResolution.validationScope,
+      queryScope: ebay.queryResolution?.queryScope ?? requestQueryResolution.queryScope,
       selectionReason: ebay.selectionReason,
       errorMessage: ebay.errorMessage,
       responseStatus: ebay.responseStatus,
@@ -158,6 +172,14 @@ function buildProviderDebug(
       queryCandidates: sold.queryCandidates ?? [],
       selectedQuery: sold.selectedQuery,
       selectedQueryTier: sold.selectedQueryTier,
+      queryContextUsed:
+        sold.queryResolution?.queryContextUsed ?? requestQueryResolution.queryContextUsed,
+      querySource: sold.queryResolution?.querySource ?? requestQueryResolution.querySource,
+      resolvedSearchQuery:
+        sold.queryResolution?.resolvedSearchQuery ?? requestQueryResolution.resolvedSearchQuery,
+      validationScope:
+        sold.queryResolution?.validationScope ?? requestQueryResolution.validationScope,
+      queryScope: sold.queryResolution?.queryScope ?? requestQueryResolution.queryScope,
       contributedFields: soldFields.contributed,
       omittedFields: soldFields.omitted,
       errorMessage: sold.errorMessage,
@@ -172,6 +194,19 @@ function buildProviderDebug(
       ].filter((value): value is string => typeof value === 'string' && value.length > 0),
       currentQuery: terapeak.queryDebug.currentQuery,
       previousPobQuery: terapeak.queryDebug.previousPobQuery,
+      queryContextUsed:
+        terapeak.queryDebug.queryResolution?.queryContextUsed ??
+        requestQueryResolution.queryContextUsed,
+      querySource:
+        terapeak.queryDebug.queryResolution?.querySource ?? requestQueryResolution.querySource,
+      resolvedSearchQuery:
+        terapeak.queryDebug.queryResolution?.resolvedSearchQuery ??
+        requestQueryResolution.resolvedSearchQuery,
+      validationScope:
+        terapeak.queryDebug.queryResolution?.validationScope ??
+        requestQueryResolution.validationScope,
+      queryScope:
+        terapeak.queryDebug.queryResolution?.queryScope ?? requestQueryResolution.queryScope,
       selectedMode: terapeak.queryDebug.selectedMode,
       currentResultCount: terapeak.queryDebug.currentResultCount,
       previousPobResultCount: terapeak.queryDebug.previousPobResultCount,
@@ -182,6 +217,11 @@ function buildProviderDebug(
     social: {
       status: socialStatus,
       confidence: 'low' as const,
+      queryContextUsed: requestQueryResolution.queryContextUsed,
+      querySource: requestQueryResolution.querySource,
+      resolvedSearchQuery: requestQueryResolution.resolvedSearchQuery,
+      validationScope: requestQueryResolution.validationScope,
+      queryScope: requestQueryResolution.queryScope,
       contributedFields: socialFields.contributed,
       omittedFields: socialFields.omitted,
       details: social.debug,
@@ -254,6 +294,10 @@ export async function runValidation(
       chart,
       research,
     });
+    const requestQueryResolution = buildProviderQueryResolutionDebug(
+      request,
+      Boolean(ebay.queryResolution?.queryContextUsed)
+    );
     const mergedSignals = { ebay, sold, terapeak, social, chart, research };
     const socialWrites = {
       ...(social.twitterTrending !== null ? { twitterTrending: social.twitterTrending } : {}),
@@ -385,7 +429,12 @@ export async function runValidation(
         omittedOptionalWrites,
         writeResolution,
         sourceSet: ['ebay', 'sold', 'terapeak', 'social', 'chart', 'research'],
-        providers: buildProviderDebug(ebay, sold, terapeak, social, chart, research),
+        providers: buildProviderDebug(request, ebay, sold, terapeak, social, chart, research),
+        queryContextUsed: requestQueryResolution.queryContextUsed,
+        querySource: requestQueryResolution.querySource,
+        resolvedSearchQuery: requestQueryResolution.resolvedSearchQuery,
+        validationScope: requestQueryResolution.validationScope,
+        queryScope: requestQueryResolution.queryScope,
       },
     };
   } catch (error) {

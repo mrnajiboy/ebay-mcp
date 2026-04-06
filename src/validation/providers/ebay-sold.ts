@@ -6,7 +6,7 @@ import type {
   ValidationSignalConfidence,
   ValidationSoldVelocity,
 } from '../types.js';
-import { buildSoldQueryPlan } from './query-utils.js';
+import { buildResolvedSoldQueryPlan } from './query-utils.js';
 
 interface SoldProviderProduct {
   title?: string;
@@ -168,7 +168,7 @@ export async function getEbaySoldValidationSignals(
 ): Promise<EbaySoldValidationSignals> {
   const soldApiUrl = process.env.SOLD_ITEMS_API_URL?.trim();
   const soldApiKey = process.env.SOLD_ITEMS_API_KEY?.trim();
-  const queryPlan = buildSoldQueryPlan(request);
+  const { queryPlan, queryResolution } = buildResolvedSoldQueryPlan(request);
   const queryCandidates = queryPlan.map((candidate) => candidate.query);
   const query = queryCandidates[0] ?? null;
   const queryDiagnostics: NonNullable<EbaySoldValidationSignals['queryDiagnostics']> = [];
@@ -177,6 +177,7 @@ export async function getEbaySoldValidationSignals(
     return {
       ...createEmptySoldSignals(query, queryCandidates, 'unavailable'),
       queryDiagnostics,
+      queryResolution,
     };
   }
 
@@ -189,6 +190,7 @@ export async function getEbaySoldValidationSignals(
     let selectedResult = {
       ...createEmptySoldSignals(query, queryCandidates, 'unavailable'),
       queryDiagnostics,
+      queryResolution,
     };
     let lastErrorMessage: string | undefined;
 
@@ -244,6 +246,7 @@ export async function getEbaySoldValidationSignals(
           selectedQueryTier: index + 1,
           responseUrl: typeof data.response_url === 'string' ? data.response_url : null,
           status: data.success === false ? 'error' : 'ok',
+          queryResolution,
         };
 
         if ((soldResultsCount ?? 0) >= 5) {
@@ -266,10 +269,14 @@ export async function getEbaySoldValidationSignals(
       return {
         ...createEmptySoldSignals(query, queryCandidates, 'error', lastErrorMessage),
         queryDiagnostics,
+        queryResolution,
       };
     }
 
-    return selectedResult;
+    return {
+      ...selectedResult,
+      queryResolution,
+    };
   } catch (error) {
     return {
       ...createEmptySoldSignals(
@@ -279,6 +286,7 @@ export async function getEbaySoldValidationSignals(
         error instanceof Error ? error.message : String(error)
       ),
       queryDiagnostics,
+      queryResolution,
     };
   }
 }

@@ -89,7 +89,7 @@
     "@types/supertest": "^7.2.0",
     "@types/update-notifier": "^6.0.8",
     "@vitest/coverage-v8": "^4.0.18",
-    "@vitest/eslint-plugin": "^1.6.12",
+    "@vitest/eslint-plugin": "^1.6.14",
     "@vitest/ui": "^4.0.18",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
@@ -101,7 +101,7 @@
     "tsc-alias": "^1.8.16",
     "tsx": "^4.19.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.1",
+    "typescript-eslint": "^8.58.0",
     "vitest": "^4.0.18"
   },
   "packageManager": "pnpm@10.14.0",

@@ -1,6 +1,6 @@
 import type { EbaySellerApi } from '@/api/index.js';
 import type { TerapeakValidationSignals, ValidationRunRequest } from '../types.js';
-import { buildValidationQueryCandidates } from './query-utils.js';
+import { buildResolvedValidationQueryPlan } from './query-utils.js';
 
 export async function getTerapeakValidationSignals(
   _api: EbaySellerApi,
@@ -8,7 +8,8 @@ export async function getTerapeakValidationSignals(
 ): Promise<TerapeakValidationSignals> {
   await Promise.resolve();
 
-  const queryCandidates = buildValidationQueryCandidates(request);
+  const { queryPlan, queryResolution } = buildResolvedValidationQueryPlan(request);
+  const queryCandidates = queryPlan.map((candidate) => candidate.query);
   const currentQuery = queryCandidates[0] ?? null;
   const previousPobQuery = queryCandidates[1] ?? currentQuery;
 
@@ -30,6 +31,7 @@ export async function getTerapeakValidationSignals(
       selectedMode: 'combined',
       currentResultCount: null,
       previousPobResultCount: null,
+      queryResolution,
       notes:
         'Terapeak/eBay research provider contract is in place, but live authenticated research retrieval is not implemented yet.',
     },

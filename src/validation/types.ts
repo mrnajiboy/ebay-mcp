@@ -31,6 +31,20 @@ export interface ValidationCurrentMetrics {
   daysTracked: number | null;
 }
 
+export interface ValidationQueryContext {
+  resolvedSearchQuery?: string | null;
+  validationScope?: string | null;
+  queryScope?: string | null;
+}
+
+export interface ProviderQueryResolutionDebug {
+  queryContextUsed: boolean;
+  querySource: 'resolved_query_context' | 'provider_fallback';
+  resolvedSearchQuery: string | null;
+  validationScope: string | null;
+  queryScope: string | null;
+}
+
 export interface ValidationRunRequest {
   validationId: string;
   runType: 'scheduled' | 'manual';
@@ -59,6 +73,7 @@ export interface ValidationRunRequest {
     artistTier: string;
     initialBudget: number | null;
     reserveBudget: number | null;
+    queryContext?: ValidationQueryContext;
     currentMetrics: ValidationCurrentMetrics;
   };
 }
@@ -87,6 +102,7 @@ export interface EbayValidationSignals {
   responseBodyExcerpt?: string | null;
   sampleSize: number;
   soldVelocity: ValidationSoldVelocity;
+  queryResolution?: ProviderQueryResolutionDebug;
 }
 
 export interface SoldItemSample {
@@ -121,6 +137,7 @@ export interface EbaySoldValidationSignals {
   responseUrl: string | null;
   status: 'ok' | 'unavailable' | 'error';
   errorMessage?: string;
+  queryResolution?: ProviderQueryResolutionDebug;
 }
 
 export interface SocialValidationSignals {
@@ -146,6 +163,7 @@ export interface SocialValidationSignals {
       recentResultCount?: number | null;
       confidence?: ValidationSignalConfidence;
       note?: string;
+      queryResolution?: ProviderQueryResolutionDebug;
     };
     youtube?: {
       checked: boolean;
@@ -200,6 +218,7 @@ export interface SocialValidationSignals {
       avgDailyViews?: number | null;
       confidence?: ValidationSignalConfidence;
       note?: string;
+      queryResolution?: ProviderQueryResolutionDebug;
     };
     reddit?: {
       checked: boolean;
@@ -219,6 +238,7 @@ export interface SocialValidationSignals {
       pageLimitReached?: boolean | null;
       confidence?: ValidationSignalConfidence;
       note?: string;
+      queryResolution?: ProviderQueryResolutionDebug;
     };
   };
 }
@@ -242,6 +262,7 @@ export interface TerapeakValidationSignals {
     currentResultCount?: number | null;
     previousPobResultCount?: number | null;
     notes?: string | null;
+    queryResolution?: ProviderQueryResolutionDebug;
   };
 }
 

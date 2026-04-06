@@ -20,6 +20,12 @@ export const validationCurrentMetricsSchema = z.object({
   daysTracked: z.number().nullable(),
 });
 
+export const validationQueryContextSchema = z.object({
+  resolvedSearchQuery: z.string().nullable().optional(),
+  validationScope: z.string().nullable().optional(),
+  queryScope: z.string().nullable().optional(),
+});
+
 export const validationRunRequestSchema = z.object({
   validationId: z.string().min(1),
   runType: z.enum(['scheduled', 'manual']),
@@ -48,6 +54,7 @@ export const validationRunRequestSchema = z.object({
     artistTier: z.string(),
     initialBudget: z.number().nullable(),
     reserveBudget: z.number().nullable(),
+    queryContext: validationQueryContextSchema.optional(),
     currentMetrics: validationCurrentMetricsSchema,
   }),
 });
