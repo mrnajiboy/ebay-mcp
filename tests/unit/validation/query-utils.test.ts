@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildValidationEffectiveContext } from '@/validation/effective-context.js';
-import { validationRunRequestSchema } from '@/validation/schemas.js';
-import type { ValidationRunRequest } from '@/validation/types.js';
+import { buildValidationEffectiveContext } from '../../../src/validation/effective-context.js';
+import { validationRunRequestSchema } from '../../../src/validation/schemas.js';
+import type { ValidationRunRequest } from '../../../src/validation/types.js';
 import {
   buildResolvedBrowseQueryPlan,
   buildResolvedRedditQueryPlan,
@@ -9,7 +9,8 @@ import {
   buildResolvedTwitterQueryPlan,
   buildResolvedValidationQueryPlan,
   buildResolvedYouTubeQueryPlan,
-} from '@/validation/providers/query-utils.js';
+  normalizeSocialSearchPhrase,
+} from '../../../src/validation/providers/query-utils.js';
 
 function createRequest(
   queryContext: ValidationRunRequest['validation']['queryContext'],
@@ -151,9 +152,11 @@ describe('resolved validation query plans', () => {
 
     expect(plan.queryPlan[0]).toEqual({ family: 'resolved_query_context', query: 'test' });
     expect(plan.queryPlan.length).toBeGreaterThan(1);
-    expect(plan.queryPlan.some((candidate) => candidate.family !== 'resolved_query_context')).toBe(
-      true
-    );
+    expect(
+      plan.queryPlan.some(
+        (candidate: { family: string }) => candidate.family !== 'resolved_query_context'
+      )
+    ).toBe(true);
   });
 });
 
@@ -256,8 +259,80 @@ describe('effective validation context', () => {
 
     expect(plan.queryPlan.length).toBeGreaterThan(0);
     expect(plan.queryPlan[0]?.query).toContain('IU');
-    expect(plan.queryPlan.some((candidate) => candidate.query.includes('H.E.R. World Tour'))).toBe(
-      true
+    expect(
+      plan.queryPlan.some((candidate: { query: string }) =>
+        candidate.query.includes('H.E.R. World Tour')
+      )
+    ).toBe(true);
+  });
+});
+
+describe('social query normalization', () => {
+  it('preserves legitimate title tokens while stripping packaging-only variation phrases', () => {
+    expect(normalizeSocialSearchPhrase('BTS The Package Random Ver.')).toBe('BTS The Package');
+  });
+
+  it('preserves exact direct-query overrides for social providers', () => {
+    const request = createRequest({
+      directQueryActive: true,
+      queryScope: 'Direct Query',
+      resolvedSearchQuery: 'BTS The Package POB preorder alert',
+    });
+
+    expect(buildResolvedTwitterQueryPlan(request).queryPlan).toEqual([
+      { family: 'resolved_query_context', query: 'BTS The Package POB preorder alert' },
+    ]);
+    expect(buildResolvedYouTubeQueryPlan(request).queryPlan).toEqual([
+      { family: 'resolved_query_context', query: 'BTS The Package POB preorder alert' },
+    ]);
+    expect(buildResolvedRedditQueryPlan(request).queryPlan).toEqual([
+      { family: 'resolved_query_context', query: 'BTS The Package POB preorder alert' },
+    ]);
+  });
+
+  it('retains scoped social fallbacks when the resolved query normalizes away to nothing', () => {
+    const request = createRequest(
+      {
+        directQueryActive: false,
+        queryScope: 'Artist + City / Country / State/Province',
+        resolvedSearchQuery: 'POB Random Ver.',
+      },
+      {
+        name: 'BTS The Package Random Ver.',
+        variation: ['Random Ver.'],
+        canonicalArtists: ['BTS'],
+        relatedAlbums: ['The Package'],
+      }
     );
+
+    expect(buildResolvedTwitterQueryPlan(request).queryPlan).toEqual([
+      { family: 'artist_album_conversation', query: 'BTS The Package' },
+      { family: 'artist_only_fallback', query: 'BTS' },
+      { family: 'album_only_fallback', query: 'The Package' },
+    ]);
+    expect(buildResolvedYouTubeQueryPlan(request).queryPlan[0]?.query).toBe('BTS The Package');
+    expect(buildResolvedRedditQueryPlan(request).queryPlan[0]?.query).toBe('BTS The Package');
+  });
+
+  it('keeps legitimate package titles in resolved social query plans', () => {
+    const request = createRequest(
+      {
+        directQueryActive: false,
+        queryScope: 'Artist + Album',
+      },
+      {
+        name: 'BTS The Package Random Ver.',
+        variation: ['Random Ver.'],
+        canonicalArtists: ['BTS'],
+        relatedAlbums: ['The Package'],
+      }
+    );
+
+    const twitterPlan = buildResolvedTwitterQueryPlan(request);
+
+    expect(twitterPlan.queryPlan[0]?.query).toBe('BTS The Package');
+    expect(
+      twitterPlan.queryPlan.some((candidate: { query: string }) => candidate.query.includes('Package'))
+    ).toBe(true);
   });
 });

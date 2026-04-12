@@ -15,6 +15,15 @@ export interface ResolvedProviderQueryPlan {
   queryResolution: ProviderQueryResolutionDebug;
 }
 
+export interface SocialQueryContextDebug {
+  rawItemTitleInput: string;
+  rawSocialQueryInput: string;
+  normalizedSocialAlbumPhrase: string;
+  normalizedSocialQueryBase: string;
+  strippedVariationTerms: string[];
+  variationStripNote?: string;
+}
+
 type DeclaredQueryScope =
   | 'artist_only'
   | 'artist_item'
@@ -59,9 +68,27 @@ const GENERIC_DESCRIPTOR_PATTERN =
 const BROWSE_DESCRIPTOR_HINT_PATTERN =
   /\blimited\b|\bdeluxe\b|\bdigipack\b|\bplatform\b|\bjewel\b|\bphotobook\b|\bkit\b|\bpoca\b|\bweverse\b|\bcompact\b|\btarget\b|\bexclusive\b|\bsigned\b|\bvinyl\b|\blp\b|\bstandard\b/i;
 const SOCIAL_CONVERSATION_NOISE_PATTERN =
-  /\b(?:lp|vinyl|cd|photobook|digipack|platform|jewel|compact|kit|poca|weverse|standard|limited|deluxe|edition|version|ver\.?)\b/gi;
+  /\b(?:lp|vinyl|cd|photobook|digipack|platform|jewel|compact|kit|poca|pocaalbum|weverse|nemo|qr|standard|limited|deluxe|version|ver\.?)\b/gi;
 const SOCIAL_LISTING_NOISE_PATTERN =
   /\b(?:set|lot|bundle|sealed|official merch|merch(?:andise)?|shop|store|benefit|photocard|pob|pre\s*order|preorder|fanmade|replica|unofficial|listing|sale)\b/gi;
+const SOCIAL_VARIATION_NOISE_PATTERNS = [
+  /\bmember\s+selection\b/gi,
+  /\ball\s+set\b/gi,
+  /\bplush\s+key\s*ring(?:\s+(?:ver(?:sion)?|edition|package))?\b/gi,
+  /\bsmart\s+album\b/gi,
+  /\bpoca\s*album\b|\bpocaalbum\b/gi,
+  /\b(?:jewel|photobook|weverse(?:\s+albums?)?|limited|platform|qr|nemo|digipack|kit|compact|standard|deluxe)\s+(?:ver(?:sion)?|edition|package)\b/gi,
+  /\b(?:jewel|photobook|weverse(?:\s+albums?)?|limited|platform|qr|nemo|digipack|kit|compact|standard|deluxe|random|ver(?:sion)?|edition|package)\b/gi,
+];
+const SOCIAL_QUERY_VARIATION_NOISE_PATTERNS = [
+  /\bmember\s+selection\b/gi,
+  /\ball\s+set\b/gi,
+  /\bplush\s+key\s*ring(?:\s+(?:ver(?:sion)?|edition|package))?\b/gi,
+  /\bsmart\s+album\b/gi,
+  /\bpoca\s*album\b|\bpocaalbum\b/gi,
+  /\b(?:jewel|photobook|weverse(?:\s+albums?)?|limited|platform|qr|nemo|digipack|kit|compact|standard|deluxe)\s+(?:ver(?:sion)?|edition|package)\b/gi,
+  /\brandom\s+ver(?:sion)?\b/gi,
+];
 
 export function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
@@ -77,6 +104,35 @@ export function sanitizeQueryCandidate(query: string): string {
     .replace(/[\s\-–—:;,./]+$/, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function ensureGlobalPattern(pattern: RegExp): RegExp {
+  return new RegExp(
+    pattern.source,
+    pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`
+  );
+}
+
+function dedupeNormalizedValues(values: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const value of values) {
+    const normalized = sanitizeQueryCandidate(value);
+    if (!normalized) {
+      continue;
+    }
+
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    result.push(normalized);
+  }
+
+  return result;
 }
 
 function tokenizeQuery(value: string): string[] {
@@ -128,6 +184,26 @@ function stripArtistsFromText(value: string, artists: string[]): string {
 
     return result.replace(new RegExp(escapeRegExp(sanitizedArtist), 'ig'), ' ');
   }, value);
+}
+
+function stripSocialVariationNoise(value: string): string {
+  let normalized = value;
+
+  for (const pattern of SOCIAL_QUERY_VARIATION_NOISE_PATTERNS) {
+    normalized = normalized.replace(pattern, ' ');
+  }
+
+  return normalized;
+}
+
+function collectSocialVariationTerms(value: string): string[] {
+  return dedupeNormalizedValues(
+    SOCIAL_VARIATION_NOISE_PATTERNS.flatMap((pattern) =>
+      Array.from(value.matchAll(ensureGlobalPattern(pattern)), (match) =>
+        sanitizeQueryCandidate(match[0] ?? '')
+      )
+    )
+  );
 }
 
 function stripPrimaryArtist(candidate: string, primaryArtist: string): string {
@@ -205,35 +281,71 @@ export function getPrimaryAlbumPhrase(request: ValidationRunRequest): string {
 }
 
 export function getPrimarySocialAlbumPhrase(request: ValidationRunRequest): string {
+  return getSocialQueryContextDebug(request).normalizedSocialAlbumPhrase;
+}
+
+function getRawSocialQueryInput(request: ValidationRunRequest): string {
   const effectiveContext = getValidationEffectiveContext(request);
 
   if (effectiveContext.sourceType === 'event') {
-    const eventPhrase = buildConversationAlbumPhrase(
+    return sanitizeQueryCandidate(
       buildCompactPhrase(
         effectiveContext.searchEvent ?? '',
         effectiveContext.searchItem ?? '',
         effectiveContext.searchLocation ?? ''
       )
     );
+  }
 
-    if (extractSemanticTokens(eventPhrase).length > 0) {
-      return eventPhrase;
-    }
+  const contextAlbum = sanitizeQueryCandidate(effectiveContext.searchAlbum ?? '');
+  if (contextAlbum) {
+    return contextAlbum;
   }
 
   for (const relatedAlbum of request.item.relatedAlbums) {
     const sanitizedRelatedAlbum = sanitizeQueryCandidate(relatedAlbum?.trim() ?? '');
-    if (!sanitizedRelatedAlbum) {
-      continue;
-    }
-
-    const conversationAlbum = buildConversationAlbumPhrase(sanitizedRelatedAlbum);
-    if (extractSemanticTokens(conversationAlbum).length > 0) {
-      return conversationAlbum;
+    if (sanitizedRelatedAlbum) {
+      return sanitizedRelatedAlbum;
     }
   }
 
-  return buildConversationAlbumPhrase(getPrimaryAlbumPhrase(request));
+  return sanitizeQueryCandidate(effectiveContext.searchItem ?? request.item.name);
+}
+
+export function getSocialQueryContextDebug(request: ValidationRunRequest): SocialQueryContextDebug {
+  const effectiveContext = getValidationEffectiveContext(request);
+  const primaryArtist = normalizeSocialSearchPhrase(getPrimaryArtist(request));
+  const rawItemTitleInput = sanitizeQueryCandidate(request.item.name);
+  const rawSocialQueryInput = getRawSocialQueryInput(request);
+  const normalizedSocialAlbumPhrase = stripPrimaryArtist(
+    buildConversationAlbumPhrase(rawSocialQueryInput),
+    primaryArtist || getPrimaryArtist(request)
+  );
+  const normalizedSocialQueryBase =
+    buildCompactPhrase(primaryArtist, normalizedSocialAlbumPhrase) ||
+    primaryArtist ||
+    normalizedSocialAlbumPhrase;
+  const strippedVariationTerms = dedupeNormalizedValues(
+    [
+      request.item.name,
+      rawSocialQueryInput,
+      effectiveContext.searchItem ?? '',
+      effectiveContext.searchAlbum ?? '',
+      ...request.item.variation,
+    ].flatMap((value) => collectSocialVariationTerms(value ?? ''))
+  );
+
+  return {
+    rawItemTitleInput,
+    rawSocialQueryInput,
+    normalizedSocialAlbumPhrase,
+    normalizedSocialQueryBase,
+    strippedVariationTerms,
+    variationStripNote:
+      strippedVariationTerms.length > 0
+        ? `Variation terms stripped for social broadening: ${strippedVariationTerms.join(', ')}`
+        : undefined,
+  };
 }
 
 function extractMeaningfulTitleToken(value: string): string {
@@ -305,7 +417,7 @@ function buildCompactPhrase(...parts: string[]): string {
 
 export function normalizeSocialSearchPhrase(value: string): string {
   return sanitizeQueryCandidate(
-    stripBracketCharacters(simplifyItemTitle(value))
+    stripSocialVariationNoise(stripBracketCharacters(simplifyItemTitle(value)))
       .replace(/[“”"'`]+/g, ' ')
       .replace(/[&]+/g, ' and ')
       .replace(/[,:;/\\|]+/g, ' ')
@@ -427,7 +539,7 @@ export function getResolvedSearchQuery(request: ValidationRunRequest): string | 
   return sanitizeQueryContextValue(getQueryContext(request)?.resolvedSearchQuery);
 }
 
-function getUsableResolvedSearchQuery(request: ValidationRunRequest): string | null {
+export function getUsableResolvedSearchQuery(request: ValidationRunRequest): string | null {
   const resolvedSearchQuery = getResolvedSearchQuery(request);
 
   return resolvedSearchQuery && !isRejectedResolvedQuery(resolvedSearchQuery)
@@ -488,12 +600,32 @@ function resolveDeclaredQueryScope(request: ValidationRunRequest): DeclaredQuery
   return 'unknown';
 }
 
-function hasExclusiveDirectQueryOverride(request: ValidationRunRequest): boolean {
+export function hasExclusiveDirectQueryOverride(request: ValidationRunRequest): boolean {
   const queryContext = getQueryContext(request);
 
   return (
     queryContext?.directQueryActive === true && getNormalizedQueryScope(request) === 'direct query'
   );
+}
+
+function getEffectiveResolvedQueryCandidate(
+  request: ValidationRunRequest,
+  queryNormalizer?: (query: string) => string
+): string | null {
+  const usableResolvedQuery = getUsableResolvedSearchQuery(request);
+  if (usableResolvedQuery === null) {
+    return null;
+  }
+
+  if (hasExclusiveDirectQueryOverride(request)) {
+    return usableResolvedQuery;
+  }
+
+  const normalizedResolvedQuery = sanitizeQueryCandidate(
+    queryNormalizer ? queryNormalizer(usableResolvedQuery) : usableResolvedQuery
+  );
+
+  return normalizedResolvedQuery || null;
 }
 
 function finalizeLooseQueryPlan(candidates: ProviderQueryCandidate[]): ProviderQueryCandidate[] {
@@ -527,9 +659,10 @@ function buildArtistOnlySocialFallbackPlan(
 function constrainFallbackPlanForScope(
   request: ValidationRunRequest,
   fallbackPlan: ProviderQueryCandidate[],
-  scopeSpecificFallbackPlan: ProviderQueryCandidate[]
+  scopeSpecificFallbackPlan: ProviderQueryCandidate[],
+  queryNormalizer?: (query: string) => string
 ): ProviderQueryCandidate[] {
-  if (getUsableResolvedSearchQuery(request) === null) {
+  if (getEffectiveResolvedQueryCandidate(request, queryNormalizer) === null) {
     return fallbackPlan;
   }
 
@@ -566,21 +699,24 @@ export function buildProviderQueryResolutionDebug(
 
 export function prependResolvedQueryCandidate(
   request: ValidationRunRequest,
-  fallbackPlan: ProviderQueryCandidate[]
+  fallbackPlan: ProviderQueryCandidate[],
+  queryNormalizer?: (query: string) => string
 ): ResolvedProviderQueryPlan {
-  const usableResolvedQuery = getUsableResolvedSearchQuery(request);
-  const queryPlan = usableResolvedQuery
-    ? hasExclusiveDirectQueryOverride(request)
-      ? [{ family: 'resolved_query_context', query: usableResolvedQuery }]
+  const normalizedResolvedQuery = getEffectiveResolvedQueryCandidate(request, queryNormalizer);
+  const exclusiveDirectQueryOverride =
+    normalizedResolvedQuery !== null && hasExclusiveDirectQueryOverride(request);
+  const queryPlan = normalizedResolvedQuery
+    ? exclusiveDirectQueryOverride
+      ? [{ family: 'resolved_query_context', query: normalizedResolvedQuery }]
       : dedupeQueryPlan([
-          { family: 'resolved_query_context', query: usableResolvedQuery },
+          { family: 'resolved_query_context', query: normalizedResolvedQuery },
           ...fallbackPlan,
         ])
     : fallbackPlan;
 
   return {
     queryPlan,
-    queryResolution: buildProviderQueryResolutionDebug(request, usableResolvedQuery !== null),
+    queryResolution: buildProviderQueryResolutionDebug(request, normalizedResolvedQuery !== null),
   };
 }
 
@@ -839,22 +975,16 @@ export function buildSoldQueryCandidates(request: ValidationRunRequest): string[
 
 export function buildTwitterQueryPlan(request: ValidationRunRequest): ProviderQueryCandidate[] {
   const { primaryArtist } = buildCorePhrases(request);
+  const socialQueryContext = getSocialQueryContextDebug(request);
   const compactArtist = normalizeSocialSearchPhrase(primaryArtist);
-  const compactAlbum = stripPrimaryArtist(
-    getPrimarySocialAlbumPhrase(request),
-    compactArtist || primaryArtist
-  );
-  const artistAlbum = buildCompactPhrase(compactArtist, compactAlbum);
+  const compactAlbum = socialQueryContext.normalizedSocialAlbumPhrase;
+  const artistAlbum = socialQueryContext.normalizedSocialQueryBase;
 
   const candidates: ProviderQueryCandidate[] = compactAlbum
     ? [
         {
           family: 'artist_album_conversation',
           query: artistAlbum,
-        },
-        {
-          family: 'quoted_artist_album',
-          query: artistAlbum ? `"${artistAlbum}"` : '',
         },
       ]
     : [];
@@ -875,8 +1005,10 @@ export function buildResolvedTwitterQueryPlan(
     constrainFallbackPlanForScope(
       request,
       buildTwitterQueryPlan(request),
-      buildArtistOnlySocialFallbackPlan(request)
-    )
+      buildArtistOnlySocialFallbackPlan(request),
+      normalizeSocialSearchPhrase
+    ),
+    normalizeSocialSearchPhrase
   );
 }
 
@@ -886,12 +1018,10 @@ export function buildTwitterQueryCandidates(request: ValidationRunRequest): stri
 
 export function buildYouTubeQueryPlan(request: ValidationRunRequest): ProviderQueryCandidate[] {
   const { primaryArtist } = buildCorePhrases(request);
+  const socialQueryContext = getSocialQueryContextDebug(request);
   const compactArtist = normalizeSocialSearchPhrase(primaryArtist);
-  const compactAlbum = stripPrimaryArtist(
-    getPrimarySocialAlbumPhrase(request),
-    compactArtist || primaryArtist
-  );
-  const artistAlbum = buildCompactPhrase(compactArtist, compactAlbum);
+  const compactAlbum = socialQueryContext.normalizedSocialAlbumPhrase;
+  const artistAlbum = socialQueryContext.normalizedSocialQueryBase;
 
   return finalizeConversationQueryPlan(
     compactAlbum
@@ -899,11 +1029,8 @@ export function buildYouTubeQueryPlan(request: ValidationRunRequest): ProviderQu
           { family: 'artist_album_media_core', query: artistAlbum },
           { family: 'artist_album_official', query: buildCompactPhrase(artistAlbum, 'official') },
           { family: 'artist_album_mv', query: buildCompactPhrase(artistAlbum, 'mv') },
-          {
-            family: 'artist_album_music_video',
-            query: buildCompactPhrase(artistAlbum, 'music video'),
-          },
           { family: 'artist_album_teaser', query: buildCompactPhrase(artistAlbum, 'teaser') },
+          { family: 'artist_only_media_fallback', query: compactArtist },
         ]
       : [{ family: 'artist_only_media_fallback', query: compactArtist }]
   );
@@ -917,8 +1044,10 @@ export function buildResolvedYouTubeQueryPlan(
     constrainFallbackPlanForScope(
       request,
       buildYouTubeQueryPlan(request),
-      buildArtistOnlySocialFallbackPlan(request)
-    )
+      buildArtistOnlySocialFallbackPlan(request),
+      normalizeSocialSearchPhrase
+    ),
+    normalizeSocialSearchPhrase
   );
 }
 
@@ -928,23 +1057,25 @@ export function buildYouTubeQueryCandidates(request: ValidationRunRequest): stri
 
 export function buildRedditQueryPlan(request: ValidationRunRequest): ProviderQueryCandidate[] {
   const { primaryArtist } = buildCorePhrases(request);
-  const compactAlbum = stripPrimaryArtist(
-    getPrimarySocialAlbumPhrase(request),
-    normalizeSocialSearchPhrase(primaryArtist) || primaryArtist
-  );
-  const artistAlbum = buildCompactPhrase(primaryArtist, compactAlbum);
+  const compactArtist = normalizeSocialSearchPhrase(primaryArtist);
+  const socialQueryContext = getSocialQueryContextDebug(request);
+  const compactAlbum = socialQueryContext.normalizedSocialAlbumPhrase;
+  const artistAlbum = socialQueryContext.normalizedSocialQueryBase;
 
-  return finalizeQueryPlan(
-    [
-      { family: 'artist_album_discussion', query: artistAlbum },
-      { family: 'album_artist_discussion', query: buildCompactPhrase(compactAlbum, primaryArtist) },
-      {
-        family: 'artist_album_comeback',
-        query: buildCompactPhrase(primaryArtist, compactAlbum, 'discussion'),
-      },
-    ],
-    primaryArtist,
+  return finalizeConversationQueryPlan(
     compactAlbum
+      ? [
+          { family: 'artist_album_discussion', query: artistAlbum },
+          {
+            family: 'album_artist_discussion',
+            query: buildCompactPhrase(compactAlbum, compactArtist),
+          },
+          {
+            family: 'artist_album_comeback',
+            query: buildCompactPhrase(artistAlbum, 'discussion'),
+          },
+        ]
+      : [{ family: 'artist_only_fallback', query: compactArtist }]
   );
 }
 
@@ -956,8 +1087,10 @@ export function buildResolvedRedditQueryPlan(
     constrainFallbackPlanForScope(
       request,
       buildRedditQueryPlan(request),
-      buildArtistOnlySocialFallbackPlan(request)
-    )
+      buildArtistOnlySocialFallbackPlan(request),
+      normalizeSocialSearchPhrase
+    ),
+    normalizeSocialSearchPhrase
   );
 }
 

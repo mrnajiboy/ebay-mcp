@@ -463,7 +463,8 @@ Current module layout:
 - [`src/validation/recommendation.ts`](src/validation/recommendation.ts) — recommendation and automation decision logic
 - [`src/validation/providers/ebay.ts`](src/validation/providers/ebay.ts) — live eBay browse-market snapshot provider using the server's existing user-scoped eBay API client
 - [`src/validation/providers/ebay-sold.ts`](src/validation/providers/ebay-sold.ts) — temporary sold-data provider backed by an external API via `SOLD_ITEMS_API_URL` and `SOLD_ITEMS_API_KEY`
-- [`src/validation/providers/terapeak.ts`](src/validation/providers/terapeak.ts) — stable Terapeak/eBay research contract provider for current-market and previous-POB metrics; currently a placeholder contract, not a live authenticated research integration yet
+- [`src/validation/providers/terapeak.ts`](src/validation/providers/terapeak.ts) — authenticated eBay Research provider orchestration for current-market and previous-POB metrics, including candidate scoring, fallback diagnostics, and sold-velocity bucketing
+- [`src/validation/providers/ebay-research.ts`](src/validation/providers/ebay-research.ts) — low-level authenticated eBay Research fetcher with session-cookie sourcing, response parsing, and auth-aware cache invalidation
 - [`src/validation/providers/query-utils.ts`](src/validation/providers/query-utils.ts) — shared multi-tier query candidate and fallback helpers used by browse and sold providers
 - [`src/validation/providers/social.ts`](src/validation/providers/social.ts) — phase-1 social provider for recent Twitter/X activity, YouTube view-rate proxy data, and Reddit recent-post counts with graceful degradation
 - [`src/validation/providers/chart.ts`](src/validation/providers/chart.ts) — chart-signal stub reserved for later implementation
@@ -519,7 +520,7 @@ The current merge order is fixed in [`runValidation()`](src/validation/run-valid
 
 - **Watchers / preorder count / shipping / competition** prefer Terapeak contract output when available, then fall back to the browse/current-market provider.
 - **Market price** prefers Terapeak contract output, then the sold provider's median sold price, then the browse/current-market provider.
-- **Sold day buckets** (`day1Sold` through `day5Sold`, plus `daysTracked`) prefer the sold provider and only fall back to browse-derived values when sold enrichment is missing.
+- **Sold day buckets** (`day1Sold` through `day5Sold`, plus `daysTracked`) prefer the sold provider, then authenticated eBay Research sold-row bucketing, then the browse/current-market provider.
 - **Previous POB metrics** (`previousPobAvgPriceUsd`, `previousPobSellThroughPct`) are written from the Terapeak contract output when available.
 - **Previous comeback first-week sales** (`previousComebackFirstWeekSales`) is written from the orchestration-side research provider when available.
 - **Supportive social fields** are only written when a value is actually resolved, so the pipeline avoids blanking previously stored downstream data.
@@ -565,7 +566,7 @@ Runs the validation pipeline for the target environment.
 
 The request/response contract is defined in [`src/validation/types.ts`](src/validation/types.ts), and the orchestration behavior is implemented in [`src/validation/run-validation.ts`](src/validation/run-validation.ts).
 
-The `writes` payload is intentionally non-destructive for supportive and placeholder-backed optional fields: if a social, Terapeak placeholder, or research placeholder provider cannot resolve data, the orchestration omits those optional writes instead of overwriting existing downstream values with empty placeholders.
+The `writes` payload is intentionally non-destructive for supportive and optional fields: if a social, authenticated eBay Research, or previous-comeback research provider cannot resolve data, the orchestration omits those optional writes instead of overwriting existing downstream values with empty placeholders.
 
 #### `GET /validation/health`
 
@@ -610,7 +611,7 @@ Current backend status:
 
 - eBay live market snapshot support is implemented and wired into orchestration.
 - Sold-data enrichment is implemented through a **temporary external provider** abstraction.
-- Terapeak/eBay research and previous-comeback research are both wired into orchestration as **stable placeholder contracts**.
+- Authenticated eBay Research is wired into orchestration for current-market and previous-POB retrieval, while previous-comeback research remains a separate placeholder contract.
 - Social support signals are implemented in phase 1.
 - Chart data remains a stub.
 - Validation is currently an **admin-operated hosted backend workflow**, not an MCP tool surface.
@@ -621,7 +622,8 @@ Provider behavior:
 - **Browse/eBay provider:** [`src/validation/providers/ebay.ts`](src/validation/providers/ebay.ts) uses the eBay Browse API plus shared query fallback logic from [`src/validation/providers/query-utils.ts`](src/validation/providers/query-utils.ts). It walks multiple query candidates, records the selected query and tier in debug output, and uses heuristic matching rather than a strict catalog identity join. Event-driven runs now build those fallback queries from normalized event context instead of raw item title assumptions.
 - **Browse debug semantics:** validation debug now keeps browse candidate generation, selected query/tier, browse-specific sample size, and per-candidate result counts separate from sold-provider result counts so operators can tell whether the browse layer contributed a field, fell back to a weaker query, or returned no usable match.
 - **Sold provider:** [`src/validation/providers/ebay-sold.ts`](src/validation/providers/ebay-sold.ts) uses a temporary external sold-data source configured by `SOLD_ITEMS_API_URL` and `SOLD_ITEMS_API_KEY`. It uses the same query-fallback strategy as the browse provider and returns sold-price ranges, sample sold items, and recent sold-velocity buckets when available.
-- **Terapeak / eBay research provider:** [`src/validation/providers/terapeak.ts`](src/validation/providers/terapeak.ts) is currently a stable placeholder contract. It already defines the query/debug shape and output fields used by orchestration, including `previousPobAvgPriceUsd` and `previousPobSellThroughPct`, but live authenticated Terapeak/eBay research retrieval is not implemented yet.
+- **Terapeak / eBay research provider:** [`src/validation/providers/terapeak.ts`](src/validation/providers/terapeak.ts) now evaluates authenticated eBay Research candidates for both current-market and previous-POB contexts, scores them against title alignment and subtype coverage, preserves per-candidate diagnostics in debug output, and derives sold-day buckets from sold-row timestamps when available.
+- **Authenticated research session source:** [`src/validation/providers/ebay-research.ts`](src/validation/providers/ebay-research.ts) can source eBay Research authentication from cookie JSON, persisted KV-backed session state, Playwright storage state, or a browser profile directory. Parsed ACTIVE and SOLD tab responses are cached, but automatically invalidated when the authenticated cookie fingerprint changes.
 - **Social provider:** [`src/validation/providers/social.ts`](src/validation/providers/social.ts) supports phase-1 Twitter/X recent activity, YouTube average-daily-views proxy data exposed through the `youtubeViews24hMillions` field, and Reddit recent post counts. These signals degrade gracefully on provider/API failure and are used as supportive indicators rather than authoritative demand truth.
 - **Chart provider:** [`src/validation/providers/chart.ts`](src/validation/providers/chart.ts) is still a stub and does not currently contribute chart-based metrics.
 - **Previous comeback research provider:** [`src/validation/providers/research.ts`](src/validation/providers/research.ts) is currently a stable placeholder contract for orchestration-side historical research. It returns the future-facing `previousComebackFirstWeekSales` field shape, and it documents `PERPLEXITY_API_KEY` for a later external-research implementation, but it does not yet perform live historical lookup.
@@ -630,6 +632,7 @@ Recommendation behavior:
 
 - [`src/validation/recommendation.ts`](src/validation/recommendation.ts) now accepts Terapeak and research inputs alongside browse, sold, social, and chart signals.
 - Recommendation generation also consumes the normalized effective context so event runs can carry source-aware monitoring notes and avoid item-only assumptions when no usable item identity exists.
+- Automatic tracking now pauses when the validation is still nominally in a watch state but the required source context or a usable derived query is missing.
 - The decisioning remains intentionally conservative: Terapeak and research data can improve monitoring notes and confidence context, but the system still avoids aggressive automatic buy-state changes from partial or proxy signals alone.
 
 Known limitations in the current implementation:
@@ -637,7 +640,7 @@ Known limitations in the current implementation:
 - The sold-data provider depends on external configuration via `SOLD_ITEMS_API_URL` and `SOLD_ITEMS_API_KEY`.
 - If those sold-data variables are missing, validation still runs but sold enrichment degrades to an unavailable/error state rather than providing full historical-sales signals.
 - The sold-data provider is temporary and intended to be replaced by an internal implementation later.
-- The Terapeak provider contract is present, but there is no live authenticated Terapeak/eBay research integration yet.
+- Authenticated eBay Research requires a valid session source such as `EBAY_RESEARCH_COOKIES_JSON`, a persisted KV session, Playwright storage state, or a browser profile directory; without one, the provider degrades to diagnostic-only output.
 - The previous-comeback research provider contract is present, but no live historical inference or Perplexity-backed lookup is implemented yet even when `PERPLEXITY_API_KEY` is configured.
 - The browse provider still relies on heuristic query selection and fallback matching.
 - The YouTube-backed `youtubeViews24hMillions` field is currently an **average daily views proxy**, not a true trailing 24-hour delta.

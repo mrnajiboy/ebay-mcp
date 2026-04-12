@@ -71,6 +71,29 @@ function getWriteSource(value: unknown, source: string): string {
   return isMeaningfulWriteValue(value) ? source : 'none';
 }
 
+function resolvePreferredSoldMetric(
+  soldValue: number | null,
+  terapeakValue: number | null,
+  ebayValue: number | null
+): {
+  value: number | null;
+  source: 'sold' | 'terapeak' | 'ebay' | 'none';
+} {
+  if (soldValue !== null) {
+    return { value: soldValue, source: 'sold' };
+  }
+
+  if (terapeakValue !== null) {
+    return { value: terapeakValue, source: 'terapeak' };
+  }
+
+  if (ebayValue !== null) {
+    return { value: ebayValue, source: 'ebay' };
+  }
+
+  return { value: null, source: 'none' };
+}
+
 function buildProviderDebug(
   request: ValidationRunRequest,
   ebay: Awaited<ReturnType<typeof getEbayValidationSignals>>,
@@ -111,6 +134,12 @@ function buildProviderDebug(
     competitionLevel: terapeak.competitionLevel,
     previousPobAvgPriceUsd: terapeak.previousPobAvgPriceUsd,
     previousPobSellThroughPct: terapeak.previousPobSellThroughPct,
+    day1Sold: terapeak.soldVelocity.day1Sold,
+    day2Sold: terapeak.soldVelocity.day2Sold,
+    day3Sold: terapeak.soldVelocity.day3Sold,
+    day4Sold: terapeak.soldVelocity.day4Sold,
+    day5Sold: terapeak.soldVelocity.day5Sold,
+    daysTracked: terapeak.soldVelocity.daysTracked,
   });
   const socialFields = getFieldPresence({
     twitterTrending: social.twitterTrending,
@@ -216,8 +245,20 @@ function buildProviderDebug(
       queryScope:
         terapeak.queryDebug.queryResolution?.queryScope ?? requestQueryResolution.queryScope,
       selectedMode: terapeak.queryDebug.selectedMode,
+      currentQueryFamily: terapeak.queryDebug.currentQueryFamily,
+      previousPobQueryFamily: terapeak.queryDebug.previousPobQueryFamily,
       currentResultCount: terapeak.queryDebug.currentResultCount,
       previousPobResultCount: terapeak.queryDebug.previousPobResultCount,
+      currentWatcherCoverageCount: terapeak.queryDebug.currentWatcherCoverageCount,
+      previousPobWatcherCoverageCount: terapeak.queryDebug.previousPobWatcherCoverageCount,
+      candidateDiagnostics: terapeak.queryDebug.candidateDiagnostics ?? [],
+      previousPobCandidateDiagnostics: terapeak.queryDebug.previousPobCandidateDiagnostics ?? [],
+      fallbackReasons: terapeak.queryDebug.fallbackReasons ?? [],
+      writeSources: terapeak.queryDebug.writeSources ?? {},
+      soldBucketDebug: terapeak.soldBucketDebug,
+      recentSoldCount7d: terapeak.recentSoldCount7d,
+      authState: terapeak.queryDebug.authState,
+      sessionStrategy: terapeak.queryDebug.sessionStrategy,
       contributedFields: terapeakFields.contributed,
       omittedFields: terapeakFields.omitted,
       notes: terapeak.queryDebug.notes,
@@ -290,13 +331,43 @@ export async function runValidation(
       terapeak.marketPriceUsd ?? sold.soldMedianPriceUsd ?? ebay.marketPriceUsd;
     const mergedAvgShippingCostUsd = terapeak.avgShippingCostUsd ?? ebay.avgShippingCostUsd;
     const mergedCompetitionLevel = terapeak.competitionLevel ?? ebay.competitionLevel;
+    const day1Sold = resolvePreferredSoldMetric(
+      sold.soldVelocity.day1Sold,
+      terapeak.soldVelocity.day1Sold,
+      ebay.soldVelocity.day1Sold
+    );
+    const day2Sold = resolvePreferredSoldMetric(
+      sold.soldVelocity.day2Sold,
+      terapeak.soldVelocity.day2Sold,
+      ebay.soldVelocity.day2Sold
+    );
+    const day3Sold = resolvePreferredSoldMetric(
+      sold.soldVelocity.day3Sold,
+      terapeak.soldVelocity.day3Sold,
+      ebay.soldVelocity.day3Sold
+    );
+    const day4Sold = resolvePreferredSoldMetric(
+      sold.soldVelocity.day4Sold,
+      terapeak.soldVelocity.day4Sold,
+      ebay.soldVelocity.day4Sold
+    );
+    const day5Sold = resolvePreferredSoldMetric(
+      sold.soldVelocity.day5Sold,
+      terapeak.soldVelocity.day5Sold,
+      ebay.soldVelocity.day5Sold
+    );
+    const daysTracked = resolvePreferredSoldMetric(
+      sold.soldVelocity.daysTracked,
+      terapeak.soldVelocity.daysTracked,
+      ebay.soldVelocity.daysTracked
+    );
     const soldVelocity = {
-      day1Sold: sold.soldVelocity.day1Sold ?? ebay.soldVelocity.day1Sold,
-      day2Sold: sold.soldVelocity.day2Sold ?? ebay.soldVelocity.day2Sold,
-      day3Sold: sold.soldVelocity.day3Sold ?? ebay.soldVelocity.day3Sold,
-      day4Sold: sold.soldVelocity.day4Sold ?? ebay.soldVelocity.day4Sold,
-      day5Sold: sold.soldVelocity.day5Sold ?? ebay.soldVelocity.day5Sold,
-      daysTracked: sold.soldVelocity.daysTracked ?? ebay.soldVelocity.daysTracked,
+      day1Sold: day1Sold.value,
+      day2Sold: day2Sold.value,
+      day3Sold: day3Sold.value,
+      day4Sold: day4Sold.value,
+      day5Sold: day5Sold.value,
+      daysTracked: daysTracked.value,
     };
 
     const recommendation = buildValidationRecommendation(effectiveRequest, {
@@ -338,55 +409,61 @@ export async function runValidation(
     const writeResolution = {
       avgWatchersPerListing:
         terapeak.avgWatchersPerListing !== null
-          ? 'terapeak'
+          ? (terapeak.queryDebug.writeSources?.avgWatchersPerListing ?? 'terapeak')
           : getWriteSource(ebay.avgWatchersPerListing, 'ebay'),
       preOrderListingsCount:
         terapeak.preOrderListingsCount !== null
-          ? 'terapeak'
+          ? (terapeak.queryDebug.writeSources?.preOrderListingsCount ?? 'terapeak')
           : getWriteSource(ebay.preOrderListingsCount, 'ebay'),
       marketPriceUsd:
         terapeak.marketPriceUsd !== null
-          ? 'terapeak'
+          ? (terapeak.queryDebug.writeSources?.marketPriceUsd ?? 'terapeak')
           : sold.soldMedianPriceUsd !== null
             ? 'sold'
             : getWriteSource(ebay.marketPriceUsd, 'ebay'),
       avgShippingCostUsd:
         terapeak.avgShippingCostUsd !== null
-          ? 'terapeak'
+          ? (terapeak.queryDebug.writeSources?.avgShippingCostUsd ?? 'terapeak')
           : getWriteSource(ebay.avgShippingCostUsd, 'ebay'),
       competitionLevel:
         terapeak.competitionLevel !== null
-          ? 'terapeak'
+          ? (terapeak.queryDebug.writeSources?.competitionLevel ?? 'terapeak')
           : getWriteSource(ebay.competitionLevel, 'ebay'),
       twitterTrending: getWriteSource(social.twitterTrending, 'social'),
       youtubeViews24hMillions: getWriteSource(social.youtubeViews24hMillions, 'social'),
       redditPostsCount7d: getWriteSource(social.redditPostsCount7d, 'social'),
       day1Sold:
-        sold.soldVelocity.day1Sold !== null
-          ? 'sold'
-          : getWriteSource(ebay.soldVelocity.day1Sold, 'ebay'),
+        day1Sold.source === 'terapeak'
+          ? (terapeak.queryDebug.writeSources?.day1Sold ?? 'terapeak')
+          : day1Sold.source,
       day2Sold:
-        sold.soldVelocity.day2Sold !== null
-          ? 'sold'
-          : getWriteSource(ebay.soldVelocity.day2Sold, 'ebay'),
+        day2Sold.source === 'terapeak'
+          ? (terapeak.queryDebug.writeSources?.day2Sold ?? 'terapeak')
+          : day2Sold.source,
       day3Sold:
-        sold.soldVelocity.day3Sold !== null
-          ? 'sold'
-          : getWriteSource(ebay.soldVelocity.day3Sold, 'ebay'),
+        day3Sold.source === 'terapeak'
+          ? (terapeak.queryDebug.writeSources?.day3Sold ?? 'terapeak')
+          : day3Sold.source,
       day4Sold:
-        sold.soldVelocity.day4Sold !== null
-          ? 'sold'
-          : getWriteSource(ebay.soldVelocity.day4Sold, 'ebay'),
+        day4Sold.source === 'terapeak'
+          ? (terapeak.queryDebug.writeSources?.day4Sold ?? 'terapeak')
+          : day4Sold.source,
       day5Sold:
-        sold.soldVelocity.day5Sold !== null
-          ? 'sold'
-          : getWriteSource(ebay.soldVelocity.day5Sold, 'ebay'),
+        day5Sold.source === 'terapeak'
+          ? (terapeak.queryDebug.writeSources?.day5Sold ?? 'terapeak')
+          : day5Sold.source,
       daysTracked:
-        sold.soldVelocity.daysTracked !== null
-          ? 'sold'
-          : getWriteSource(ebay.soldVelocity.daysTracked, 'ebay'),
-      previousPobAvgPriceUsd: getWriteSource(terapeak.previousPobAvgPriceUsd, 'terapeak'),
-      previousPobSellThroughPct: getWriteSource(terapeak.previousPobSellThroughPct, 'terapeak'),
+        daysTracked.source === 'terapeak'
+          ? (terapeak.queryDebug.writeSources?.daysTracked ?? 'terapeak')
+          : daysTracked.source,
+      previousPobAvgPriceUsd:
+        terapeak.previousPobAvgPriceUsd !== null
+          ? (terapeak.queryDebug.writeSources?.previousPobAvgPriceUsd ?? 'terapeak')
+          : 'none',
+      previousPobSellThroughPct:
+        terapeak.previousPobSellThroughPct !== null
+          ? (terapeak.queryDebug.writeSources?.previousPobSellThroughPct ?? 'terapeak')
+          : 'none',
       previousComebackFirstWeekSales: getWriteSource(
         research.previousComebackFirstWeekSales,
         'research'

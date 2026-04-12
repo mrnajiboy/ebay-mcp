@@ -24,6 +24,55 @@ function addHours(timestamp: string, hours: number): string {
   return new Date(new Date(timestamp).getTime() + hours * 60 * 60 * 1000).toISOString();
 }
 
+function isRejectedResolvedQuery(value: string | null | undefined): boolean {
+  return typeof value === 'string' && /^error\s*:/i.test(value.trim());
+}
+
+function buildFallbackTrackingQuery(effectiveContext: ValidationEffectiveContext): string | null {
+  const parts =
+    effectiveContext.sourceType === 'event'
+      ? [
+          effectiveContext.searchArtist,
+          effectiveContext.searchEvent,
+          effectiveContext.searchItem,
+          effectiveContext.searchLocation,
+        ]
+      : [
+          effectiveContext.searchArtist,
+          effectiveContext.searchAlbum ?? effectiveContext.searchItem,
+          effectiveContext.searchLocation,
+        ];
+
+  const fallbackQuery = parts
+    .filter((part): part is string => typeof part === 'string' && part.trim().length > 0)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return fallbackQuery.length > 0 ? fallbackQuery : null;
+}
+
+function hasUsableTrackingQuery(effectiveContext: ValidationEffectiveContext): boolean {
+  const resolvedSearchQuery = effectiveContext.resolvedSearchQuery?.trim() ?? null;
+  if (resolvedSearchQuery && !isRejectedResolvedQuery(resolvedSearchQuery)) {
+    return true;
+  }
+
+  const effectiveSearchQuery = effectiveContext.effectiveSearchQuery?.trim() ?? '';
+  if (effectiveSearchQuery.length > 0 && !isRejectedResolvedQuery(effectiveSearchQuery)) {
+    return true;
+  }
+
+  return buildFallbackTrackingQuery(effectiveContext) !== null;
+}
+
+function resolvePreferredSoldValue(
+  soldValue: number | null,
+  researchValue: number | null
+): number | null {
+  return soldValue ?? researchValue;
+}
+
 export function buildValidationRecommendation(
   request: ValidationRunRequest,
   signals: ValidationRecommendationInput
@@ -40,11 +89,18 @@ export function buildValidationRecommendation(
   const dDay = request.validation.dDay;
   const baseCadence: TrackingCadence =
     typeof dDay === 'number' && dDay >= -3 && dDay <= 3 ? 'Hourly' : 'Daily';
+  const hasRequiredSource =
+    signals.effectiveContext.sourceType === 'event'
+      ? Boolean(signals.effectiveContext.searchEvent ?? signals.effectiveContext.eventRecordId)
+      : signals.effectiveContext.hasItem;
+  const hasUsableQuery = hasUsableTrackingQuery(signals.effectiveContext);
 
   const shouldAutoTrack =
     request.validation.autoCheckEnabled &&
     request.validation.automationStatus === 'Watching' &&
-    request.validation.buyDecision === 'Watching';
+    request.validation.buyDecision === 'Watching' &&
+    hasRequiredSource &&
+    hasUsableQuery;
 
   const trackingCadence: TrackingCadence = shouldAutoTrack ? baseCadence : 'Off';
   const nextCheckAt = !shouldAutoTrack
@@ -73,11 +129,42 @@ export function buildValidationRecommendation(
         signals.effectiveContext.searchItem ??
         request.item.name ??
         'release');
+  const mergedSoldVelocity = {
+    day1Sold: resolvePreferredSoldValue(
+      signals.sold.soldVelocity.day1Sold,
+      signals.terapeak.soldVelocity.day1Sold
+    ),
+    day2Sold: resolvePreferredSoldValue(
+      signals.sold.soldVelocity.day2Sold,
+      signals.terapeak.soldVelocity.day2Sold
+    ),
+    day3Sold: resolvePreferredSoldValue(
+      signals.sold.soldVelocity.day3Sold,
+      signals.terapeak.soldVelocity.day3Sold
+    ),
+  };
   const recentSoldCount = [
-    signals.sold.soldVelocity.day1Sold,
-    signals.sold.soldVelocity.day2Sold,
-    signals.sold.soldVelocity.day3Sold,
+    mergedSoldVelocity.day1Sold,
+    mergedSoldVelocity.day2Sold,
+    mergedSoldVelocity.day3Sold,
   ].reduce<number>((sum, value) => sum + (value ?? 0), 0);
+  const hasSoldProviderEvidence =
+    signals.sold.soldMedianPriceUsd !== null ||
+    signals.sold.soldResultsCount !== null ||
+    Object.values(signals.sold.soldVelocity).some((value) => value !== null);
+  const hasResearchSoldEvidence =
+    signals.terapeak.provider === 'ebay_research_ui' &&
+    (signals.terapeak.soldListingsCount !== null ||
+      signals.terapeak.recentSoldCount7d !== null ||
+      Object.values(signals.terapeak.soldVelocity).some((value) => value !== null));
+  const effectiveSoldComparablePrice =
+    signals.sold.soldMedianPriceUsd ??
+    (hasResearchSoldEvidence ? signals.terapeak.researchSoldPriceUsd : null);
+  const effectiveSoldConfidence = hasSoldProviderEvidence
+    ? signals.sold.confidence
+    : hasResearchSoldEvidence
+      ? signals.terapeak.confidence
+      : 'Low';
 
   let latestAiRecommendation = 'Continue watching until stronger market signal appears.';
   let latestAiConfidence: 'High' | 'Medium' | 'Low' = 'Medium';
@@ -87,7 +174,11 @@ export function buildValidationRecommendation(
     latestAiRecommendation =
       'Automatic tracking paused because the validation is no longer in a watchable state.';
     latestAiConfidence = 'High';
-    monitoringNotes = `Stop conditions were met, so automation will not schedule another ${signals.effectiveContext.mode} validation run for ${subjectLabel}.`;
+    monitoringNotes = !hasRequiredSource
+      ? `Tracking was paused because the required ${signals.effectiveContext.sourceType} source context is missing for ${subjectLabel}.`
+      : !hasUsableQuery
+        ? `Tracking was paused because no valid search query could be derived for ${subjectLabel}.`
+        : `External watch-state controls were not satisfied, so automation will not schedule another ${signals.effectiveContext.mode} validation run for ${subjectLabel}.`;
   } else if (
     marginRatio !== null &&
     marginRatio >= 1 &&
@@ -104,16 +195,16 @@ export function buildValidationRecommendation(
         'Healthy active-listing volume and sold comparables support continued monitoring without yet forcing a buy-state change.';
     }
   } else if (
-    signals.sold.soldMedianPriceUsd !== null &&
+    effectiveSoldComparablePrice !== null &&
     recentSoldCount > 0 &&
-    signals.sold.confidence !== 'Low'
+    effectiveSoldConfidence !== 'Low'
   ) {
     latestAiRecommendation =
       'Recent sold comparables support real resale demand. Continue watching closely while waiting for a stronger conviction signal.';
-    latestAiConfidence = signals.sold.confidence === 'High' ? 'High' : 'Medium';
+    latestAiConfidence = effectiveSoldConfidence === 'High' ? 'High' : 'Medium';
     monitoringNotes =
       'Sold-item data confirms recent transaction activity, improving confidence while remaining conservative on buy-state changes.';
-  } else if (signals.sold.soldMedianPriceUsd !== null) {
+  } else if (effectiveSoldComparablePrice !== null) {
     latestAiRecommendation =
       'Sold comps are available, but sample depth is still limited. Keep monitoring until resale momentum becomes clearer.';
     latestAiConfidence = 'Medium';

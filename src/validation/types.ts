@@ -37,6 +37,23 @@ export interface SoldQueryDiagnostic {
   note?: string;
 }
 
+export interface ResearchQueryDiagnostic {
+  query: string;
+  tier: number;
+  family?: string;
+  activeListings: number | null;
+  soldTotal: number | null;
+  avgWatchersPerListing: number | null;
+  watcherCoverageCount: number | null;
+  sellThroughPct: number | null;
+  titleMatchScore: number | null;
+  subtypeAligned?: boolean;
+  tooNarrow?: boolean;
+  score: number | null;
+  status: 'ok' | 'error';
+  note?: string;
+}
+
 export interface ValidationCurrentMetrics {
   avgWatchersPerListing: number | null;
   preOrderListingsCount: number | null;
@@ -211,6 +228,11 @@ export interface SocialValidationSignals {
   debug?: {
     twitter?: {
       checked: boolean;
+      rawItemTitleInput?: string;
+      rawSocialQueryInput?: string;
+      normalizedSocialQueryBase?: string;
+      strippedVariationTerms?: string[];
+      variationStripNote?: string;
       query?: string;
       searchUrl?: string;
       queryCandidates?: string[];
@@ -231,6 +253,11 @@ export interface SocialValidationSignals {
     };
     youtube?: {
       checked: boolean;
+      rawItemTitleInput?: string;
+      rawSocialQueryInput?: string;
+      normalizedSocialQueryBase?: string;
+      strippedVariationTerms?: string[];
+      variationStripNote?: string;
       query?: string;
       searchUrl?: string;
       queryCandidates?: string[];
@@ -286,6 +313,11 @@ export interface SocialValidationSignals {
     };
     reddit?: {
       checked: boolean;
+      rawItemTitleInput?: string;
+      rawSocialQueryInput?: string;
+      normalizedSocialQueryBase?: string;
+      strippedVariationTerms?: string[];
+      variationStripNote?: string;
       query?: string;
       searchUrl?: string;
       queryCandidates?: string[];
@@ -311,22 +343,44 @@ export interface TerapeakValidationSignals {
   avgWatchersPerListing: number | null;
   preOrderListingsCount: number | null;
   marketPriceUsd: number | null;
+  researchSoldPriceUsd: number | null;
   avgShippingCostUsd: number | null;
   competitionLevel: number | null;
   previousPobAvgPriceUsd: number | null;
   previousPobSellThroughPct: number | null;
   currentListingsCount: number | null;
   soldListingsCount: number | null;
+  soldVelocity: ValidationSoldVelocity;
+  recentSoldCount7d?: number | null;
+  soldBucketDebug?: SoldBucketDebug;
   provider: 'terapeak' | 'ebay_research_ui' | 'none';
   confidence: ValidationSignalConfidence;
   queryDebug: {
     currentQuery?: string | null;
     previousPobQuery?: string | null;
+    currentQueryFamily?: string | null;
+    previousPobQueryFamily?: string | null;
     selectedMode?: 'current_market' | 'previous_pob' | 'combined' | null;
     currentResultCount?: number | null;
     previousPobResultCount?: number | null;
     notes?: string | null;
     queryResolution?: ProviderQueryResolutionDebug;
+    currentModulesSeen?: string[];
+    previousPobModulesSeen?: string[];
+    currentPageErrors?: string[];
+    previousPobPageErrors?: string[];
+    currentActiveEndpointUrl?: string | null;
+    currentSoldEndpointUrl?: string | null;
+    previousPobActiveEndpointUrl?: string | null;
+    previousPobSoldEndpointUrl?: string | null;
+    authState?: 'authenticated' | 'missing' | 'expired' | 'unavailable';
+    sessionStrategy?: 'env_cookies' | 'kv_store' | 'storage_state' | 'playwright_profile' | 'none';
+    candidateDiagnostics?: ResearchQueryDiagnostic[];
+    previousPobCandidateDiagnostics?: ResearchQueryDiagnostic[];
+    currentWatcherCoverageCount?: number | null;
+    previousPobWatcherCoverageCount?: number | null;
+    fallbackReasons?: string[];
+    writeSources?: Record<string, string>;
   };
 }
 

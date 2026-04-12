@@ -13,6 +13,7 @@ import {
   extractSemanticTokens,
   getPrimaryAlbumPhrase,
   getPrimarySocialAlbumPhrase,
+  getSocialQueryContextDebug,
   normalizeWhitespace,
 } from './query-utils.js';
 import type { ProviderQueryCandidate } from './query-utils.js';
@@ -124,6 +125,11 @@ interface RedditQueryDiagnostic {
 
 interface TwitterDebug {
   checked: boolean;
+  rawItemTitleInput?: string;
+  rawSocialQueryInput?: string;
+  normalizedSocialQueryBase?: string;
+  strippedVariationTerms?: string[];
+  variationStripNote?: string;
   query?: string;
   searchUrl?: string;
   queryCandidates?: string[];
@@ -164,6 +170,11 @@ interface YouTubeCandidateDebug {
 
 interface YouTubeDebug {
   checked: boolean;
+  rawItemTitleInput?: string;
+  rawSocialQueryInput?: string;
+  normalizedSocialQueryBase?: string;
+  strippedVariationTerms?: string[];
+  variationStripNote?: string;
   query?: string;
   searchUrl?: string;
   queryCandidates?: string[];
@@ -192,6 +203,11 @@ interface YouTubeDebug {
 
 interface RedditDebug {
   checked: boolean;
+  rawItemTitleInput?: string;
+  rawSocialQueryInput?: string;
+  normalizedSocialQueryBase?: string;
+  strippedVariationTerms?: string[];
+  variationStripNote?: string;
   query?: string;
   searchUrl?: string;
   queryCandidates?: string[];
@@ -544,6 +560,14 @@ async function fetchYouTubeVideoDetails(
 export async function getSocialValidationSignals(
   request: ValidationRunRequest
 ): Promise<SocialValidationSignals> {
+  const socialQueryContext = getSocialQueryContextDebug(request);
+  const socialDebugFields = {
+    rawItemTitleInput: socialQueryContext.rawItemTitleInput,
+    rawSocialQueryInput: socialQueryContext.rawSocialQueryInput,
+    normalizedSocialQueryBase: socialQueryContext.normalizedSocialQueryBase,
+    strippedVariationTerms: socialQueryContext.strippedVariationTerms,
+    variationStripNote: socialQueryContext.variationStripNote,
+  };
   const debug: SocialValidationDebugState = {
     twitter: { checked: false },
     youtube: { checked: false },
@@ -574,6 +598,7 @@ export async function getSocialValidationSignals(
 
     debug.twitter = {
       checked: true,
+      ...socialDebugFields,
       queryCandidates,
       selectedQuery,
       query: selectedQuery,
@@ -620,6 +645,7 @@ export async function getSocialValidationSignals(
       result.twitterTrending = (totalTweetCount ?? 0) >= TWITTER_TRENDING_THRESHOLD;
       debug.twitter = {
         checked: true,
+        ...socialDebugFields,
         queryCandidates,
         selectedQuery,
         query: selectedQuery,
@@ -634,6 +660,7 @@ export async function getSocialValidationSignals(
     } else {
       debug.twitter = {
         checked: true,
+        ...socialDebugFields,
         queryCandidates,
         selectedQuery,
         query: selectedQuery,
@@ -664,6 +691,7 @@ export async function getSocialValidationSignals(
 
     debug.youtube = {
       checked: true,
+      ...socialDebugFields,
       queryCandidates,
       selectedQuery: queryCandidates[0],
       query: queryCandidates[0],
@@ -817,6 +845,7 @@ export async function getSocialValidationSignals(
         result.youtubeViews24hMillions = roundMillions(selectedCandidate?.avgDailyViews ?? null);
         debug.youtube = {
           checked: true,
+          ...socialDebugFields,
           queryCandidates,
           selectedQuery,
           selectedCandidateClass: selectedCandidate?.rankingSignals.candidateClass ?? null,
@@ -869,6 +898,7 @@ export async function getSocialValidationSignals(
       } else {
         debug.youtube = {
           checked: true,
+          ...socialDebugFields,
           queryCandidates,
           selectedQuery: queryCandidates[0],
           selectedCandidateClass: null,
@@ -898,6 +928,7 @@ export async function getSocialValidationSignals(
     } catch (error) {
       debug.youtube = {
         checked: true,
+        ...socialDebugFields,
         queryCandidates,
         selectedQuery: queryCandidates[0],
         selectedCandidateClass: null,
@@ -943,6 +974,7 @@ export async function getSocialValidationSignals(
 
     debug.reddit = {
       checked: true,
+      ...socialDebugFields,
       query,
       queryCandidates,
       selectedQuery,
@@ -990,6 +1022,7 @@ export async function getSocialValidationSignals(
       result.redditPostsCount7d = recentResultCount;
       debug.reddit = {
         checked: true,
+        ...socialDebugFields,
         query: selectedQuery,
         queryCandidates,
         selectedQuery,
@@ -1005,6 +1038,7 @@ export async function getSocialValidationSignals(
     } else {
       debug.reddit = {
         checked: true,
+        ...socialDebugFields,
         query: selectedQuery,
         queryCandidates,
         selectedQuery,
