@@ -387,9 +387,26 @@ export interface TerapeakValidationSignals {
 export interface PreviousComebackResearchSignals {
   previousAlbumTitle: string | null;
   previousComebackFirstWeekSales: number | null;
+  perplexityHistoricalContextScore: number;
+  historicalContextNotes: string;
   confidence: ValidationSignalConfidence;
   notes: string;
   sources?: string[];
+  debug?: {
+    providerStatus: 'ok' | 'unconfigured' | 'no_evidence' | 'error';
+    parseStatus: 'ok' | 'fallback' | 'error' | 'unconfigured';
+    query: string | null;
+    promptFocus: string[];
+    citations: string[];
+    sourceSnippets: string[];
+    resolvedPriorRelease: string | null;
+    extractedConfidence: ValidationSignalConfidence | null;
+    computedConfidence: ValidationSignalConfidence;
+    confidenceReason: string | null;
+    scoreAssignmentReason: string;
+    rawResponseText?: string | null;
+    errorMessage?: string | null;
+  };
 }
 
 export interface ChartValidationSignals {
@@ -415,6 +432,9 @@ export interface ValidationWrites {
   previousPobAvgPriceUsd?: number | null;
   previousPobSellThroughPct?: number | null;
   previousComebackFirstWeekSales?: number | null;
+  perplexityHistoricalContextScore?: number;
+  historicalContextNotes?: string;
+  researchConfidence?: ValidationSignalConfidence;
   monitoringNotes?: string;
   lastDataSnapshot?: string;
   latestAiRecommendation?: string;

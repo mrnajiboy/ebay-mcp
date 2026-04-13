@@ -626,7 +626,7 @@ Provider behavior:
 - **Authenticated research session source:** [`src/validation/providers/ebay-research.ts`](src/validation/providers/ebay-research.ts) can source eBay Research authentication from cookie JSON, persisted KV-backed session state, Playwright storage state, or a browser profile directory. Parsed ACTIVE and SOLD tab responses are cached, but automatically invalidated when the authenticated cookie fingerprint changes.
 - **Social provider:** [`src/validation/providers/social.ts`](src/validation/providers/social.ts) supports phase-1 Twitter/X recent activity, YouTube average-daily-views proxy data exposed through the `youtubeViews24hMillions` field, and Reddit recent post counts. These signals degrade gracefully on provider/API failure and are used as supportive indicators rather than authoritative demand truth.
 - **Chart provider:** [`src/validation/providers/chart.ts`](src/validation/providers/chart.ts) is still a stub and does not currently contribute chart-based metrics.
-- **Previous comeback research provider:** [`src/validation/providers/research.ts`](src/validation/providers/research.ts) is currently a stable placeholder contract for orchestration-side historical research. It returns the future-facing `previousComebackFirstWeekSales` field shape, and it documents `PERPLEXITY_API_KEY` for a later external-research implementation, but it does not yet perform live historical lookup.
+- **Previous comeback research provider:** [`src/validation/providers/research.ts`](src/validation/providers/research.ts) now performs Perplexity-backed historical research when `PERPLEXITY_API_KEY` is configured. It attempts to resolve the prior comeback, normalize previous first-week sales when support exists, assign a `perplexityHistoricalContextScore`, generate concise `historicalContextNotes`, and emit debug diagnostics covering the research query, citations/snippets, resolved prior release, confidence, and score reasoning.
 
 Recommendation behavior:
 
@@ -641,7 +641,7 @@ Known limitations in the current implementation:
 - If those sold-data variables are missing, validation still runs but sold enrichment degrades to an unavailable/error state rather than providing full historical-sales signals.
 - The sold-data provider is temporary and intended to be replaced by an internal implementation later.
 - Authenticated eBay Research requires a valid session source such as `EBAY_RESEARCH_COOKIES_JSON`, a persisted KV session, Playwright storage state, or a browser profile directory; without one, the provider degrades to diagnostic-only output.
-- The previous-comeback research provider contract is present, but no live historical inference or Perplexity-backed lookup is implemented yet even when `PERPLEXITY_API_KEY` is configured.
+- The previous-comeback research provider depends on grounded external research and therefore degrades to low-confidence notes with a zero historical score when `PERPLEXITY_API_KEY` is missing, the response cannot be normalized, or reliable evidence is not found.
 - The browse provider still relies on heuristic query selection and fallback matching.
 - The YouTube-backed `youtubeViews24hMillions` field is currently an **average daily views proxy**, not a true trailing 24-hour delta.
 - Social signals are supportive/proxy data only and should not be presented as decisive automated buy logic.

@@ -178,9 +178,28 @@ avgWatchersPerListing: null,
     getPreviousComebackResearchSignalsMock.mockResolvedValue({
       previousAlbumTitle: null,
       previousComebackFirstWeekSales: null,
+      perplexityHistoricalContextScore: 0,
+      historicalContextNotes:
+        'PERPLEXITY_API_KEY is not configured. Historical context for ATEEZ GOLDEN HOUR remains unverified; rely more on live market signals.',
       confidence: 'Low',
-      notes: 'test',
+      notes:
+        'PERPLEXITY_API_KEY is not configured. Historical context for ATEEZ GOLDEN HOUR remains unverified; rely more on live market signals.',
       sources: [],
+      debug: {
+        providerStatus: 'unconfigured',
+        parseStatus: 'unconfigured',
+        query: 'ATEEZ GOLDEN HOUR',
+        promptFocus: ['identify the immediately previous comeback or album release'],
+        citations: [],
+        sourceSnippets: [],
+        resolvedPriorRelease: null,
+        extractedConfidence: null,
+        computedConfidence: 'Low',
+        confidenceReason: null,
+        scoreAssignmentReason: 'test reason',
+        rawResponseText: null,
+        errorMessage: null,
+      },
     });
 
     const result = await runValidation({} as never, {
@@ -250,9 +269,23 @@ avgWatchersPerListing: null,
     expect(result.writes?.day2Sold).toBe(2);
     expect(result.writes?.day3Sold).toBe(1);
     expect(result.writes?.daysTracked).toBe(5);
+    expect(result.writes?.perplexityHistoricalContextScore).toBeUndefined();
+    expect(result.writes?.historicalContextNotes).toBeUndefined();
+    expect(result.writes?.researchConfidence).toBeUndefined();
     expect((result.debug as { writeResolution: Record<string, string> }).writeResolution.day1Sold).toBe('sold');
     expect((result.debug as { writeResolution: Record<string, string> }).writeResolution.day2Sold).toBe('sold');
     expect((result.debug as { writeResolution: Record<string, string> }).writeResolution.day3Sold).toBe('sold');
     expect((result.debug as { writeResolution: Record<string, string> }).writeResolution.daysTracked).toBe('sold');
+    expect(
+      (result.debug as { writeResolution: Record<string, string> }).writeResolution
+        .perplexityHistoricalContextScore
+    ).toBe('none');
+    expect((result.debug as { omittedOptionalWrites: string[] }).omittedOptionalWrites).toEqual(
+      expect.arrayContaining([
+        'perplexityHistoricalContextScore',
+        'historicalContextNotes',
+        'researchConfidence',
+      ])
+    );
   });
 });

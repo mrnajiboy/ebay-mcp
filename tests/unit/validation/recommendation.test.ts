@@ -160,8 +160,10 @@ function buildSignals(request: ValidationRunRequest): {
     research: {
       previousAlbumTitle: null,
       previousComebackFirstWeekSales: null,
+      perplexityHistoricalContextScore: 0,
+      historicalContextNotes: 'Limited prior-market evidence found. Context weak; rely more on live market signals.',
       confidence: 'Low',
-      notes: 'test',
+      notes: 'Limited prior-market evidence found. Context weak; rely more on live market signals.',
       sources: [],
     },
     effectiveContext: buildValidationEffectiveContext(request),
@@ -281,5 +283,76 @@ describe('buildValidationRecommendation()', () => {
       'Continue watching until stronger market signal appears.'
     );
     expect(recommendation.monitoringNotes).not.toContain('Sold-item data confirms recent transaction activity');
+  });
+
+  it('appends historical research notes and score context to monitoring notes', () => {
+    const request = buildRequest();
+    const signals = buildSignals(request);
+
+    signals.research = {
+      ...signals.research,
+      previousAlbumTitle: 'THE WORLD EP.1',
+      previousComebackFirstWeekSales: 1350000,
+      perplexityHistoricalContextScore: 17,
+      historicalContextNotes:
+        'Previous comeback sold strongly in first week and collector demand remained broad across preorder channels.',
+      confidence: 'High',
+      notes:
+        'Previous comeback sold strongly in first week and collector demand remained broad across preorder channels.',
+      debug: {
+        providerStatus: 'ok',
+        parseStatus: 'ok',
+        query: 'ATEEZ GOLDEN HOUR',
+        promptFocus: ['identify the immediately previous comeback or album release'],
+        citations: ['https://example.test/sales'],
+        sourceSnippets: ['Supported by prior-release sales coverage.'],
+        resolvedPriorRelease: 'THE WORLD EP.1',
+        extractedConfidence: 'High',
+        computedConfidence: 'High',
+        confidenceReason: 'The prior release and first-week sales were directly supported.',
+        scoreAssignmentReason: 'High confidence based on resolved prior release and supported first-week sales.',
+        rawResponseText: null,
+        errorMessage: null,
+      },
+    };
+
+    const recommendation = buildValidationRecommendation(request, signals);
+
+    expect(recommendation.monitoringNotes).toContain('Historical context (High, score 17/20)');
+    expect(recommendation.monitoringNotes).toContain('Previous comeback first-week sales reference: 1350000.');
+  });
+
+  it('does not append fallback historical notes when research did not produce usable evidence', () => {
+    const request = buildRequest();
+    const signals = buildSignals(request);
+
+    signals.research = {
+      ...signals.research,
+      historicalContextNotes:
+        'PERPLEXITY_API_KEY is not configured. Historical context for ATEEZ GOLDEN HOUR remains unverified; rely more on live market signals.',
+      notes:
+        'PERPLEXITY_API_KEY is not configured. Historical context for ATEEZ GOLDEN HOUR remains unverified; rely more on live market signals.',
+      debug: {
+        providerStatus: 'unconfigured',
+        parseStatus: 'unconfigured',
+        query: 'ATEEZ GOLDEN HOUR',
+        promptFocus: ['identify the immediately previous comeback or album release'],
+        citations: [],
+        sourceSnippets: [],
+        resolvedPriorRelease: null,
+        extractedConfidence: null,
+        computedConfidence: 'Low',
+        confidenceReason: null,
+        scoreAssignmentReason:
+          'Historical research did not yield structured evidence, so the provider returned a zero historical score.',
+        rawResponseText: null,
+        errorMessage: null,
+      },
+    };
+
+    const recommendation = buildValidationRecommendation(request, signals);
+
+    expect(recommendation.monitoringNotes).not.toContain('Historical context (Low, score 0/20)');
+    expect(recommendation.monitoringNotes).not.toContain('PERPLEXITY_API_KEY');
   });
 });

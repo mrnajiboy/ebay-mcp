@@ -165,6 +165,12 @@ export function buildValidationRecommendation(
     : hasResearchSoldEvidence
       ? signals.terapeak.confidence
       : 'Low';
+  const hasUsableHistoricalResearch =
+    signals.research.debug?.providerStatus !== undefined
+      ? signals.research.debug.providerStatus === 'ok'
+      : signals.research.previousAlbumTitle !== null ||
+        signals.research.previousComebackFirstWeekSales !== null ||
+        signals.research.perplexityHistoricalContextScore > 0;
 
   let latestAiRecommendation = 'Continue watching until stronger market signal appears.';
   let latestAiConfidence: 'High' | 'Medium' | 'Low' = 'Medium';
@@ -234,8 +240,12 @@ export function buildValidationRecommendation(
     }
   }
 
-  if (signals.research.previousComebackFirstWeekSales !== null) {
+  if (hasUsableHistoricalResearch && signals.research.previousComebackFirstWeekSales !== null) {
     monitoringNotes += ` Previous comeback first-week sales reference: ${signals.research.previousComebackFirstWeekSales}.`;
+  }
+
+  if (hasUsableHistoricalResearch && signals.research.historicalContextNotes.length > 0) {
+    monitoringNotes += ` Historical context (${signals.research.confidence}, score ${signals.research.perplexityHistoricalContextScore}/20): ${signals.research.historicalContextNotes}`;
   }
 
   return {

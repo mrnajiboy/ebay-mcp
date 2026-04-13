@@ -149,6 +149,9 @@ function buildProviderDebug(
   const researchFields = getFieldPresence({
     previousAlbumTitle: research.previousAlbumTitle,
     previousComebackFirstWeekSales: research.previousComebackFirstWeekSales,
+    perplexityHistoricalContextScore: research.perplexityHistoricalContextScore,
+    historicalContextNotes: research.historicalContextNotes,
+    researchConfidence: research.confidence,
   });
 
   const ebayStatus: ProviderDebugStatus =
@@ -166,9 +169,15 @@ function buildProviderDebug(
         ? 'ok'
         : 'partial';
   const researchStatus: ProviderDebugStatus =
-    research.previousComebackFirstWeekSales !== null || research.previousAlbumTitle !== null
-      ? 'ok'
-      : 'stub';
+    research.debug?.providerStatus === 'unconfigured'
+      ? 'unavailable'
+      : research.debug?.providerStatus === 'error'
+        ? 'partial'
+        : research.previousComebackFirstWeekSales !== null ||
+            research.previousAlbumTitle !== null ||
+            research.perplexityHistoricalContextScore > 0
+          ? 'ok'
+          : 'partial';
 
   return {
     ebay: {
@@ -286,10 +295,23 @@ function buildProviderDebug(
       confidence: research.confidence.toLowerCase(),
       previousAlbumTitle: research.previousAlbumTitle,
       previousComebackFirstWeekSales: research.previousComebackFirstWeekSales,
+      perplexityHistoricalContextScore: research.perplexityHistoricalContextScore,
+      historicalContextNotes: research.historicalContextNotes,
       contributedFields: researchFields.contributed,
       omittedFields: researchFields.omitted,
       notes: research.notes,
       sources: research.sources ?? [],
+      query: research.debug?.query ?? null,
+      promptFocus: research.debug?.promptFocus ?? [],
+      sourceSnippets: research.debug?.sourceSnippets ?? [],
+      resolvedPriorRelease: research.debug?.resolvedPriorRelease ?? research.previousAlbumTitle,
+      extractedConfidence: research.debug?.extractedConfidence ?? null,
+      computedConfidence: research.debug?.computedConfidence ?? research.confidence,
+      confidenceReason: research.debug?.confidenceReason ?? null,
+      scoreAssignmentReason: research.debug?.scoreAssignmentReason ?? null,
+      providerStatus: research.debug?.providerStatus ?? null,
+      parseStatus: research.debug?.parseStatus ?? null,
+      errorMessage: research.debug?.errorMessage ?? null,
     },
   };
 }
@@ -384,6 +406,12 @@ export async function runValidation(
       Boolean(ebay.queryResolution?.queryContextUsed)
     );
     const mergedSignals = { effectiveContext, ebay, sold, terapeak, social, chart, research };
+    const hasUsableHistoricalResearch =
+      research.debug?.providerStatus !== undefined
+        ? research.debug.providerStatus === 'ok'
+        : research.previousAlbumTitle !== null ||
+          research.previousComebackFirstWeekSales !== null ||
+          research.perplexityHistoricalContextScore > 0;
     const socialWrites = {
       ...(social.twitterTrending !== null ? { twitterTrending: social.twitterTrending } : {}),
       ...(social.youtubeViews24hMillions !== null
@@ -402,7 +430,14 @@ export async function runValidation(
         : {}),
     };
     const researchWrites = {
-      ...(research.previousComebackFirstWeekSales !== null
+      ...(hasUsableHistoricalResearch
+        ? {
+            perplexityHistoricalContextScore: research.perplexityHistoricalContextScore,
+            historicalContextNotes: research.historicalContextNotes,
+            researchConfidence: research.confidence,
+          }
+        : {}),
+      ...(hasUsableHistoricalResearch && research.previousComebackFirstWeekSales !== null
         ? { previousComebackFirstWeekSales: research.previousComebackFirstWeekSales }
         : {}),
     };
@@ -465,9 +500,12 @@ export async function runValidation(
           ? (terapeak.queryDebug.writeSources?.previousPobSellThroughPct ?? 'terapeak')
           : 'none',
       previousComebackFirstWeekSales: getWriteSource(
-        research.previousComebackFirstWeekSales,
+        hasUsableHistoricalResearch ? research.previousComebackFirstWeekSales : null,
         'research'
       ),
+      perplexityHistoricalContextScore: hasUsableHistoricalResearch ? 'research' : 'none',
+      historicalContextNotes: hasUsableHistoricalResearch ? 'research' : 'none',
+      researchConfidence: hasUsableHistoricalResearch ? 'research' : 'none',
     };
     const omittedOptionalWrites = Object.entries(writeResolution)
       .filter(([, source]) => source === 'none')
