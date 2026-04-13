@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { CloudflareKVStore, type KVStore, UpstashRedisKVStore } from '@/auth/kv-store.js';
+import { createKVStoreForBackend, type KVStore } from '@/auth/kv-store.js';
 
 export type EbayResearchSessionStoreBackend =
   | 'cloudflare_kv'
@@ -60,8 +60,8 @@ export const EBAY_RESEARCH_STORAGE_STATE_SOURCE_LEGACY_KEY = 'ebay_research_stor
 const EBAY_RESEARCH_SESSION_STORE_ENV_KEY = 'EBAY_RESEARCH_SESSION_STORE';
 const RESEARCH_SESSION_KEY_PREFIX = 'ebay-research:session';
 
-let cloudflareKvSingleton: CloudflareKVStore | null | undefined;
-let upstashKvSingleton: UpstashRedisKVStore | null | undefined;
+let cloudflareKvSingleton: KVStore | null | undefined;
+let upstashKvSingleton: KVStore | null | undefined;
 
 function resolvePath(pathValue: string): string {
   return resolve(process.cwd(), pathValue);
@@ -268,13 +268,13 @@ export abstract class KvBackedEbayResearchSessionStore implements EbayResearchSe
 }
 
 export class CloudflareKvSessionStore extends KvBackedEbayResearchSessionStore {
-  constructor(kvStore: CloudflareKVStore, marketplace: string) {
+  constructor(kvStore: KVStore, marketplace: string) {
     super('cloudflare_kv', 'cloudflare_kv', kvStore, marketplace);
   }
 }
 
 export class UpstashKvSessionStore extends KvBackedEbayResearchSessionStore {
-  constructor(kvStore: UpstashRedisKVStore, marketplace: string) {
+  constructor(kvStore: KVStore, marketplace: string) {
     super('upstash-redis', 'upstash-redis', kvStore, marketplace);
   }
 }
@@ -339,14 +339,22 @@ export class NoopSessionStore implements EbayResearchSessionStore {
   }
 }
 
-function getCloudflareSingleton(): CloudflareKVStore {
-  cloudflareKvSingleton ??= new CloudflareKVStore();
+function getOrCreateSelectedKvStore(
+  backend: Extract<EbayResearchSessionStoreBackend, 'cloudflare_kv' | 'upstash-redis'>
+): KVStore {
+  return createKVStoreForBackend(
+    backend === 'cloudflare_kv' ? 'cloudflare-kv' : 'upstash-redis'
+  );
+}
+
+function getCloudflareSingleton(): KVStore {
+  cloudflareKvSingleton ??= getOrCreateSelectedKvStore('cloudflare_kv');
 
   return cloudflareKvSingleton;
 }
 
-function getUpstashSingleton(): UpstashRedisKVStore {
-  upstashKvSingleton ??= new UpstashRedisKVStore();
+function getUpstashSingleton(): KVStore {
+  upstashKvSingleton ??= getOrCreateSelectedKvStore('upstash-redis');
 
   return upstashKvSingleton;
 }

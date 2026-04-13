@@ -15,6 +15,20 @@ const marketplace =
   configuredMarketplace && configuredMarketplace.length > 0 ? configuredMarketplace : 'EBAY-US';
 const researchUrl = `https://www.ebay.com/sh/research?marketplace=${encodeURIComponent(marketplace)}`;
 
+function getExpectedVerificationSessionSource(
+  selectedStore: 'cloudflare_kv' | 'upstash-redis' | 'filesystem' | 'none'
+): 'kv' | 'filesystem' | null {
+  if (selectedStore === 'cloudflare_kv' || selectedStore === 'upstash-redis') {
+    return 'kv';
+  }
+
+  if (selectedStore === 'filesystem') {
+    return 'filesystem';
+  }
+
+  return null;
+}
+
 function getChromiumChannel(): string | undefined {
   const configuredChannel = process.env.PLAYWRIGHT_CHROMIUM_CHANNEL?.trim();
   return configuredChannel && configuredChannel.length > 0 ? configuredChannel : undefined;
@@ -67,9 +81,12 @@ async function main(): Promise<void> {
 
     const verification: EbayResearchAuthInspection =
       await inspectEbayResearchAuthState(marketplace);
+    const expectedSessionSource = getExpectedVerificationSessionSource(
+      persistence.sessionStoreSelected
+    );
     if (
       verification.authState !== 'loaded' ||
-      verification.sessionSource !== persistence.sessionStoreSelected ||
+      verification.sessionSource !== expectedSessionSource ||
       verification.authValidationSucceeded !== true
     ) {
       throw new Error(

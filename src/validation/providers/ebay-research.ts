@@ -31,7 +31,7 @@ type ResearchSessionStrategy =
   | 'storage_state'
   | 'playwright_profile'
   | 'none';
-type ResearchSessionSource = EbayResearchSessionStoreBackend | 'env' | 'playwright_profile' | null;
+type ResearchSessionSource = 'kv' | 'env' | 'filesystem' | 'playwright_profile' | null;
 
 export interface EbayResearchListingRow {
   title: string;
@@ -313,13 +313,28 @@ function resolveResearchSessionStore(marketplace: string): EbayResearchSessionSt
   return createEbayResearchSessionStoreResolution(marketplace);
 }
 
+function getSessionSourceForStoreBackend(
+  backend: EbayResearchSessionStoreBackend
+): Extract<ResearchSessionSource, 'kv' | 'filesystem'> | null {
+  if (isKvEbayResearchSessionStoreBackend(backend)) {
+    return 'kv';
+  }
+
+  if (backend === 'filesystem') {
+    return 'filesystem';
+  }
+
+  return null;
+}
+
 function shouldAttemptFilesystemFallback(
   selectedBackend: EbayResearchSessionStoreBackend
 ): boolean {
   return (
     selectedBackend === 'filesystem' ||
     (isKvEbayResearchSessionStoreBackend(selectedBackend) &&
-      RESEARCH_SESSION_ALLOW_FILESYSTEM_FALLBACK)
+      RESEARCH_SESSION_ALLOW_FILESYSTEM_FALLBACK) ||
+    (selectedBackend === 'none' && RESEARCH_SESSION_ALLOW_FILESYSTEM_FALLBACK)
   );
 }
 
@@ -607,14 +622,15 @@ async function readResearchLegacyStorageStateFromStore(
   marketplace: string
 ): Promise<PersistedKvStorageStateRecord | null> {
   const legacyKeys = getEbayResearchSessionLegacyKeys(marketplace);
-  const [rawValue, updatedAt, source] = await Promise.all([
-    store.getLegacyValue<string>(legacyKeys.storageStateKey),
-    store.getLegacyValue<string>(legacyKeys.updatedAtKey),
-    store.getLegacyValue<string>(legacyKeys.sourceKey),
-  ]);
+  const rawValue = await store.getLegacyValue<string>(legacyKeys.storageStateKey);
   if (typeof rawValue !== 'string' || rawValue.trim().length === 0) {
     return null;
   }
+
+  const [updatedAt, source] = await Promise.all([
+    store.getLegacyValue<string>(legacyKeys.updatedAtKey),
+    store.getLegacyValue<string>(legacyKeys.sourceKey),
+  ]);
 
   let parsed: ResearchStorageState | null;
   try {
@@ -687,13 +703,26 @@ async function persistResearchSessionToStore(options: {
     backend: resolution.selected,
     marketplace: options.marketplace,
     source: options.source,
-    sessionSource: options.sessionSource ?? resolution.selected,
+    sessionSource: options.sessionSource ?? getSessionSourceForStoreBackend(resolution.selected),
     storageStateBytes,
   };
+  const persistedSession: PersistedResearchSession = {
+    cookies: persistedCookies,
+    storageState: persistedStorageState ?? storageStateFromCookies(persistedCookies),
+    updatedAt,
+    expiresAt: expiryMs ? new Date(expiryMs).toISOString() : null,
+    marketplace: options.marketplace,
+    source: options.source,
+    sessionSource: options.sessionSource ?? getSessionSourceForStoreBackend(resolution.selected),
+  };
+  const legacyKeys = getEbayResearchSessionLegacyKeys(options.marketplace);
 
   await Promise.all([
     resolution.store.setStorageState(serializedStorageState, { ttlSeconds }),
     resolution.store.setMeta(meta, { ttlSeconds }),
+    ...(resolution.store instanceof KvBackedEbayResearchSessionStore
+      ? [resolution.store['kvStore'].put(legacyKeys.sessionKey, persistedSession, ttlSeconds)]
+      : []),
   ]);
   logResearchSession(
     `Stored eBay Research storage state to ${resolution.selected} (${storageStateBytes} bytes)`
@@ -1894,7 +1923,7 @@ async function resolveResearchAuthState(marketplace: string): Promise<ResearchAu
               authState: 'loaded',
               sessionStrategy: 'storage_state',
               ...diagnostics,
-              sessionSource: storeResolution.selected,
+              sessionSource: 'kv',
               notes: [
                 ...notes,
                 `Restored canonical eBay Research storage state from ${storeResolution.selected}${kvStorageStateRecord.updatedAt ? ` (updated ${kvStorageStateRecord.updatedAt})` : ''}.`,
@@ -1991,7 +2020,7 @@ async function resolveResearchAuthState(marketplace: string): Promise<ResearchAu
             authState: 'loaded',
             sessionStrategy: 'storage_state',
             ...diagnostics,
-            sessionSource: storeResolution.selected,
+            sessionSource: 'kv',
             notes: [
               ...notes,
               `Restored eBay Research storage state from ${storeResolution.selected}.`,
@@ -2059,7 +2088,7 @@ async function resolveResearchAuthState(marketplace: string): Promise<ResearchAu
             authState: 'loaded',
             sessionStrategy: 'storage_state',
             ...diagnostics,
-            sessionSource: storeResolution.selected,
+            sessionSource: 'kv',
             notes: [
               ...notes,
               `Restored eBay Research storage state from ${storeResolution.selected}.`,
@@ -2116,7 +2145,7 @@ async function resolveResearchAuthState(marketplace: string): Promise<ResearchAu
           authState: 'loaded',
           sessionStrategy: persistedSession.source ?? 'kv_store',
           ...diagnostics,
-          sessionSource: storeResolution.selected,
+          sessionSource: 'kv',
           notes: [
             ...notes,
             `Restored eBay Research cookie session from ${storeResolution.selected}.`,
@@ -2696,7 +2725,7 @@ export async function storeEbayResearchSessionToKv(
     cookies,
     storageState: sanitizedStorageState,
     source,
-    sessionSource: resolveResearchSessionStore(marketplace).selected,
+    sessionSource: getSessionSourceForStoreBackend(resolveResearchSessionStore(marketplace).selected),
     required: true,
   });
 }

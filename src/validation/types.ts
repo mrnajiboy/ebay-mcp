@@ -376,12 +376,10 @@ export interface TerapeakValidationSignals {
     authState?: 'loaded' | 'authenticated' | 'missing' | 'expired' | 'unavailable';
     sessionStrategy?: 'env_cookies' | 'kv_store' | 'storage_state' | 'playwright_profile' | 'none';
     sessionSource?:
-      | 'cloudflare_kv'
-      | 'upstash-redis'
+      | 'kv'
       | 'filesystem'
       | 'env'
       | 'playwright_profile'
-      | 'none'
       | null;
     sessionStoreConfigured?: 'cloudflare_kv' | 'upstash-redis' | 'filesystem' | 'none';
     sessionStoreSelected?: 'cloudflare_kv' | 'upstash-redis' | 'filesystem' | 'none';

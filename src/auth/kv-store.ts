@@ -12,6 +12,8 @@ export interface KVStore {
   delete(key: string): Promise<void>;
 }
 
+type KVStoreBackend = 'memory' | 'cloudflare-kv' | 'upstash-redis';
+
 // ── In-memory backend ─────────────────────────────────────────────────────────
 
 interface MemEntry {
@@ -238,6 +240,61 @@ export class UpstashRedisKVStore implements KVStore {
  * that need to swap the backend.
  */
 let _kvStoreSingleton: KVStore | null = null;
+const _kvStoreSingletonsByBackend = new Map<KVStoreBackend, KVStore>();
+
+function normalizeKVStoreBackend(value: string | null | undefined): KVStoreBackend {
+  const backend = (value ?? 'cloudflare-kv').toLowerCase().trim();
+
+  switch (backend) {
+    case 'memory':
+    case 'in-memory':
+      return 'memory';
+    case 'upstash-redis':
+    case 'upstash':
+    case 'redis':
+      return 'upstash-redis';
+    case 'cloudflare-kv':
+    case 'cloudflare':
+    default:
+      return 'cloudflare-kv';
+  }
+}
+
+function createKVStoreInstance(backend: KVStoreBackend, rawEnv?: string | null): KVStore {
+  switch (backend) {
+    case 'memory': {
+      console.log(
+        `[kv-store] EBAY_TOKEN_STORE_BACKEND="${rawEnv ?? ''}" → using InMemoryKVStore (no external KV calls)`
+      );
+      return new InMemoryKVStore();
+    }
+    case 'upstash-redis': {
+      console.log(
+        `[kv-store] EBAY_TOKEN_STORE_BACKEND="${rawEnv ?? ''}" → using UpstashRedisKVStore (url="${process.env.UPSTASH_REDIS_REST_URL ?? '(unset)'}")`
+      );
+      return new UpstashRedisKVStore();
+    }
+    case 'cloudflare-kv':
+    default: {
+      console.log(
+        `[kv-store] EBAY_TOKEN_STORE_BACKEND="${rawEnv ?? '(unset)'}" → using CloudflareKVStore (accountId="${process.env.CLOUDFLARE_ACCOUNT_ID ?? '(unset)'}") — set EBAY_TOKEN_STORE_BACKEND=memory to disable`
+      );
+      return new CloudflareKVStore();
+    }
+  }
+}
+
+export function createKVStoreForBackend(backend: string): KVStore {
+  const normalizedBackend = normalizeKVStoreBackend(backend);
+  const existing = _kvStoreSingletonsByBackend.get(normalizedBackend);
+  if (existing) {
+    return existing;
+  }
+
+  const store = createKVStoreInstance(normalizedBackend, backend);
+  _kvStoreSingletonsByBackend.set(normalizedBackend, store);
+  return store;
+}
 
 /**
  * Returns (or lazily creates) the process-wide KV store singleton based on the
@@ -256,37 +313,11 @@ export function createKVStore(): KVStore {
   }
 
   const rawEnv = process.env.EBAY_TOKEN_STORE_BACKEND;
-  const backend = (rawEnv ?? 'cloudflare-kv').toLowerCase().trim();
+  const normalizedBackend = normalizeKVStoreBackend(rawEnv);
 
-  // Log exactly once, at the point the singleton is first constructed.
-  switch (backend) {
-    case 'memory':
-    case 'in-memory': {
-      console.log(
-        `[kv-store] EBAY_TOKEN_STORE_BACKEND="${rawEnv ?? ''}" → using InMemoryKVStore (no external KV calls)`
-      );
-      _kvStoreSingleton = new InMemoryKVStore();
-      break;
-    }
-    case 'upstash-redis':
-    case 'upstash':
-    case 'redis': {
-      console.log(
-        `[kv-store] EBAY_TOKEN_STORE_BACKEND="${rawEnv ?? ''}" → using UpstashRedisKVStore (url="${process.env.UPSTASH_REDIS_REST_URL ?? '(unset)'}")`
-      );
-      _kvStoreSingleton = new UpstashRedisKVStore();
-      break;
-    }
-    case 'cloudflare-kv':
-    case 'cloudflare':
-    default: {
-      console.log(
-        `[kv-store] EBAY_TOKEN_STORE_BACKEND="${rawEnv ?? '(unset)'}" → using CloudflareKVStore (accountId="${process.env.CLOUDFLARE_ACCOUNT_ID ?? '(unset)'}") — set EBAY_TOKEN_STORE_BACKEND=memory to disable`
-      );
-      _kvStoreSingleton = new CloudflareKVStore();
-      break;
-    }
-  }
+  _kvStoreSingleton =
+    _kvStoreSingletonsByBackend.get(normalizedBackend) ??
+    createKVStoreForBackend(rawEnv ?? normalizedBackend);
 
   return _kvStoreSingleton;
 }
@@ -303,4 +334,5 @@ export function createKVStore(): KVStore {
  */
 export function resetKVStoreSingleton(replacement: KVStore | null = null): void {
   _kvStoreSingleton = replacement;
+  _kvStoreSingletonsByBackend.clear();
 }
