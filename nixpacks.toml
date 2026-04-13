@@ -1,5 +1,4 @@
-[providers]
-node = true
+providers = ["node"]
 
 [phases.setup]
 aptPkgs = [
