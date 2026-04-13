@@ -263,6 +263,10 @@ export abstract class KvBackedEbayResearchSessionStore implements EbayResearchSe
     return await this.kvStore.get<T>(key);
   }
 
+  async setLegacyValue<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
+    await this.kvStore.put(key, value, ttlSeconds);
+  }
+
   async deleteLegacyKeys(keys: string[]): Promise<void> {
     await Promise.all(keys.map(async (key) => await this.kvStore.delete(key)));
   }

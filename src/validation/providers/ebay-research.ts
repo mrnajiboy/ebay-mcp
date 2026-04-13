@@ -721,7 +721,7 @@ async function persistResearchSessionToStore(options: {
     resolution.store.setStorageState(serializedStorageState, { ttlSeconds }),
     resolution.store.setMeta(meta, { ttlSeconds }),
     ...(resolution.store instanceof KvBackedEbayResearchSessionStore
-      ? [resolution.store.kvStore.put(legacyKeys.sessionKey, persistedSession, ttlSeconds)]
+      ? [resolution.store.setLegacyValue(legacyKeys.sessionKey, persistedSession, ttlSeconds)]
       : []),
   ]);
   logResearchSession(
