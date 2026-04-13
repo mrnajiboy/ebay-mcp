@@ -783,7 +783,7 @@ Review the diff, commit the generated changes you want to keep, and deploy.
 
 ### Local env management
 
-For local development, standard runtime scripts automatically load `.env` via dotenvx. Hosted platforms should provide environment variables directly — the server detects hosted environments (e.g. `RENDER=true`) and skips local file loading.
+For local development, standard runtime scripts load `.env` via dotenvx only when a real local [`.env`](.env) file is present. Hosted platforms should provide environment variables directly — the server skips dotenvx for hosted/runtime environments (including Nixpacks-style deployments, which set [`DISABLE_DOTENVX`](nixpacks.toml:26)) and whenever no local [`.env`](.env) file exists.
 
 ```bash
 pnpm run env:encrypt   # encrypt .env for safe sharing

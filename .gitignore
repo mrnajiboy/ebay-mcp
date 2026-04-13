@@ -88,8 +88,8 @@ test-results/
 *.lcov
 .jest/
 junit.xml
-tests/curl/
-tests/fixtures/
+tests/unit/validation/curl/
+tests/unit/validation/fixtures/
 
 # Cache directories
 .cache/

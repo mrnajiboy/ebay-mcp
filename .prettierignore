@@ -24,5 +24,5 @@ package-lock.json
 .env.*
 !.env.example
 .airtable/
-tests/curl/
-tests/fixtures/
+tests/unit/validation/curl/
+tests/unit/validation/fixtures/
