@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { createKVStoreForBackend, type KVStore } from '@/auth/kv-store.js';
+import * as kvStoreModule from '@/auth/kv-store.js';
+import type { KVStore } from '@/auth/kv-store.js';
 
 export type EbayResearchSessionStoreBackend =
   | 'cloudflare_kv'
@@ -342,7 +343,13 @@ export class NoopSessionStore implements EbayResearchSessionStore {
 function getOrCreateSelectedKvStore(
   backend: Extract<EbayResearchSessionStoreBackend, 'cloudflare_kv' | 'upstash-redis'>
 ): KVStore {
-  return createKVStoreForBackend(backend === 'cloudflare_kv' ? 'cloudflare-kv' : 'upstash-redis');
+  const explicitBackend = backend === 'cloudflare_kv' ? 'cloudflare-kv' : 'upstash-redis';
+
+  if (typeof kvStoreModule.createKVStoreForBackend === 'function') {
+    return kvStoreModule.createKVStoreForBackend(explicitBackend);
+  }
+
+  return kvStoreModule.createKVStore();
 }
 
 function getCloudflareSingleton(): KVStore {

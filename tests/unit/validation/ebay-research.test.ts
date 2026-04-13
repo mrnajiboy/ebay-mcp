@@ -28,14 +28,19 @@ vi.mock('axios', () => ({
   isAxiosError: () => false,
 }));
 
-vi.mock('@/auth/kv-store.js', () => ({
-  createKVStore: () => ({
+vi.mock('@/auth/kv-store.js', () => {
+  const mockStore = {
     backendName: 'memory',
     get: kvGetMock,
     put: kvPutMock,
     delete: kvDeleteMock,
-  }),
-}));
+  };
+
+  return {
+    createKVStore: () => mockStore,
+    createKVStoreForBackend: () => mockStore,
+  };
+});
 
 vi.mock('node:fs', () => ({
   existsSync: existsSyncMock,
@@ -172,6 +177,7 @@ describe('fetchEbayResearch()', () => {
     vi.useRealTimers();
     delete process.env.EBAY_RESEARCH_COOKIES_JSON;
     delete process.env.EBAY_RESEARCH_STORAGE_STATE_JSON;
+    delete process.env.EBAY_RESEARCH_SESSION_ALLOW_FILESYSTEM_FALLBACK;
   });
 
   it('re-fetches research tabs when the authenticated cookie set changes', async () => {
@@ -325,6 +331,8 @@ describe('fetchEbayResearch()', () => {
   });
 
   it('invalidates a rejected KV session so later auth sources can be used', async () => {
+    process.env.EBAY_RESEARCH_SESSION_ALLOW_FILESYSTEM_FALLBACK = 'true';
+
     kvGetMock
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(null)
