@@ -350,9 +350,17 @@ function sanitizeResearchStorageState(
   } satisfies ResearchStorageState;
 }
 
-function buildResearchAuthDebug(authState: ResearchAuthState): Omit<
+function buildResearchAuthDebug(
+  authState: ResearchAuthState
+): Omit<
   EbayResearchResponse['debug'],
-  'query' | 'activeEndpointUrl' | 'soldEndpointUrl' | 'fetchedAt' | 'modulesSeen' | 'pageErrors' | 'notes'
+  | 'query'
+  | 'activeEndpointUrl'
+  | 'soldEndpointUrl'
+  | 'fetchedAt'
+  | 'modulesSeen'
+  | 'pageErrors'
+  | 'notes'
 > {
   return {
     authState: authState.authState,
@@ -1080,7 +1088,9 @@ function buildCookieHeader(cookies: ResearchCookie[]): string {
     .join('; ');
 }
 
-async function readStorageStateFile(storageStatePath: string): Promise<ResearchStorageState | null> {
+async function readStorageStateFile(
+  storageStatePath: string
+): Promise<ResearchStorageState | null> {
   if (!existsSync(storageStatePath)) {
     return null;
   }
@@ -1154,7 +1164,9 @@ async function readPlaywrightProfileState(
 
   const playwrightModule = await loadPlaywrightModule();
   if (!playwrightModule?.chromium?.launchPersistentContext) {
-    notes.push('Playwright runtime is unavailable, so the local Playwright profile could not be loaded.');
+    notes.push(
+      'Playwright runtime is unavailable, so the local Playwright profile could not be loaded.'
+    );
     return null;
   }
 
@@ -1231,10 +1243,7 @@ async function resolveResearchAuthState(marketplace: string): Promise<ResearchAu
           sessionStrategy: 'storage_state',
           ...diagnostics,
           sessionSource: 'kv',
-          notes: [
-            ...notes,
-            `Restored eBay Research storage state from ${store.backendName}.`,
-          ],
+          notes: [...notes, `Restored eBay Research storage state from ${store.backendName}.`],
         };
         researchAuthCache[marketplace] = {
           expiresAt: Date.now() + RESEARCH_COOKIE_CACHE_TTL_MS,
@@ -1248,15 +1257,13 @@ async function resolveResearchAuthState(marketplace: string): Promise<ResearchAu
       diagnostics.kvLoadSucceeded = true;
       const value: ResearchAuthState = {
         cookies: persistedSession.cookies,
-        storageState: persistedSession.storageState ?? storageStateFromCookies(persistedSession.cookies),
+        storageState:
+          persistedSession.storageState ?? storageStateFromCookies(persistedSession.cookies),
         authState: 'authenticated',
         sessionStrategy: persistedSession.source ?? 'kv_store',
         ...diagnostics,
         sessionSource: 'kv',
-        notes: [
-          ...notes,
-          `Restored eBay Research cookie session from ${store.backendName}.`,
-        ],
+        notes: [...notes, `Restored eBay Research cookie session from ${store.backendName}.`],
       };
       researchAuthCache[marketplace] = {
         expiresAt: Date.now() + RESEARCH_COOKIE_CACHE_TTL_MS,
@@ -1307,7 +1314,9 @@ async function resolveResearchAuthState(marketplace: string): Promise<ResearchAu
           return value;
         }
       } else {
-        notes.push(`${RESEARCH_STORAGE_STATE_ENV_KEY} did not contain a valid Playwright storage state.`);
+        notes.push(
+          `${RESEARCH_STORAGE_STATE_ENV_KEY} did not contain a valid Playwright storage state.`
+        );
       }
     } catch {
       notes.push(`${RESEARCH_STORAGE_STATE_ENV_KEY} could not be parsed as JSON.`);

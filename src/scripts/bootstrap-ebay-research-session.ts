@@ -51,7 +51,8 @@ async function main(): Promise<void> {
     await storeEbayResearchSessionToKv(marketplace, storageState, 'storage_state');
     clearEbayResearchAuthCache();
 
-    const verification: EbayResearchAuthInspection = await inspectEbayResearchAuthState(marketplace);
+    const verification: EbayResearchAuthInspection =
+      await inspectEbayResearchAuthState(marketplace);
     if (verification.authState !== 'authenticated' || verification.sessionSource !== 'kv') {
       throw new Error(
         `eBay Research session bootstrap verification failed (authState=${verification.authState}, sessionSource=${verification.sessionSource ?? 'none'}, cookieCount=${verification.cookieCount}).`
