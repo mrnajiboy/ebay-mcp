@@ -96,6 +96,17 @@ function buildSoldPayload(): string {
   });
 }
 
+function buildValidationPayload(): string {
+  return buildActivePayload();
+}
+
+async function readFixture(relativePath: string): Promise<string> {
+  const fs = (await vi.importActual('node:fs/promises')) as {
+    readFile: (path: URL, encoding: string) => Promise<string>;
+  };
+  return await fs.readFile(new URL(relativePath, import.meta.url), 'utf8');
+}
+
 describe('fetchEbayResearch()', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -171,11 +182,12 @@ describe('fetchEbayResearch()', () => {
     const { fetchEbayResearch } = await import('../../../src/validation/providers/ebay-research.js');
 
     axiosGetMock
+      .mockResolvedValueOnce({ status: 200, data: buildValidationPayload() })
       .mockResolvedValueOnce({ status: 200, data: buildActivePayload() })
       .mockResolvedValueOnce({ status: 200, data: buildSoldPayload() });
 
     await fetchEbayResearch('ATEEZ GOLDEN HOUR');
-    expect(axiosGetMock).toHaveBeenCalledTimes(2);
+    expect(axiosGetMock).toHaveBeenCalledTimes(3);
 
     axiosGetMock.mockClear();
     vi.advanceTimersByTime(6 * 60 * 1000);
@@ -184,11 +196,12 @@ describe('fetchEbayResearch()', () => {
     ]);
 
     axiosGetMock
+      .mockResolvedValueOnce({ status: 200, data: buildValidationPayload() })
       .mockResolvedValueOnce({ status: 200, data: buildActivePayload() })
       .mockResolvedValueOnce({ status: 200, data: buildSoldPayload() });
 
     await fetchEbayResearch('ATEEZ GOLDEN HOUR');
-    expect(axiosGetMock).toHaveBeenCalledTimes(2);
+    expect(axiosGetMock).toHaveBeenCalledTimes(3);
   });
 
   it('does not cache transient non-2xx research responses', async () => {
@@ -199,6 +212,7 @@ describe('fetchEbayResearch()', () => {
     const { fetchEbayResearch } = await import('../../../src/validation/providers/ebay-research.js');
 
     axiosGetMock
+      .mockResolvedValueOnce({ status: 200, data: buildValidationPayload() })
       .mockResolvedValueOnce({
         status: 429,
         data: JSON.stringify({ _type: 'PageErrorModule', message: 'Rate limited' }),
@@ -214,6 +228,7 @@ describe('fetchEbayResearch()', () => {
 
     axiosGetMock.mockClear();
     axiosGetMock
+      .mockResolvedValueOnce({ status: 200, data: buildValidationPayload() })
       .mockResolvedValueOnce({ status: 200, data: buildActivePayload() })
       .mockResolvedValueOnce({ status: 200, data: buildSoldPayload() });
 
@@ -224,20 +239,110 @@ describe('fetchEbayResearch()', () => {
     expect(response.sold.soldRows).toHaveLength(1);
   });
 
+  it('parses the ACTIVE and SOLD research fixtures with usable module debug output', async () => {
+    process.env.EBAY_RESEARCH_COOKIES_JSON = JSON.stringify([
+      { name: 'sid', value: 'cookie-a', domain: '.ebay.com', path: '/' },
+    ]);
+
+    const activeFixture = await readFixture('../../fixtures/ebay-research-active-babymonster-choom-pob.ndjson');
+    const soldFixture = await readFixture('../../fixtures/ebay-research-sold-babymonster-choom-pob.ndjson');
+    const { fetchEbayResearch } = await import('../../../src/validation/providers/ebay-research.js');
+
+    axiosGetMock
+      .mockResolvedValueOnce({ status: 200, data: buildValidationPayload() })
+      .mockResolvedValueOnce({ status: 200, data: activeFixture })
+      .mockResolvedValueOnce({ status: 200, data: soldFixture });
+
+    const response = await fetchEbayResearch('BABYMONSTER CHOOM POB');
+
+    expect(response.debug.activeParse?.modulesSeen).toEqual(
+      expect.arrayContaining([
+        'PageErrorModule',
+        'ResultsHeaderModule',
+        'ResearchAggregateModule',
+        'ActiveSearchResultsModule',
+      ])
+    );
+    expect(response.debug.activeParse?.moduleCount).toBeGreaterThan(0);
+    expect(response.debug.activeParse?.parseErrors).toEqual([]);
+    expect(response.debug.activeParse?.pageErrors).toEqual(
+      expect.arrayContaining(['PageErrorModule present'])
+    );
+    expect(response.debug.activeParse?.aggregateExtracted).toBe(true);
+    expect(response.debug.activeParse?.rowCount).toBeGreaterThan(0);
+    expect(response.debug.activeParse?.watcherCoverageCount).toBeGreaterThan(0);
+    expect(response.debug.activeParse?.usefulResponse).toBe(true);
+
+    expect(response.active.avgListingPriceUsd).toBe(50.32);
+    expect(response.active.listingPriceMinUsd).toBe(14.32);
+    expect(response.active.listingPriceMaxUsd).toBe(92.9);
+    expect(response.active.avgShippingUsd).toBe(15.29);
+    expect(response.active.freeShippingPct).toBe(10);
+    expect(response.active.totalActiveListings).toBe(10);
+    expect(response.active.promotedListingsPct).toBe(60);
+    expect(response.active.listingRows.length).toBeGreaterThan(0);
+    expect(response.active.listingRows.some((row) => row.watchers !== null)).toBe(true);
+    expect(response.active.avgWatchersPerListing).not.toBeNull();
+
+    expect(response.debug.soldParse?.modulesSeen).toEqual(
+      expect.arrayContaining([
+        'PageErrorModule',
+        'ResultsHeaderModule',
+        'ResearchAggregateModule',
+        'SearchResultsModule',
+      ])
+    );
+    expect(response.debug.soldParse?.moduleCount).toBeGreaterThan(0);
+    expect(response.debug.soldParse?.parseErrors).toEqual([]);
+    expect(response.debug.soldParse?.pageErrors?.length ?? 0).toBeGreaterThan(0);
+    expect(response.debug.soldParse?.aggregateExtracted).toBe(true);
+    expect(response.debug.soldParse?.rowCount).toBeGreaterThan(0);
+    expect(response.debug.soldParse?.watcherCoverageCount).toBe(0);
+    expect(response.debug.soldParse?.usefulResponse).toBe(true);
+
+    expect(response.sold.avgSoldPriceUsd).toBe(71.51);
+    expect(response.sold.soldPriceMinUsd).toBe(14.32);
+    expect(response.sold.soldPriceMaxUsd).toBe(88.3);
+    expect(response.sold.avgShippingUsd).toBe(8.45);
+    expect(response.sold.freeShippingPct).toBe(71);
+    expect(response.sold.totalSold).toBe(7);
+    expect(response.sold.sellThroughPct).toBe(33.33);
+    expect(response.sold.totalSellers).toBe(3);
+    expect(response.sold.totalItemSalesUsd).toBe(500.57);
+    expect(response.sold.soldRows.length).toBeGreaterThan(0);
+    expect(response.sold.soldRows.some((row) => row.lastSoldDate !== null)).toBe(true);
+
+    expect(response.debug.usefulResponse).toBe(true);
+    expect(response.debug.modulesSeen).toEqual(
+      expect.arrayContaining([
+        'PageErrorModule',
+        'ResultsHeaderModule',
+        'ResearchAggregateModule',
+        'ActiveSearchResultsModule',
+        'SearchResultsModule',
+      ])
+    );
+  });
+
   it('invalidates a rejected KV session so later auth sources can be used', async () => {
     kvGetMock
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({
         cookies: [{ name: 'sid', value: 'cookie-a', domain: '.ebay.com', path: '/' }],
         updatedAt: '2026-04-10T00:00:00.000Z',
         expiresAt: null,
         marketplace: 'EBAY-US',
         source: 'kv_store',
-      })
-      .mockResolvedValueOnce(null);
+      });
 
-    const { fetchEbayResearch } = await import('../../../src/validation/providers/ebay-research.js');
+    const { clearEbayResearchAuthCache, fetchEbayResearch } = await import(
+      '../../../src/validation/providers/ebay-research.js'
+    );
 
     axiosGetMock
+      .mockResolvedValueOnce({ status: 200, data: buildValidationPayload() })
       .mockResolvedValueOnce({
         status: 403,
         data: JSON.stringify({ _type: 'PageErrorModule', message: 'Forbidden' }),
@@ -253,6 +358,8 @@ describe('fetchEbayResearch()', () => {
     expect(firstResponse.debug.sessionStrategy).toBe('kv_store');
     expect(firstResponse.debug.sessionSource).toBe('kv');
     expect(kvDeleteMock.mock.calls.length).toBeGreaterThan(0);
+    clearEbayResearchAuthCache();
+    axiosGetMock.mockReset();
 
     existsSyncMock.mockImplementation((path?: string) =>
       typeof path === 'string' && path.includes('.ebay-research/storage-state.json')
@@ -262,10 +369,14 @@ describe('fetchEbayResearch()', () => {
         cookies: [{ name: 'sid', value: 'cookie-b', domain: '.ebay.com', path: '/' }],
       })
     );
-    axiosGetMock.mockResolvedValueOnce({ status: 200, data: buildActivePayload() }).mockResolvedValueOnce({
-      status: 200,
-      data: buildSoldPayload(),
-    });
+    clearEbayResearchAuthCache();
+    axiosGetMock
+      .mockResolvedValueOnce({ status: 200, data: buildValidationPayload() })
+      .mockResolvedValueOnce({ status: 200, data: buildActivePayload() })
+      .mockResolvedValueOnce({
+        status: 200,
+        data: buildSoldPayload(),
+      });
 
     const secondResponse = await fetchEbayResearch('ATEEZ GOLDEN HOUR');
 
@@ -303,6 +414,7 @@ describe('fetchEbayResearch()', () => {
     const { fetchEbayResearch } = await import('../../../src/validation/providers/ebay-research.js');
 
     axiosGetMock
+      .mockResolvedValueOnce({ status: 200, data: buildValidationPayload() })
       .mockResolvedValueOnce({ status: 200, data: buildActivePayload() })
       .mockResolvedValueOnce({ status: 200, data: buildSoldPayload() });
 
@@ -373,12 +485,17 @@ describe('fetchEbayResearch()', () => {
       '../../../src/validation/providers/ebay-research.js'
     );
 
+    axiosGetMock
+      .mockResolvedValueOnce({ status: 200, data: buildValidationPayload() })
+      .mockResolvedValueOnce({ status: 200, data: buildValidationPayload() });
+
     const usInspection = await inspectEbayResearchAuthState('EBAY-US');
     const gbInspection = await inspectEbayResearchAuthState('EBAY-GB');
 
     expect(usInspection.cookieCount).toBe(1);
     expect(gbInspection.cookieCount).toBe(1);
-    expect(kvGetMock).toHaveBeenCalledTimes(2);
+    expect(kvGetMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+    expect(browserContextCookiesMock).toHaveBeenCalledTimes(2);
     expect(browserContextCookiesMock).toHaveBeenNthCalledWith(1, 'https://www.ebay.com');
     expect(browserContextCookiesMock).toHaveBeenNthCalledWith(2, 'https://www.ebay.com');
   });

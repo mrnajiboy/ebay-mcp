@@ -79,6 +79,9 @@ export interface EbayResearchResponse {
     fetchedAt: string;
     modulesSeen: string[];
     pageErrors: string[];
+    activeParse?: ResearchTabParseDebug;
+    soldParse?: ResearchTabParseDebug;
+    usefulResponse?: boolean;
     authState: ResearchDebugAuthState;
     sessionStrategy: ResearchSessionStrategy;
     sessionSource: ResearchSessionSource;
@@ -121,9 +124,29 @@ interface ParsedResearchModule {
   moduleName: string;
 }
 
+interface ParsedResearchPayload {
+  modules: ParsedResearchModule[];
+  modulesSeen: string[];
+  moduleCount: number;
+  parseErrors: string[];
+}
+
+interface ResearchTabParseDebug {
+  modulesSeen: string[];
+  moduleCount: number;
+  parseErrors: string[];
+  pageErrors: string[];
+  aggregateExtracted: boolean;
+  rowCount: number;
+  watcherCoverageCount: number;
+  usefulResponse: boolean;
+}
+
 interface ResearchTabFetchResult {
   modules: ParsedResearchModule[];
   modulesSeen: string[];
+  moduleCount: number;
+  parseErrors: string[];
   pageErrors: string[];
   responseStatus: number;
   cacheKey: string;
@@ -719,8 +742,8 @@ async function validateResearchAuthState(options: {
       },
       validateStatus: (status) => status >= 200 && status < 500,
     });
-    const modules = parseResearchModules(response.data);
-    const modulesSeen = uniqueStrings(modules.map((module) => module.moduleName));
+    const parsedPayload = parseResearchModules(response.data);
+    const modulesSeen = parsedPayload.modulesSeen;
     const ok = response.status >= 200 && response.status < 300 && modulesSeen.length > 0;
     const result: ResearchSessionValidationResult = ok
       ? {
@@ -938,7 +961,7 @@ function getModuleName(value: unknown): string {
   const metaName = isRecord(value.meta) ? extractDisplayText(value.meta.name) : '';
   const typeName = typeof value._type === 'string' ? value._type : '';
   const explicitName = typeof value.name === 'string' ? value.name : '';
-  return metaName || typeName || explicitName || 'UnknownModule';
+  return typeName || metaName || explicitName || 'UnknownModule';
 }
 
 function matchesLabel(value: string, labels: string[]): boolean {
@@ -1064,6 +1087,49 @@ function findMetricText(root: unknown, labels: string[]): string | null {
 
   walk(root);
   return matches[0] ?? null;
+}
+
+function collectAggregateMetricMap(module: unknown): Record<string, string> {
+  const metrics: Record<string, string> = {};
+
+  function walk(node: unknown): void {
+    if (Array.isArray(node)) {
+      for (const entry of node) {
+        walk(entry);
+      }
+      return;
+    }
+
+    if (!isRecord(node)) {
+      return;
+    }
+
+    const headerText = extractDisplayText(node.header);
+    const valueText = extractDisplayText(node.value);
+    if (headerText.length > 0 && valueText.length > 0) {
+      metrics[compactComparableText(headerText)] = valueText;
+    }
+
+    for (const nestedValue of Object.values(node)) {
+      walk(nestedValue);
+    }
+  }
+
+  walk(module);
+  return metrics;
+}
+
+function findAggregateMetricText(module: unknown, labels: string[]): string | null {
+  const metricMap = collectAggregateMetricMap(module);
+
+  for (const label of labels) {
+    const direct = metricMap[compactComparableText(label)];
+    if (direct) {
+      return direct;
+    }
+  }
+
+  return findMetricText(module, labels);
 }
 
 function findResultEntries(root: unknown): Record<string, unknown>[] {
@@ -1194,32 +1260,32 @@ function parseActiveAggregate(
   EbayResearchResponse['active'],
   'avgWatchersPerListing' | 'watcherCoverageCount' | 'listingRows'
 > {
-  const listingPriceRange = parseRange(findMetricText(module, ['Listing price range']));
+  const listingPriceRange = parseRange(findAggregateMetricText(module, ['Listing price range']));
 
   return {
-    avgListingPriceUsd: parseCurrencyValue(findMetricText(module, ['Avg listing price'])),
+    avgListingPriceUsd: parseCurrencyValue(findAggregateMetricText(module, ['Avg listing price'])),
     listingPriceMinUsd: listingPriceRange.min,
     listingPriceMaxUsd: listingPriceRange.max,
-    avgShippingUsd: parseCurrencyValue(findMetricText(module, ['Avg shipping'])),
-    freeShippingPct: parsePercentValue(findMetricText(module, ['Free shipping'])),
-    totalActiveListings: parseNumberLike(findMetricText(module, ['Total active listings'])),
-    promotedListingsPct: parsePercentValue(findMetricText(module, ['Promoted listings'])),
+    avgShippingUsd: parseCurrencyValue(findAggregateMetricText(module, ['Avg shipping'])),
+    freeShippingPct: parsePercentValue(findAggregateMetricText(module, ['Free shipping'])),
+    totalActiveListings: parseNumberLike(findAggregateMetricText(module, ['Total active listings'])),
+    promotedListingsPct: parsePercentValue(findAggregateMetricText(module, ['Promoted listings'])),
   };
 }
 
 function parseSoldAggregate(module: unknown): Omit<EbayResearchResponse['sold'], 'soldRows'> {
-  const soldPriceRange = parseRange(findMetricText(module, ['Sold price range']));
+  const soldPriceRange = parseRange(findAggregateMetricText(module, ['Sold price range']));
 
   return {
-    avgSoldPriceUsd: parseCurrencyValue(findMetricText(module, ['Avg sold price'])),
+    avgSoldPriceUsd: parseCurrencyValue(findAggregateMetricText(module, ['Avg sold price'])),
     soldPriceMinUsd: soldPriceRange.min,
     soldPriceMaxUsd: soldPriceRange.max,
-    avgShippingUsd: parseCurrencyValue(findMetricText(module, ['Avg shipping'])),
-    freeShippingPct: parsePercentValue(findMetricText(module, ['Free shipping'])),
-    sellThroughPct: parsePercentValue(findMetricText(module, ['Sell-through'])),
-    totalSold: parseNumberLike(findMetricText(module, ['Total sold'])),
-    totalSellers: parseNumberLike(findMetricText(module, ['Total sellers'])),
-    totalItemSalesUsd: parseCurrencyValue(findMetricText(module, ['Total item sales'])),
+    avgShippingUsd: parseCurrencyValue(findAggregateMetricText(module, ['Avg shipping'])),
+    freeShippingPct: parsePercentValue(findAggregateMetricText(module, ['Free shipping'])),
+    sellThroughPct: parsePercentValue(findAggregateMetricText(module, ['Sell-through'])),
+    totalSold: parseNumberLike(findAggregateMetricText(module, ['Total sold'])),
+    totalSellers: parseNumberLike(findAggregateMetricText(module, ['Total sellers'])),
+    totalItemSalesUsd: parseCurrencyValue(findAggregateMetricText(module, ['Total item sales'])),
   };
 }
 
@@ -1245,33 +1311,237 @@ function buildWatcherMetrics(rows: EbayResearchListingRow[]): {
   };
 }
 
-function parseResearchModules(payload: string): ParsedResearchModule[] {
-  return payload
-    .split(/\r?\n/u)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .flatMap((line) => {
-      try {
-        const parsed = JSON.parse(line) as unknown;
-        return [
-          {
-            raw: parsed,
-            moduleName: getModuleName(parsed),
-          },
-        ];
-      } catch {
-        return [];
+function findJsonObjectBoundary(value: string): number | null {
+  let depth = 0;
+  let inString = false;
+  let escaping = false;
+
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index];
+    if (character === undefined) {
+      continue;
+    }
+
+    if (inString) {
+      if (escaping) {
+        escaping = false;
+        continue;
       }
-    });
+
+      if (character === '\\') {
+        escaping = true;
+        continue;
+      }
+
+      if (character === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (character === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (character === '{' || character === '[') {
+      depth += 1;
+      continue;
+    }
+
+    if (character === '}' || character === ']') {
+      depth -= 1;
+      if (depth === 0) {
+        return index + 1;
+      }
+    }
+  }
+
+  return null;
+}
+
+function consumeJsonChunks(buffer: string): {
+  chunks: string[];
+  remainder: string;
+  parseErrors: string[];
+} {
+  const chunks: string[] = [];
+  const parseErrors: string[] = [];
+  let working = buffer.trim();
+
+  while (working.length > 0) {
+    const firstJsonIndex = working.search(/[\[{]/u);
+    if (firstJsonIndex === -1) {
+      parseErrors.push(`Skipped non-JSON payload fragment: ${working.slice(0, 120)}`);
+      return { chunks, remainder: '', parseErrors };
+    }
+
+    if (firstJsonIndex > 0) {
+      const skipped = working.slice(0, firstJsonIndex).trim();
+      if (skipped.length > 0) {
+        parseErrors.push(`Skipped non-JSON prefix: ${skipped.slice(0, 120)}`);
+      }
+      working = working.slice(firstJsonIndex).trim();
+      continue;
+    }
+
+    const boundary = findJsonObjectBoundary(working);
+    if (boundary === null) {
+      return {
+        chunks,
+        remainder: working,
+        parseErrors,
+      };
+    }
+
+    chunks.push(working.slice(0, boundary));
+    working = working.slice(boundary).trim();
+  }
+
+  return {
+    chunks,
+    remainder: '',
+    parseErrors,
+  };
+}
+
+function parseResearchModules(payload: string): ParsedResearchPayload {
+  const modules: ParsedResearchModule[] = [];
+  const parseErrors: string[] = [];
+  let buffer = '';
+
+  for (const rawLine of payload.split(/\r?\n/u)) {
+    const line = rawLine.trim();
+    if (line.length === 0) {
+      continue;
+    }
+
+    buffer += line;
+    const extracted = consumeJsonChunks(buffer);
+    parseErrors.push(...extracted.parseErrors);
+    buffer = extracted.remainder;
+
+    for (const chunk of extracted.chunks) {
+      try {
+        const parsed = JSON.parse(chunk) as unknown;
+        modules.push({
+          raw: parsed,
+          moduleName: getModuleName(parsed),
+        });
+      } catch (error) {
+        parseErrors.push(
+          `Failed to parse research module chunk: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }
+  }
+
+  if (buffer.trim().length > 0) {
+    const extracted = consumeJsonChunks(buffer);
+    parseErrors.push(...extracted.parseErrors);
+
+    for (const chunk of extracted.chunks) {
+      try {
+        const parsed = JSON.parse(chunk) as unknown;
+        modules.push({
+          raw: parsed,
+          moduleName: getModuleName(parsed),
+        });
+      } catch (error) {
+        parseErrors.push(
+          `Failed to parse research module chunk: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }
+
+    if (extracted.remainder.trim().length > 0) {
+      parseErrors.push(
+        `Incomplete JSON module fragment: ${extracted.remainder.trim().slice(0, 120)}`
+      );
+    }
+  }
+
+  const modulesSeen = uniqueStrings(modules.map((module) => module.moduleName));
+  return {
+    modules,
+    modulesSeen,
+    moduleCount: modules.length,
+    parseErrors: uniqueStrings(parseErrors),
+  };
 }
 
 function extractPageErrors(modules: ParsedResearchModule[]): string[] {
-  const errors = modules
-    .filter((module) => /PageErrorModule/i.test(module.moduleName))
+  const pageErrorModules = modules.filter((module) => /PageErrorModule/i.test(module.moduleName));
+  if (pageErrorModules.length === 0) {
+    return [];
+  }
+
+  const errors = pageErrorModules
     .flatMap((module) => collectDisplayTexts(module.raw, [], 20))
     .filter((entry) => !/PageErrorModule/i.test(entry));
 
-  return uniqueStrings(errors).slice(0, 10);
+  const uniqueErrors = uniqueStrings(errors).slice(0, 10);
+  return uniqueErrors.length > 0 ? uniqueErrors : ['PageErrorModule present'];
+}
+
+function isUsefulActiveResearchPayload(
+  value: Omit<
+    EbayResearchResponse['active'],
+    'avgWatchersPerListing' | 'watcherCoverageCount' | 'listingRows'
+  >,
+  rowCount: number
+): boolean {
+  return (
+    rowCount > 0 ||
+    aggregateHasUsefulValues({
+      avgListingPriceUsd: value.avgListingPriceUsd,
+      listingPriceMinUsd: value.listingPriceMinUsd,
+      listingPriceMaxUsd: value.listingPriceMaxUsd,
+      avgShippingUsd: value.avgShippingUsd,
+      freeShippingPct: value.freeShippingPct,
+      totalActiveListings: value.totalActiveListings,
+      promotedListingsPct: value.promotedListingsPct,
+    })
+  );
+}
+
+function isUsefulSoldResearchPayload(
+  value: Omit<EbayResearchResponse['sold'], 'soldRows'>,
+  rowCount: number
+): boolean {
+  return (
+    rowCount > 0 ||
+    aggregateHasUsefulValues({
+      avgSoldPriceUsd: value.avgSoldPriceUsd,
+      soldPriceMinUsd: value.soldPriceMinUsd,
+      soldPriceMaxUsd: value.soldPriceMaxUsd,
+      avgShippingUsd: value.avgShippingUsd,
+      freeShippingPct: value.freeShippingPct,
+      sellThroughPct: value.sellThroughPct,
+      totalSold: value.totalSold,
+      totalSellers: value.totalSellers,
+      totalItemSalesUsd: value.totalItemSalesUsd,
+    })
+  );
+}
+
+function buildResearchTabParseDebug(options: {
+  fetchResult: ResearchTabFetchResult;
+  aggregateExtracted: boolean;
+  rowCount: number;
+  watcherCoverageCount?: number | null;
+  usefulResponse: boolean;
+}): ResearchTabParseDebug {
+  return {
+    modulesSeen: options.fetchResult.modulesSeen,
+    moduleCount: options.fetchResult.moduleCount,
+    parseErrors: options.fetchResult.parseErrors,
+    pageErrors: options.fetchResult.pageErrors,
+    aggregateExtracted: options.aggregateExtracted,
+    rowCount: options.rowCount,
+    watcherCoverageCount: options.watcherCoverageCount ?? 0,
+    usefulResponse: options.usefulResponse,
+  };
 }
 
 function hasUsefulResearchPayload(value: EbayResearchResponse): boolean {
@@ -1908,11 +2178,13 @@ async function fetchResearchTab(
     );
   }
 
-  const modules = parseResearchModules(response.data);
+  const parsedPayload = parseResearchModules(response.data);
   const result: ResearchTabFetchResult = {
-    modules,
-    modulesSeen: uniqueStrings(modules.map((module) => module.moduleName)),
-    pageErrors: extractPageErrors(modules),
+    modules: parsedPayload.modules,
+    modulesSeen: parsedPayload.modulesSeen,
+    moduleCount: parsedPayload.moduleCount,
+    parseErrors: parsedPayload.parseErrors,
+    pageErrors: extractPageErrors(parsedPayload.modules),
     responseStatus: response.status,
     cacheKey,
     cacheEligible: response.status >= 200 && response.status < 300,
@@ -1974,6 +2246,41 @@ export async function fetchEbayResearch(
     const watcherMetrics = buildWatcherMetrics(activeRows);
     const soldAggregate = parseSoldAggregate(soldAggregateModule);
     const soldRows = parseSoldRows(soldSearchResultsModule);
+    const activeAggregateExtracted = aggregateHasUsefulValues({
+      avgListingPriceUsd: activeAggregate.avgListingPriceUsd,
+      listingPriceMinUsd: activeAggregate.listingPriceMinUsd,
+      listingPriceMaxUsd: activeAggregate.listingPriceMaxUsd,
+      avgShippingUsd: activeAggregate.avgShippingUsd,
+      freeShippingPct: activeAggregate.freeShippingPct,
+      totalActiveListings: activeAggregate.totalActiveListings,
+      promotedListingsPct: activeAggregate.promotedListingsPct,
+    });
+    const soldAggregateExtracted = aggregateHasUsefulValues({
+      avgSoldPriceUsd: soldAggregate.avgSoldPriceUsd,
+      soldPriceMinUsd: soldAggregate.soldPriceMinUsd,
+      soldPriceMaxUsd: soldAggregate.soldPriceMaxUsd,
+      avgShippingUsd: soldAggregate.avgShippingUsd,
+      freeShippingPct: soldAggregate.freeShippingPct,
+      sellThroughPct: soldAggregate.sellThroughPct,
+      totalSold: soldAggregate.totalSold,
+      totalSellers: soldAggregate.totalSellers,
+      totalItemSalesUsd: soldAggregate.totalItemSalesUsd,
+    });
+    const activeUsefulResponse = isUsefulActiveResearchPayload(activeAggregate, activeRows.length);
+    const soldUsefulResponse = isUsefulSoldResearchPayload(soldAggregate, soldRows.length);
+    const activeParse = buildResearchTabParseDebug({
+      fetchResult: activeResult,
+      aggregateExtracted: activeAggregateExtracted,
+      rowCount: activeRows.length,
+      watcherCoverageCount: watcherMetrics.watcherCoverageCount,
+      usefulResponse: activeUsefulResponse,
+    });
+    const soldParse = buildResearchTabParseDebug({
+      fetchResult: soldResult,
+      aggregateExtracted: soldAggregateExtracted,
+      rowCount: soldRows.length,
+      usefulResponse: soldUsefulResponse,
+    });
     const response: EbayResearchResponse = {
       active: {
         ...activeAggregate,
@@ -1992,6 +2299,9 @@ export async function fetchEbayResearch(
         fetchedAt,
         modulesSeen: uniqueStrings([...activeResult.modulesSeen, ...soldResult.modulesSeen]),
         pageErrors: uniqueStrings([...activeResult.pageErrors, ...soldResult.pageErrors]),
+        activeParse,
+        soldParse,
+        usefulResponse: activeUsefulResponse || soldUsefulResponse,
         ...buildResearchAuthDebug(authState),
         notes: [...authState.notes],
       },
@@ -2052,6 +2362,27 @@ export async function fetchEbayResearch(
           fetchedAt,
           modulesSeen: [],
           pageErrors: [],
+          activeParse: {
+            modulesSeen: [],
+            moduleCount: 0,
+            parseErrors: [],
+            pageErrors: [],
+            aggregateExtracted: false,
+            rowCount: 0,
+            watcherCoverageCount: 0,
+            usefulResponse: false,
+          },
+          soldParse: {
+            modulesSeen: [],
+            moduleCount: 0,
+            parseErrors: [],
+            pageErrors: [],
+            aggregateExtracted: false,
+            rowCount: 0,
+            watcherCoverageCount: 0,
+            usefulResponse: false,
+          },
+          usefulResponse: false,
           ...buildResearchAuthDebug({
             ...authState,
             authState: authState.cookies.length > 0 ? 'expired' : authState.authState,

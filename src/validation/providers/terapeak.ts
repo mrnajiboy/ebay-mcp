@@ -394,10 +394,21 @@ function getResearchSoldTotal(response: EbayResearchResponse): number | null {
 
 function isUsefulResearchResponse(response: EbayResearchResponse): boolean {
   return (
+    response.debug.activeParse?.usefulResponse === true ||
+    response.debug.soldParse?.usefulResponse === true ||
     getResearchActiveCount(response) !== null ||
     getResearchSoldTotal(response) !== null ||
     response.active.avgWatchersPerListing !== null ||
-    response.sold.sellThroughPct !== null
+    response.sold.sellThroughPct !== null ||
+    response.active.avgListingPriceUsd !== null ||
+    response.active.avgShippingUsd !== null ||
+    response.active.freeShippingPct !== null ||
+    response.active.promotedListingsPct !== null ||
+    response.sold.avgSoldPriceUsd !== null ||
+    response.sold.avgShippingUsd !== null ||
+    response.sold.freeShippingPct !== null ||
+    response.sold.totalSellers !== null ||
+    response.sold.totalItemSalesUsd !== null
   );
 }
 
