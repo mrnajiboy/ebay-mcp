@@ -1,0 +1,1836 @@
+{
+    "_type": "PageErrorModule",
+    "severity": "ERROR",
+    "meta": {
+        "name": "pageError"
+    },
+    "debugUrl": ""
+}{
+    "_type": "ResultsHeaderModule",
+    "tabs": [
+        {
+            "id": "sold",
+            "label": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Sold"
+                    }
+                ],
+                "accessibilityText": "Sold"
+            },
+            "active": true,
+            "disabled": false
+        },
+        {
+            "id": "active",
+            "label": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Active"
+                    }
+                ],
+                "accessibilityText": "Active"
+            },
+            "active": false,
+            "disabled": false
+        }
+    ],
+    "autoSwitchTooltip": {
+        "_type": "TextualDisplay",
+        "textSpans": [
+            {
+                "_type": "TextSpan",
+                "text": "We couldn't find any Sold results in the date range you've selected, so we've switched to Active listings."
+            }
+        ],
+        "accessibilityText": "We couldn't find any Sold results in the date range you've selected, so we've switched to Active listings."
+    },
+    "searchResultsTitle": {
+        "_type": "TextualDisplay",
+        "textSpans": [
+            {
+                "_type": "TextSpan",
+                "text": "Sold listings"
+            }
+        ],
+        "accessibilityText": "Sold listings"
+    },
+    "dateRange": {
+        "_type": "TextualDisplay",
+        "textSpans": [
+            {
+                "_type": "TextSpan",
+                "text": "Jan 13, 2026"
+            },
+            {
+                "_type": "TextSpan",
+                "text": "–"
+            },
+            {
+                "_type": "TextSpan",
+                "text": "Apr 13, 2026"
+            }
+        ]
+    },
+    "trendsLabel": {
+        "_type": "TextualDisplay",
+        "textSpans": [
+            {
+                "_type": "TextSpan",
+                "text": "Show sales trends"
+            }
+        ],
+        "accessibilityText": "Show sales trends",
+        "action": {
+            "_type": "Action",
+            "type": "OPERATION",
+            "name": "showTrends",
+            "tracking": {
+                "eventFamily": "SHUB",
+                "eventAction": "ACTN",
+                "operationId": "4563492",
+                "flushImmediately": false,
+                "eventProperty": {
+                    "moduledtl": "mi:45323|li:47331"
+                }
+            }
+        }
+    },
+    "clearAll": {
+        "_type": "TextualDisplay",
+        "textSpans": [
+            {
+                "_type": "TextSpan",
+                "text": "Clear all"
+            }
+        ],
+        "accessibilityText": "Clear all",
+        "action": {
+            "_type": "Action",
+            "type": "OPERATION",
+            "name": "resultHeaderClearAll",
+            "tracking": {
+                "eventFamily": "SHUB",
+                "eventAction": "ACTN",
+                "operationId": "4563492",
+                "flushImmediately": false,
+                "eventProperty": {
+                    "moduledtl": "mi:45323|li:49972"
+                }
+            }
+        }
+    },
+    "filters": {
+        "_type": "TextualDisplay",
+        "textSpans": [
+            {
+                "_type": "TextSpan",
+                "text": "More filters"
+            }
+        ],
+        "accessibilityText": "More filters",
+        "action": {
+            "_type": "Action",
+            "type": "OPERATION",
+            "name": "resultHeaderFilter",
+            "tracking": {
+                "eventFamily": "SHUB",
+                "eventAction": "ACTN",
+                "operationId": "4563492",
+                "flushImmediately": false,
+                "eventProperty": {
+                    "moduledtl": "mi:45323|li:50318"
+                }
+            }
+        }
+    },
+    "showSalesTrends": true,
+    "meta": {
+        "name": "resultsHeader"
+    },
+    "debugUrl": ""
+}{
+    "_type": "ResearchAggregateModule",
+    "searchResultsTitle": {
+        "_type": "TextualDisplay",
+        "textSpans": [
+            {
+                "_type": "TextSpan",
+                "text": "Sold listings"
+            }
+        ],
+        "accessibilityText": "Sold listings"
+    },
+    "sections": [
+        {
+            "dataItems": [
+                {
+                    "header": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Avg sold price"
+                            }
+                        ],
+                        "accessibilityText": "Avg sold price"
+                    },
+                    "value": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "$71.51"
+                            }
+                        ],
+                        "accessibilityText": "$71.51"
+                    },
+                    "tooltip": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "The mean sold price per item for similar listings, not including shipping costs."
+                            }
+                        ],
+                        "accessibilityText": "The mean sold price per item for similar listings, not including shipping costs."
+                    }
+                },
+                {
+                    "header": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Sold price range"
+                            }
+                        ],
+                        "accessibilityText": "Sold price range"
+                    },
+                    "value": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "$14.32 - $88.30"
+                            }
+                        ],
+                        "accessibilityText": "$14.32 - $88.30"
+                    },
+                    "tooltip": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "The minimum and maximum sold price for similar listings, not including shipping costs."
+                            }
+                        ],
+                        "accessibilityText": "The minimum and maximum sold price for similar listings, not including shipping costs."
+                    }
+                }
+            ]
+        },
+        {
+            "dataItems": [
+                {
+                    "header": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Avg shipping"
+                            }
+                        ],
+                        "accessibilityText": "Avg shipping"
+                    },
+                    "value": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "$8.45"
+                            }
+                        ],
+                        "accessibilityText": "$8.45"
+                    },
+                    "tooltip": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "The average shipping cost to be paid by the buyer. This average doesn't include listings with free shipping."
+                            }
+                        ],
+                        "accessibilityText": "The average shipping cost to be paid by the buyer. This average doesn't include listings with free shipping."
+                    }
+                },
+                {
+                    "header": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Free shipping"
+                            }
+                        ],
+                        "accessibilityText": "Free shipping"
+                    },
+                    "value": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "71%"
+                            }
+                        ],
+                        "accessibilityText": "71%"
+                    },
+                    "tooltip": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "The percentage of sales that included free shipping."
+                            }
+                        ],
+                        "accessibilityText": "The percentage of sales that included free shipping."
+                    }
+                }
+            ]
+        },
+        {
+            "dataItems": [
+                {
+                    "header": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Total sold"
+                            }
+                        ],
+                        "accessibilityText": "Total sold"
+                    },
+                    "value": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "7"
+                            }
+                        ],
+                        "accessibilityText": "7"
+                    },
+                    "tooltip": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "The total number of items sold."
+                            }
+                        ],
+                        "accessibilityText": "The total number of items sold."
+                    }
+                },
+                {
+                    "header": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Sell-through"
+                            }
+                        ],
+                        "accessibilityText": "Sell-through"
+                    },
+                    "value": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "33.33%"
+                            }
+                        ],
+                        "accessibilityText": "33.33%"
+                    },
+                    "tooltip": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "The percentage of similar items that sold."
+                            }
+                        ],
+                        "accessibilityText": "The percentage of similar items that sold."
+                    }
+                },
+                {
+                    "header": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Total sellers"
+                            }
+                        ],
+                        "accessibilityText": "Total sellers"
+                    },
+                    "value": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "3"
+                            }
+                        ],
+                        "accessibilityText": "3"
+                    },
+                    "tooltip": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "The total number of sellers."
+                            }
+                        ],
+                        "accessibilityText": "The total number of sellers."
+                    }
+                }
+            ]
+        },
+        {
+            "dataItems": [
+                {
+                    "header": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Total item sales"
+                            }
+                        ],
+                        "accessibilityText": "Total item sales"
+                    },
+                    "value": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "$500.57"
+                            }
+                        ],
+                        "accessibilityText": "$500.57"
+                    },
+                    "tooltip": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "The total revenue of items sold."
+                            }
+                        ],
+                        "accessibilityText": "The total revenue of items sold."
+                    }
+                }
+            ]
+        }
+    ],
+    "trendsLabel": {
+        "_type": "TextualDisplay",
+        "textSpans": [
+            {
+                "_type": "TextSpan",
+                "text": "Show sales trends"
+            }
+        ],
+        "accessibilityText": "Show sales trends",
+        "action": {
+            "_type": "Action",
+            "type": "OPERATION",
+            "name": "showTrends",
+            "tracking": {
+                "eventFamily": "SHUB",
+                "eventAction": "ACTN",
+                "operationId": "4563492",
+                "flushImmediately": false,
+                "eventProperty": {
+                    "moduledtl": "mi:45323|li:47331"
+                }
+            }
+        }
+    },
+    "meta": {
+        "name": "aggregates"
+    },
+    "debugUrl": ""
+}{
+    "_type": "SearchResultsModule",
+    "columnheader": [
+        {
+            "headerId": "listing",
+            "text": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Listing"
+                    }
+                ],
+                "accessibilityText": "Listing"
+            },
+            "sortOrder": "None",
+            "sortable": false,
+            "contentType": "complex",
+            "toolTip": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Listing details may not be available for listings older than 90 days."
+                    }
+                ],
+                "accessibilityText": "Listing details may not be available for listings older than 90 days."
+            }
+        },
+        {
+            "headerId": "actions",
+            "text": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Actions"
+                    }
+                ],
+                "accessibilityText": "Actions",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "sort",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "EXPC",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "sid": "p2553753.m45323.l46838"
+                        }
+                    }
+                }
+            },
+            "sortOrder": "None",
+            "sortable": false,
+            "contentType": "text"
+        },
+        {
+            "headerId": "avgsalesprice",
+            "text": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Avg sold price"
+                    }
+                ],
+                "accessibilityText": "Avg sold price",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "sort",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "EXPC",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "sid": "p2553753.m45323.l46838"
+                        }
+                    }
+                }
+            },
+            "sortOrder": "None",
+            "sortable": true,
+            "contentType": "complex"
+        },
+        {
+            "headerId": "avgshipping",
+            "text": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Avg shipping"
+                    }
+                ],
+                "accessibilityText": "Avg shipping",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "sort",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "EXPC",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "sid": "p2553753.m45323.l46838"
+                        }
+                    }
+                }
+            },
+            "sortOrder": "None",
+            "sortable": true,
+            "contentType": "text",
+            "toolTip": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "This column may reflect sold items that were shipped using eBay shipping, as well as the seller's chosen shipping methods."
+                    }
+                ]
+            }
+        },
+        {
+            "headerId": "itemssold",
+            "text": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Total sold"
+                    }
+                ],
+                "accessibilityText": "Total sold",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "sort",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "EXPC",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "sid": "p2553753.m45323.l46838"
+                        }
+                    }
+                }
+            },
+            "sortOrder": "None",
+            "sortable": true,
+            "contentType": "text"
+        },
+        {
+            "headerId": "totalsales",
+            "text": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Item sales"
+                    }
+                ],
+                "accessibilityText": "Item sales",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "sort",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "EXPC",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "sid": "p2553753.m45323.l46838"
+                        }
+                    }
+                }
+            },
+            "sortOrder": "None",
+            "sortable": true,
+            "contentType": "text",
+            "toolTip": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Shipping is not included in item sales."
+                    }
+                ]
+            }
+        },
+        {
+            "headerId": "bids",
+            "text": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Bids"
+                    }
+                ],
+                "accessibilityText": "Bids",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "sort",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "EXPC",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "sid": "p2553753.m45323.l46838"
+                        }
+                    }
+                }
+            },
+            "sortOrder": "None",
+            "sortable": true,
+            "contentType": "text"
+        },
+        {
+            "headerId": "datelastsold",
+            "text": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Date last sold"
+                    }
+                ],
+                "accessibilityText": "Date last sold",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "sort",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "EXPC",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "sid": "p2553753.m45323.l46838"
+                        }
+                    }
+                }
+            },
+            "sortOrder": "None",
+            "sortable": true,
+            "contentType": "text"
+        }
+    ],
+    "modalColumn": {
+        "open": {
+            "_type": "TextualDisplay",
+            "textSpans": [
+                {
+                    "_type": "TextSpan"
+                }
+            ],
+            "accessibilityText": ", preview full size image",
+            "action": {
+                "_type": "Action",
+                "type": "OPERATION",
+                "name": "zoomableImageThumbnail",
+                "tracking": {
+                    "eventFamily": "SHUB",
+                    "eventAction": "ACTN",
+                    "operationId": "4563492",
+                    "flushImmediately": false,
+                    "eventProperty": {
+                        "moduledtl": "mi:46518|li:49970"
+                    }
+                }
+            }
+        },
+        "close": {
+            "_type": "TextualDisplay",
+            "textSpans": [
+                {
+                    "_type": "TextSpan"
+                }
+            ],
+            "accessibilityText": "Close preview",
+            "action": {
+                "_type": "Action",
+                "type": "OPERATION",
+                "name": "zoomableImageThumbnail",
+                "tracking": {
+                    "eventFamily": "SHUB",
+                    "eventAction": "ACTN",
+                    "operationId": "4563492",
+                    "flushImmediately": false,
+                    "eventProperty": {
+                        "moduledtl": "mi:46518|li:49971"
+                    }
+                }
+            }
+        }
+    },
+    "results": [
+        {
+            "listing": {
+                "image": {
+                    "_type": "Image",
+                    "title": "[POB] BABYMONSTER CHOOM 3rd Mini Album Photobook Ver",
+                    "URL": "//i.ebayimg.com/images/g/xiQAAeSwtRBpyfGH/s-l1200.jpg"
+                },
+                "itemId": {
+                    "_type": "TextualDisplayValue",
+                    "value": "117115779901",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "117115779901"
+                        }
+                    ]
+                },
+                "title": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "[POB] BABYMONSTER CHOOM 3rd Mini Album Photobook Ver"
+                        }
+                    ],
+                    "action": {
+                        "_type": "Action",
+                        "URL": "https://www.ebay.com/itm/117115779901?nordt=true&orig_cvip=true&rt=nc",
+                        "type": "NAV",
+                        "name": "newWindow",
+                        "signInRequired": false,
+                        "tracking": {
+                            "eventFamily": "SHUB",
+                            "eventAction": "EXPC",
+                            "operationId": "4563492",
+                            "flushImmediately": false,
+                            "eventProperty": {
+                                "sid": "p2553753.m46525.l48757",
+                                "trkp": "itm%3A117115779901"
+                            }
+                        }
+                    },
+                    "postAccessibilityClippedText": "opens in new window or tab"
+                },
+                "extendedTitle": {
+                    "_type": "TextualDisplayValue",
+                    "value": "[POB] BABYMONSTER CHOOM 3rd Mini Album Photobook Ver YG Entertainment Pop Vinyl Sealed 2026 Mini LP Korean K-Pop",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan"
+                        }
+                    ]
+                },
+                "formatList": [
+                    {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Fixed price"
+                            }
+                        ],
+                        "accessibilityText": "Fixed price"
+                    }
+                ],
+                "moreImages": [
+                    {
+                        "_type": "Image",
+                        "title": "-",
+                        "URL": "//i.ebayimg.com/images/g/xiQAAeSwtRBpyfGH/s-l1200.jpg"
+                    }
+                ]
+            },
+            "actions": {
+                "options": [
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "Sell Similar",
+                        "text": "Sell Similar",
+                        "action": {
+                            "_type": "Action",
+                            "URL": "https://www.ebay.com/sl/list?mode=SellLikeItem&itemId=117115779901",
+                            "type": "NAV",
+                            "name": "newWindow",
+                            "signInRequired": true
+                        }
+                    },
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "EXCLUDED_LISTING",
+                        "text": "Exclude listing"
+                    }
+                ],
+                "defaultOption": {
+                    "_type": "OptionValueSpan",
+                    "value": "Edit",
+                    "text": "Edit"
+                },
+                "accessibilityText": "Actions"
+            },
+            "avgsalesprice": {
+                "avgsalesprice": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$71.99"
+                        }
+                    ]
+                },
+                "averageshipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "Free shipping"
+                        }
+                    ]
+                },
+                "format": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "Fixed price"
+                        }
+                    ],
+                    "accessibilityText": "Fixed price"
+                }
+            },
+            "avgshipping": {
+                "avgshipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$0.00"
+                        }
+                    ]
+                },
+                "freeshipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "100% Free shipping"
+                        }
+                    ]
+                }
+            },
+            "itemssold": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "2"
+                    }
+                ]
+            },
+            "totalsales": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "$143.98"
+                    }
+                ]
+            },
+            "bids": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "-"
+                    }
+                ]
+            },
+            "datelastsold": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Apr 9, 2026"
+                    }
+                ]
+            }
+        },
+        {
+            "listing": {
+                "image": {
+                    "_type": "Image",
+                    "title": "[POB] BABYMONSTER CHOOM 3rd Mini Album Jewel Ver. (Member Selection)",
+                    "URL": "//i.ebayimg.com/images/g/dzkAAeSwM9xpyfNb/s-l1200.jpg"
+                },
+                "itemId": {
+                    "_type": "TextualDisplayValue",
+                    "value": "127779938508",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "127779938508"
+                        }
+                    ]
+                },
+                "title": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "[POB] BABYMONSTER CHOOM 3rd Mini Album Jewel Ver. (Member Selection)"
+                        }
+                    ],
+                    "action": {
+                        "_type": "Action",
+                        "URL": "https://www.ebay.com/itm/127779938508?nordt=true&orig_cvip=true&rt=nc",
+                        "type": "NAV",
+                        "name": "newWindow",
+                        "signInRequired": false,
+                        "tracking": {
+                            "eventFamily": "SHUB",
+                            "eventAction": "EXPC",
+                            "operationId": "4563492",
+                            "flushImmediately": false,
+                            "eventProperty": {
+                                "sid": "p2553753.m46525.l48757",
+                                "trkp": "itm%3A127779938508"
+                            }
+                        }
+                    },
+                    "postAccessibilityClippedText": "opens in new window or tab"
+                },
+                "extendedTitle": {
+                    "_type": "TextualDisplayValue",
+                    "value": "[POB] BABYMONSTER CHOOM 3rd Mini Album Jewel Ver. (Member Selection) YG Entertainment Pop Vinyl Sealed 2026 Mini LP First Pressing Korean K-Pop",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan"
+                        }
+                    ]
+                },
+                "formatList": [
+                    {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Fixed price"
+                            }
+                        ],
+                        "accessibilityText": "Fixed price"
+                    }
+                ],
+                "moreImages": [
+                    {
+                        "_type": "Image",
+                        "title": "-",
+                        "URL": "//i.ebayimg.com/images/g/dzkAAeSwM9xpyfNb/s-l1200.jpg"
+                    }
+                ]
+            },
+            "actions": {
+                "options": [
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "Sell Similar",
+                        "text": "Sell Similar",
+                        "action": {
+                            "_type": "Action",
+                            "URL": "https://www.ebay.com/sl/list?mode=SellLikeItem&itemId=127779938508",
+                            "type": "NAV",
+                            "name": "newWindow",
+                            "signInRequired": true
+                        }
+                    },
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "EXCLUDED_LISTING",
+                        "text": "Exclude listing"
+                    }
+                ],
+                "defaultOption": {
+                    "_type": "OptionValueSpan",
+                    "value": "Edit",
+                    "text": "Edit"
+                },
+                "accessibilityText": "Actions"
+            },
+            "avgsalesprice": {
+                "avgsalesprice": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$88.30"
+                        }
+                    ]
+                },
+                "averageshipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "Free shipping"
+                        }
+                    ]
+                },
+                "format": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "Fixed price"
+                        }
+                    ],
+                    "accessibilityText": "Fixed price"
+                }
+            },
+            "avgshipping": {
+                "avgshipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$0.00"
+                        }
+                    ]
+                },
+                "freeshipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "100% Free shipping"
+                        }
+                    ]
+                }
+            },
+            "itemssold": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "2"
+                    }
+                ]
+            },
+            "totalsales": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "$176.60"
+                    }
+                ]
+            },
+            "bids": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "-"
+                    }
+                ]
+            },
+            "datelastsold": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Apr 6, 2026"
+                    }
+                ]
+            }
+        },
+        {
+            "listing": {
+                "image": {
+                    "_type": "Image",
+                    "title": "BABYMONSTER [CHOOM] Album JEWEL 6 Ver SET/6 CD+6 Photo Book+18 Card+POB+GIFT",
+                    "URL": "//i.ebayimg.com/images/g/92QAAeSwQCppyexM/s-l1200.jpg"
+                },
+                "itemId": {
+                    "_type": "TextualDisplayValue",
+                    "value": "168272619331",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "168272619331"
+                        }
+                    ]
+                },
+                "title": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "BABYMONSTER [CHOOM] Album JEWEL 6 Ver SET/6 CD+6 Photo Book+18 Card+POB+GIFT"
+                        }
+                    ],
+                    "action": {
+                        "_type": "Action",
+                        "URL": "https://www.ebay.com/itm/168272619331?nordt=true&orig_cvip=true&rt=nc",
+                        "type": "NAV",
+                        "name": "newWindow",
+                        "signInRequired": false,
+                        "tracking": {
+                            "eventFamily": "SHUB",
+                            "eventAction": "EXPC",
+                            "operationId": "4563492",
+                            "flushImmediately": false,
+                            "eventProperty": {
+                                "sid": "p2553753.m46525.l48757",
+                                "trkp": "itm%3A168272619331"
+                            }
+                        }
+                    },
+                    "postAccessibilityClippedText": "opens in new window or tab"
+                },
+                "extendedTitle": {
+                    "_type": "TextualDisplayValue",
+                    "value": "BABYMONSTER [CHOOM] Album JEWEL 6 Ver SET/6 CD+6 Photo Book+18 Card+POB+GIFT YG Entertainment South Korea (Republic of Korea) Monster K-Pop",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan"
+                        }
+                    ]
+                },
+                "formatList": [
+                    {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Fixed price"
+                            }
+                        ],
+                        "accessibilityText": "Fixed price"
+                    }
+                ],
+                "moreImages": [
+                    {
+                        "_type": "Image",
+                        "title": "-",
+                        "URL": "//i.ebayimg.com/images/g/92QAAeSwQCppyexM/s-l1200.jpg"
+                    }
+                ]
+            },
+            "actions": {
+                "options": [
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "Sell Similar",
+                        "text": "Sell Similar",
+                        "action": {
+                            "_type": "Action",
+                            "URL": "https://www.ebay.com/sl/list?mode=SellLikeItem&itemId=168272619331",
+                            "type": "NAV",
+                            "name": "newWindow",
+                            "signInRequired": true
+                        }
+                    },
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "EXCLUDED_LISTING",
+                        "text": "Exclude listing"
+                    }
+                ],
+                "defaultOption": {
+                    "_type": "OptionValueSpan",
+                    "value": "Edit",
+                    "text": "Edit"
+                },
+                "accessibilityText": "Actions"
+            },
+            "avgsalesprice": {
+                "avgsalesprice": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$80.50"
+                        }
+                    ]
+                },
+                "averageshipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "Free shipping"
+                        }
+                    ]
+                },
+                "format": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "Fixed price"
+                        }
+                    ],
+                    "accessibilityText": "Fixed price"
+                }
+            },
+            "avgshipping": {
+                "avgshipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$0.00"
+                        }
+                    ]
+                },
+                "freeshipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "100% Free shipping"
+                        }
+                    ]
+                }
+            },
+            "itemssold": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "1"
+                    }
+                ]
+            },
+            "totalsales": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "$80.50"
+                    }
+                ]
+            },
+            "bids": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "-"
+                    }
+                ]
+            },
+            "datelastsold": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Apr 9, 2026"
+                    }
+                ]
+            }
+        },
+        {
+            "listing": {
+                "image": {
+                    "_type": "Image",
+                    "title": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Jewel ver. & SHOP POB",
+                    "URL": "//i.ebayimg.com/images/g/pA8AAeSwcN1pykJn/s-l1200.png"
+                },
+                "itemId": {
+                    "_type": "TextualDisplayValue",
+                    "value": "227279108068",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "227279108068"
+                        }
+                    ]
+                },
+                "title": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Jewel ver. & SHOP POB"
+                        }
+                    ],
+                    "action": {
+                        "_type": "Action",
+                        "URL": "https://www.ebay.com/itm/227279108068?nordt=true&orig_cvip=true&rt=nc",
+                        "type": "NAV",
+                        "name": "newWindow",
+                        "signInRequired": false,
+                        "tracking": {
+                            "eventFamily": "SHUB",
+                            "eventAction": "EXPC",
+                            "operationId": "4563492",
+                            "flushImmediately": false,
+                            "eventProperty": {
+                                "sid": "p2553753.m46525.l48757",
+                                "trkp": "itm%3A227279108068"
+                            }
+                        }
+                    },
+                    "postAccessibilityClippedText": "opens in new window or tab"
+                },
+                "extendedTitle": {
+                    "_type": "TextualDisplayValue",
+                    "value": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Jewel ver. & SHOP POB South Korea (Republic of Korea) Music Original",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan"
+                        }
+                    ]
+                },
+                "formatList": [
+                    {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Fixed price"
+                            }
+                        ],
+                        "accessibilityText": "Fixed price"
+                    }
+                ],
+                "moreImages": [
+                    {
+                        "_type": "Image",
+                        "title": "-",
+                        "URL": "//i.ebayimg.com/images/g/pA8AAeSwcN1pykJn/s-l1200.png"
+                    }
+                ]
+            },
+            "actions": {
+                "options": [
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "Sell Similar",
+                        "text": "Sell Similar",
+                        "action": {
+                            "_type": "Action",
+                            "URL": "https://www.ebay.com/sl/list?mode=SellLikeItem&itemId=227279108068",
+                            "type": "NAV",
+                            "name": "newWindow",
+                            "signInRequired": true
+                        }
+                    },
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "EXCLUDED_LISTING",
+                        "text": "Exclude listing"
+                    }
+                ],
+                "defaultOption": {
+                    "_type": "OptionValueSpan",
+                    "value": "Edit",
+                    "text": "Edit"
+                },
+                "accessibilityText": "Actions"
+            },
+            "avgsalesprice": {
+                "avgsalesprice": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$14.32"
+                        }
+                    ]
+                },
+                "averageshipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "+$8.90 shipping"
+                        }
+                    ]
+                },
+                "format": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "Fixed price"
+                        }
+                    ],
+                    "accessibilityText": "Fixed price"
+                }
+            },
+            "avgshipping": {
+                "avgshipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$8.90"
+                        }
+                    ]
+                },
+                "freeshipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "0% Free shipping"
+                        }
+                    ]
+                }
+            },
+            "itemssold": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "1"
+                    }
+                ]
+            },
+            "totalsales": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "$14.32"
+                    }
+                ]
+            },
+            "bids": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "-"
+                    }
+                ]
+            },
+            "datelastsold": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Mar 30, 2026"
+                    }
+                ]
+            }
+        },
+        {
+            "listing": {
+                "image": {
+                    "_type": "Image",
+                    "title": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Jewel ver. SET & SHOP POB",
+                    "URL": "//i.ebayimg.com/images/g/sOAAAeSw58xpykKL/s-l1200.png"
+                },
+                "itemId": {
+                    "_type": "TextualDisplayValue",
+                    "value": "227279108341",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "227279108341"
+                        }
+                    ]
+                },
+                "title": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Jewel ver. SET & SHOP POB"
+                        }
+                    ],
+                    "action": {
+                        "_type": "Action",
+                        "URL": "https://www.ebay.com/itm/227279108341?nordt=true&orig_cvip=true&rt=nc",
+                        "type": "NAV",
+                        "name": "newWindow",
+                        "signInRequired": false,
+                        "tracking": {
+                            "eventFamily": "SHUB",
+                            "eventAction": "EXPC",
+                            "operationId": "4563492",
+                            "flushImmediately": false,
+                            "eventProperty": {
+                                "sid": "p2553753.m46525.l48757",
+                                "trkp": "itm%3A227279108341"
+                            }
+                        }
+                    },
+                    "postAccessibilityClippedText": "opens in new window or tab"
+                },
+                "extendedTitle": {
+                    "_type": "TextualDisplayValue",
+                    "value": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Jewel ver. SET & SHOP POB South Korea (Republic of Korea) Music Original",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan"
+                        }
+                    ]
+                },
+                "formatList": [
+                    {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Fixed price"
+                            }
+                        ],
+                        "accessibilityText": "Fixed price"
+                    }
+                ],
+                "moreImages": [
+                    {
+                        "_type": "Image",
+                        "title": "-",
+                        "URL": "//i.ebayimg.com/images/g/sOAAAeSw58xpykKL/s-l1200.png"
+                    }
+                ]
+            },
+            "actions": {
+                "options": [
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "Sell Similar",
+                        "text": "Sell Similar",
+                        "action": {
+                            "_type": "Action",
+                            "URL": "https://www.ebay.com/sl/list?mode=SellLikeItem&itemId=227279108341",
+                            "type": "NAV",
+                            "name": "newWindow",
+                            "signInRequired": true
+                        }
+                    },
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "EXCLUDED_LISTING",
+                        "text": "Exclude listing"
+                    }
+                ],
+                "defaultOption": {
+                    "_type": "OptionValueSpan",
+                    "value": "Edit",
+                    "text": "Edit"
+                },
+                "accessibilityText": "Actions"
+            },
+            "avgsalesprice": {
+                "avgsalesprice": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$85.20"
+                        }
+                    ]
+                },
+                "averageshipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "+$8.00 shipping"
+                        }
+                    ]
+                },
+                "format": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "Fixed price"
+                        }
+                    ],
+                    "accessibilityText": "Fixed price"
+                }
+            },
+            "avgshipping": {
+                "avgshipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$8.00"
+                        }
+                    ]
+                },
+                "freeshipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "0% Free shipping"
+                        }
+                    ]
+                }
+            },
+            "itemssold": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "1"
+                    }
+                ]
+            },
+            "totalsales": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "$85.20"
+                    }
+                ]
+            },
+            "bids": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "-"
+                    }
+                ]
+            },
+            "datelastsold": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Apr 12, 2026"
+                    }
+                ]
+            }
+        }
+    ],
+    "pagination": {
+        "summary": {
+            "_type": "TextualDisplay",
+            "textSpans": [
+                {
+                    "_type": "TextSpan",
+                    "text": "Results: 1 - 5"
+                }
+            ],
+            "accessibilityText": "Results: 1 - 5"
+        },
+        "first": {
+            "_type": "PaginationTextualDisplay",
+            "disabled": false,
+            "textSpans": [
+                {
+                    "_type": "TextSpan"
+                }
+            ],
+            "accessibilityText": "Go to first page",
+            "action": {
+                "_type": "Action",
+                "type": "OPERATION",
+                "name": "paginationFirst",
+                "tracking": {
+                    "eventFamily": "SHUB",
+                    "eventAction": "EXPC",
+                    "operationId": "4563492",
+                    "flushImmediately": false,
+                    "eventProperty": {
+                        "sid": "p2553753.m45323.l46818"
+                    }
+                }
+            }
+        },
+        "prev": {
+            "_type": "PaginationTextualDisplay",
+            "disabled": true,
+            "textSpans": [
+                {
+                    "_type": "TextSpan"
+                }
+            ],
+            "accessibilityText": "Go to previous page",
+            "action": {
+                "_type": "Action",
+                "type": "OPERATION",
+                "name": "paginationPrev",
+                "tracking": {
+                    "eventFamily": "SHUB",
+                    "eventAction": "EXPC",
+                    "operationId": "4563492",
+                    "flushImmediately": false,
+                    "eventProperty": {
+                        "sid": "p2553753.m45323.l46819"
+                    }
+                }
+            }
+        },
+        "current": {
+            "_type": "TextualDisplay",
+            "textSpans": [
+                {
+                    "_type": "TextSpan",
+                    "text": "Page 1"
+                }
+            ],
+            "accessibilityText": "Page 1"
+        },
+        "next": {
+            "_type": "PaginationTextualDisplay",
+            "disabled": true,
+            "textSpans": [
+                {
+                    "_type": "TextSpan"
+                }
+            ],
+            "accessibilityText": "Go to next page",
+            "action": {
+                "_type": "Action",
+                "type": "OPERATION",
+                "name": "paginationNext",
+                "tracking": {
+                    "eventFamily": "SHUB",
+                    "eventAction": "EXPC",
+                    "operationId": "4563492",
+                    "flushImmediately": false,
+                    "eventProperty": {
+                        "sid": "p2553753.m45323.l46821"
+                    }
+                }
+            }
+        },
+        "itemsPerPage": {
+            "options": [
+                {
+                    "_type": "OptionValueSpan",
+                    "value": "10",
+                    "selected": false,
+                    "text": "10"
+                },
+                {
+                    "_type": "OptionValueSpan",
+                    "value": "20",
+                    "selected": false,
+                    "text": "20"
+                },
+                {
+                    "_type": "OptionValueSpan",
+                    "value": "50",
+                    "selected": true,
+                    "text": "50"
+                }
+            ],
+            "accessibilityText": "Results per page",
+            "label": "Results per page"
+        },
+        "currentPageNum": 1
+    },
+    "meta": {
+        "name": "searchResults"
+    },
+    "debugUrl": ""
+}

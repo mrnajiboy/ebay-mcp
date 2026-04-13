@@ -1,0 +1,2330 @@
+{
+    "_type": "PageErrorModule",
+    "debugUrl": ""
+}{
+    "_type": "ResultsHeaderModule",
+    "tabs": [
+        {
+            "id": "sold",
+            "label": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Sold"
+                    }
+                ],
+                "accessibilityText": "Sold"
+            },
+            "active": false,
+            "disabled": false
+        },
+        {
+            "id": "active",
+            "label": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Active"
+                    }
+                ],
+                "accessibilityText": "Active"
+            },
+            "active": true,
+            "disabled": false
+        }
+    ],
+    "autoSwitchTooltip": {
+        "_type": "TextualDisplay",
+        "textSpans": [
+            {
+                "_type": "TextSpan",
+                "text": "We couldn't find any Sold results in the date range you've selected, so we've switched to Active listings."
+            }
+        ],
+        "accessibilityText": "We couldn't find any Sold results in the date range you've selected, so we've switched to Active listings."
+    },
+    "searchResultsTitle": {
+        "_type": "TextualDisplay",
+        "textSpans": [
+            {
+                "_type": "TextSpan",
+                "text": "Currently live today"
+            }
+        ],
+        "accessibilityText": "Currently live today"
+    },
+    "trendsLabel": {
+        "_type": "TextualDisplay",
+        "textSpans": [
+            {
+                "_type": "TextSpan",
+                "text": "Show current trends"
+            }
+        ],
+        "accessibilityText": "Show current trends",
+        "action": {
+            "_type": "Action",
+            "type": "OPERATION",
+            "name": "showTrends",
+            "tracking": {
+                "eventFamily": "SHUB",
+                "eventAction": "ACTN",
+                "operationId": "4563492",
+                "flushImmediately": false,
+                "eventProperty": {
+                    "moduledtl": "mi:45323|li:47331"
+                }
+            }
+        }
+    },
+    "clearAll": {
+        "_type": "TextualDisplay",
+        "textSpans": [
+            {
+                "_type": "TextSpan",
+                "text": "Clear all"
+            }
+        ],
+        "accessibilityText": "Clear all",
+        "action": {
+            "_type": "Action",
+            "type": "OPERATION",
+            "name": "resultHeaderClearAll",
+            "tracking": {
+                "eventFamily": "SHUB",
+                "eventAction": "ACTN",
+                "operationId": "4563492",
+                "flushImmediately": false,
+                "eventProperty": {
+                    "moduledtl": "mi:45323|li:49972"
+                }
+            }
+        }
+    },
+    "filters": {
+        "_type": "TextualDisplay",
+        "textSpans": [
+            {
+                "_type": "TextSpan",
+                "text": "More filters"
+            }
+        ],
+        "accessibilityText": "More filters",
+        "action": {
+            "_type": "Action",
+            "type": "OPERATION",
+            "name": "resultHeaderFilter",
+            "tracking": {
+                "eventFamily": "SHUB",
+                "eventAction": "ACTN",
+                "operationId": "4563492",
+                "flushImmediately": false,
+                "eventProperty": {
+                    "moduledtl": "mi:45323|li:50318"
+                }
+            }
+        }
+    },
+    "showSalesTrends": true,
+    "meta": {
+        "name": "resultsHeader"
+    },
+    "debugUrl": ""
+}{
+    "_type": "ResearchAggregateModule",
+    "sections": [
+        {
+            "dataItems": [
+                {
+                    "header": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Avg listing price"
+                            }
+                        ],
+                        "accessibilityText": "Avg listing price"
+                    },
+                    "value": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "$50.32"
+                            }
+                        ],
+                        "accessibilityText": "$50.32"
+                    },
+                    "tooltip": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "The average price similar items are currently listed for. Shipping costs aren't included in the listing price."
+                            }
+                        ],
+                        "accessibilityText": "The average price similar items are currently listed for. Shipping costs aren't included in the listing price.",
+                        "action": {
+                            "_type": "Action",
+                            "type": "OPERATION",
+                            "name": "activeAggregatesTooltip",
+                            "tracking": {
+                                "eventFamily": "SHUB",
+                                "eventAction": "ACTN",
+                                "operationId": "4563492",
+                                "flushImmediately": false,
+                                "eventProperty": {
+                                    "moduledtl": "mi:46517|li:48749|tooltipName:avgListingPrice"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "header": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Listing price range"
+                            }
+                        ],
+                        "accessibilityText": "Listing price range"
+                    },
+                    "value": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "$14.32 - $92.90"
+                            }
+                        ],
+                        "accessibilityText": "$14.32 - $92.90"
+                    },
+                    "tooltip": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "The minimum and maximum price similar items are listed for. Shipping costs aren't included in the listing prices."
+                            }
+                        ],
+                        "accessibilityText": "The minimum and maximum price similar items are listed for. Shipping costs aren't included in the listing prices.",
+                        "action": {
+                            "_type": "Action",
+                            "type": "OPERATION",
+                            "name": "activeAggregatesTooltip",
+                            "tracking": {
+                                "eventFamily": "SHUB",
+                                "eventAction": "ACTN",
+                                "operationId": "4563492",
+                                "flushImmediately": false,
+                                "eventProperty": {
+                                    "moduledtl": "mi:46517|li:48749|tooltipName:listingPriceRange"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "dataItems": [
+                {
+                    "header": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Avg shipping"
+                            }
+                        ],
+                        "accessibilityText": "Avg shipping"
+                    },
+                    "value": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "$15.29"
+                            }
+                        ],
+                        "accessibilityText": "$15.29"
+                    },
+                    "tooltip": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "The average shipping cost to be paid by the buyer. This average doesn't include listings with free shipping."
+                            }
+                        ],
+                        "accessibilityText": "The average shipping cost to be paid by the buyer. This average doesn't include listings with free shipping.",
+                        "action": {
+                            "_type": "Action",
+                            "type": "OPERATION",
+                            "name": "activeAggregatesTooltip",
+                            "tracking": {
+                                "eventFamily": "SHUB",
+                                "eventAction": "ACTN",
+                                "operationId": "4563492",
+                                "flushImmediately": false,
+                                "eventProperty": {
+                                    "moduledtl": "mi:46517|li:48749|tooltipName:avgShippingPrice"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "header": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Free shipping"
+                            }
+                        ],
+                        "accessibilityText": "Free shipping"
+                    },
+                    "value": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "10%"
+                            }
+                        ],
+                        "accessibilityText": "10%"
+                    },
+                    "tooltip": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "The percentage of active listings that offer free shipping."
+                            }
+                        ],
+                        "accessibilityText": "The percentage of active listings that offer free shipping.",
+                        "action": {
+                            "_type": "Action",
+                            "type": "OPERATION",
+                            "name": "activeAggregatesTooltip",
+                            "tracking": {
+                                "eventFamily": "SHUB",
+                                "eventAction": "ACTN",
+                                "operationId": "4563492",
+                                "flushImmediately": false,
+                                "eventProperty": {
+                                    "moduledtl": "mi:46517|li:48749|tooltipName:freeShippingPercent"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "dataItems": [
+                {
+                    "header": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Total active listings"
+                            }
+                        ],
+                        "accessibilityText": "Total active listings"
+                    },
+                    "value": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "10"
+                            }
+                        ],
+                        "accessibilityText": "10"
+                    },
+                    "tooltip": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "The total number of active listings."
+                            }
+                        ],
+                        "accessibilityText": "The total number of active listings.",
+                        "action": {
+                            "_type": "Action",
+                            "type": "OPERATION",
+                            "name": "activeAggregatesTooltip",
+                            "tracking": {
+                                "eventFamily": "SHUB",
+                                "eventAction": "ACTN",
+                                "operationId": "4563492",
+                                "flushImmediately": false,
+                                "eventProperty": {
+                                    "moduledtl": "mi:46517|li:48749|tooltipName:totalListing"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "dataItems": [
+                {
+                    "header": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Promoted listings"
+                            }
+                        ],
+                        "accessibilityText": "Promoted listings"
+                    },
+                    "value": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "60%"
+                            }
+                        ],
+                        "accessibilityText": "60%"
+                    },
+                    "tooltip": {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "The percentage of listings that are sponsored through Promoted Listings."
+                            }
+                        ],
+                        "accessibilityText": "The percentage of listings that are sponsored through Promoted Listings.",
+                        "action": {
+                            "_type": "Action",
+                            "type": "OPERATION",
+                            "name": "activeAggregatesTooltip",
+                            "tracking": {
+                                "eventFamily": "SHUB",
+                                "eventAction": "ACTN",
+                                "operationId": "4563492",
+                                "flushImmediately": false,
+                                "eventProperty": {
+                                    "moduledtl": "mi:46517|li:48749|tooltipName:promotedListingsPercent"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "meta": {
+        "name": "aggregates"
+    },
+    "debugUrl": ""
+}{
+    "_type": "ActiveSearchResultsModule",
+    "columnheader": [
+        {
+            "headerId": "listing",
+            "text": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Listing"
+                    }
+                ],
+                "accessibilityText": "Listing"
+            },
+            "sortOrder": "None",
+            "sortable": false,
+            "contentType": "complex",
+            "toolTip": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Listing details may not be available for listings older than 90 days."
+                    }
+                ],
+                "accessibilityText": "Listing details may not be available for listings older than 90 days.",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "activeResultsTooltip",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "ACTN",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "moduledtl": "mi:46518|li:48748|tooltipName:Listing"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "headerId": "actions",
+            "text": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Actions"
+                    }
+                ],
+                "accessibilityText": "Actions",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "sort",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "EXPC",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "sid": "p2553753.m45323.l46838"
+                        }
+                    }
+                }
+            },
+            "sortOrder": "None",
+            "sortable": false,
+            "contentType": "text"
+        },
+        {
+            "headerId": "listingPrice",
+            "text": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Listing price"
+                    }
+                ],
+                "accessibilityText": "Listing price",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "sort",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "EXPC",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "sid": "p2553753.m45323.l46838"
+                        }
+                    }
+                }
+            },
+            "sortOrder": "None",
+            "sortable": true,
+            "contentType": "complex",
+            "toolTip": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "The listing price includes discounts."
+                    }
+                ],
+                "accessibilityText": "The listing price includes discounts.",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "activeResultsTooltip",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "ACTN",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "moduledtl": "mi:46518|li:48748|tooltipName:listingPrice"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "headerId": "bids",
+            "text": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Bids"
+                    }
+                ],
+                "accessibilityText": "Bids",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "sort",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "EXPC",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "sid": "p2553753.m45323.l46838"
+                        }
+                    }
+                }
+            },
+            "sortOrder": "None",
+            "sortable": true,
+            "contentType": "text"
+        },
+        {
+            "headerId": "watchers",
+            "text": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Watchers"
+                    }
+                ],
+                "accessibilityText": "Watchers",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "sort",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "EXPC",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "sid": "p2553753.m45323.l46838"
+                        }
+                    }
+                }
+            },
+            "sortOrder": "None",
+            "sortable": true,
+            "contentType": "text",
+            "toolTip": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Total watchers per listing."
+                    }
+                ],
+                "accessibilityText": "Total watchers per listing.",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "activeResultsTooltip",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "ACTN",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "moduledtl": "mi:46518|li:48748|tooltipName:watchers"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "headerId": "promoted",
+            "text": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Promoted listing"
+                    }
+                ],
+                "accessibilityText": "Promoted listing",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "sort",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "EXPC",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "sid": "p2553753.m45323.l46838"
+                        }
+                    }
+                }
+            },
+            "sortOrder": "None",
+            "sortable": true,
+            "contentType": "iconAndText"
+        },
+        {
+            "headerId": "startDate",
+            "text": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Start date"
+                    }
+                ],
+                "accessibilityText": "Start date",
+                "action": {
+                    "_type": "Action",
+                    "type": "OPERATION",
+                    "name": "sort",
+                    "tracking": {
+                        "eventFamily": "SHUB",
+                        "eventAction": "EXPC",
+                        "operationId": "4563492",
+                        "flushImmediately": false,
+                        "eventProperty": {
+                            "sid": "p2553753.m45323.l46838"
+                        }
+                    }
+                }
+            },
+            "sortOrder": "None",
+            "sortable": true,
+            "contentType": "text"
+        }
+    ],
+    "modalColumn": {
+        "open": {
+            "_type": "TextualDisplay",
+            "textSpans": [
+                {
+                    "_type": "TextSpan"
+                }
+            ],
+            "accessibilityText": ", preview full size image",
+            "action": {
+                "_type": "Action",
+                "type": "OPERATION",
+                "name": "zoomableImageThumbnail",
+                "tracking": {
+                    "eventFamily": "SHUB",
+                    "eventAction": "ACTN",
+                    "operationId": "4563492",
+                    "flushImmediately": false,
+                    "eventProperty": {
+                        "moduledtl": "mi:46518|li:49970"
+                    }
+                }
+            }
+        },
+        "close": {
+            "_type": "TextualDisplay",
+            "textSpans": [
+                {
+                    "_type": "TextSpan"
+                }
+            ],
+            "accessibilityText": "Close preview",
+            "action": {
+                "_type": "Action",
+                "type": "OPERATION",
+                "name": "zoomableImageThumbnail",
+                "tracking": {
+                    "eventFamily": "SHUB",
+                    "eventAction": "ACTN",
+                    "operationId": "4563492",
+                    "flushImmediately": false,
+                    "eventProperty": {
+                        "moduledtl": "mi:46518|li:49971"
+                    }
+                }
+            }
+        }
+    },
+    "results": [
+        {
+            "listing": {
+                "image": {
+                    "_type": "Image",
+                    "title": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Jewel ver. SET & SHOP POB",
+                    "URL": "//i.ebayimg.com/images/g/sOAAAeSw58xpykKL/s-l64.jpg"
+                },
+                "itemId": {
+                    "_type": "TextualDisplayValue",
+                    "value": "227279108341",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "227279108341"
+                        }
+                    ]
+                },
+                "title": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Jewel ver. SET & SHOP POB"
+                        }
+                    ],
+                    "accessibilityText": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Jewel ver. SET & SHOP POB",
+                    "action": {
+                        "_type": "Action",
+                        "URL": "https://www.ebay.com/itm/227279108341?nordt=true&orig_cvip=true&rt=nc",
+                        "type": "NAV",
+                        "name": "newWindow",
+                        "signInRequired": false,
+                        "tracking": {
+                            "eventFamily": "SHUB",
+                            "eventAction": "EXPC",
+                            "operationId": "4563492",
+                            "flushImmediately": false,
+                            "eventProperty": {
+                                "trkp": "itm%3A227279108341",
+                                "sid": "p2553753.m46525.l48757"
+                            }
+                        }
+                    },
+                    "postAccessibilityClippedText": "opens in new window or tab"
+                },
+                "formatList": [
+                    {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Fixed price"
+                            }
+                        ],
+                        "accessibilityText": "Fixed price"
+                    }
+                ],
+                "moreImages": [
+                    {
+                        "_type": "Image",
+                        "title": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Jewel ver. SET & SHOP POB",
+                        "URL": "//i.ebayimg.com/images/g/sOAAAeSw58xpykKL/s-l500.jpg"
+                    }
+                ]
+            },
+            "actions": {
+                "options": [
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "Sell Similar",
+                        "text": "Sell Similar",
+                        "action": {
+                            "_type": "Action",
+                            "URL": "https://www.ebay.com/sl/list?mode=SellLikeItem&itemId=227279108341",
+                            "type": "NAV",
+                            "name": "newWindow",
+                            "signInRequired": true
+                        },
+                        "accessibilityText": "Sell Similar"
+                    }
+                ],
+                "defaultOption": {
+                    "_type": "OptionValueSpan",
+                    "value": "Edit",
+                    "text": "Edit"
+                },
+                "accessibilityText": "Actions"
+            },
+            "listingPrice": {
+                "listingPrice": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$85.20"
+                        }
+                    ]
+                },
+                "listingShipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "+$8.00 shipping"
+                        }
+                    ]
+                }
+            },
+            "bids": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "-"
+                    }
+                ]
+            },
+            "watchers": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "1"
+                    }
+                ]
+            },
+            "promoted": {
+                "_type": "IconAndText",
+                "icon": {
+                    "_type": "Icon",
+                    "name": "tick"
+                }
+            },
+            "startDate": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Mar 30, 2026"
+                    }
+                ]
+            }
+        },
+        {
+            "listing": {
+                "image": {
+                    "_type": "Image",
+                    "title": "BABYMONSTER [CHOOM] Album JEWEL 6 Ver SET/6 CD+6 Photo Book+18 Card+POB+GIFT",
+                    "URL": "//i.ebayimg.com/images/g/92QAAeSwQCppyexM/s-l64.jpg"
+                },
+                "itemId": {
+                    "_type": "TextualDisplayValue",
+                    "value": "168272619331",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "168272619331"
+                        }
+                    ]
+                },
+                "title": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "BABYMONSTER [CHOOM] Album JEWEL 6 Ver SET/6 CD+6 Photo Book+18 Card+POB+GIFT"
+                        }
+                    ],
+                    "accessibilityText": "BABYMONSTER [CHOOM] Album JEWEL 6 Ver SET/6 CD+6 Photo Book+18 Card+POB+GIFT",
+                    "action": {
+                        "_type": "Action",
+                        "URL": "https://www.ebay.com/itm/168272619331?nordt=true&orig_cvip=true&rt=nc",
+                        "type": "NAV",
+                        "name": "newWindow",
+                        "signInRequired": false,
+                        "tracking": {
+                            "eventFamily": "SHUB",
+                            "eventAction": "EXPC",
+                            "operationId": "4563492",
+                            "flushImmediately": false,
+                            "eventProperty": {
+                                "trkp": "itm%3A168272619331",
+                                "sid": "p2553753.m46525.l48757"
+                            }
+                        }
+                    },
+                    "postAccessibilityClippedText": "opens in new window or tab"
+                },
+                "formatList": [
+                    {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Fixed price"
+                            }
+                        ],
+                        "accessibilityText": "Fixed price"
+                    }
+                ],
+                "moreImages": [
+                    {
+                        "_type": "Image",
+                        "title": "BABYMONSTER [CHOOM] Album JEWEL 6 Ver SET/6 CD+6 Photo Book+18 Card+POB+GIFT",
+                        "URL": "//i.ebayimg.com/images/g/92QAAeSwQCppyexM/s-l500.jpg"
+                    }
+                ]
+            },
+            "actions": {
+                "options": [
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "Sell Similar",
+                        "text": "Sell Similar",
+                        "action": {
+                            "_type": "Action",
+                            "URL": "https://www.ebay.com/sl/list?mode=SellLikeItem&itemId=168272619331",
+                            "type": "NAV",
+                            "name": "newWindow",
+                            "signInRequired": true
+                        },
+                        "accessibilityText": "Sell Similar"
+                    }
+                ],
+                "defaultOption": {
+                    "_type": "OptionValueSpan",
+                    "value": "Edit",
+                    "text": "Edit"
+                },
+                "accessibilityText": "Actions"
+            },
+            "listingPrice": {
+                "listingPrice": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$80.50"
+                        }
+                    ]
+                },
+                "listingShipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "Free shipping"
+                        }
+                    ]
+                }
+            },
+            "bids": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "-"
+                    }
+                ]
+            },
+            "watchers": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "3"
+                    }
+                ]
+            },
+            "promoted": {
+                "_type": "IconAndText",
+                "icon": {
+                    "_type": "Icon",
+                    "name": "tick"
+                }
+            },
+            "startDate": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Mar 29, 2026"
+                    }
+                ]
+            }
+        },
+        {
+            "listing": {
+                "image": {
+                    "_type": "Image",
+                    "title": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Jewel ver. & SHOP POB",
+                    "URL": "//i.ebayimg.com/images/g/pA8AAeSwcN1pykJn/s-l64.jpg"
+                },
+                "itemId": {
+                    "_type": "TextualDisplayValue",
+                    "value": "227279108068",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "227279108068"
+                        }
+                    ]
+                },
+                "title": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Jewel ver. & SHOP POB"
+                        }
+                    ],
+                    "accessibilityText": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Jewel ver. & SHOP POB",
+                    "action": {
+                        "_type": "Action",
+                        "URL": "https://www.ebay.com/itm/227279108068?nordt=true&orig_cvip=true&rt=nc",
+                        "type": "NAV",
+                        "name": "newWindow",
+                        "signInRequired": false,
+                        "tracking": {
+                            "eventFamily": "SHUB",
+                            "eventAction": "EXPC",
+                            "operationId": "4563492",
+                            "flushImmediately": false,
+                            "eventProperty": {
+                                "trkp": "itm%3A227279108068",
+                                "sid": "p2553753.m46525.l48757"
+                            }
+                        }
+                    },
+                    "postAccessibilityClippedText": "opens in new window or tab"
+                },
+                "formatList": [
+                    {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Fixed price"
+                            }
+                        ],
+                        "accessibilityText": "Fixed price"
+                    }
+                ],
+                "moreImages": [
+                    {
+                        "_type": "Image",
+                        "title": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Jewel ver. & SHOP POB",
+                        "URL": "//i.ebayimg.com/images/g/pA8AAeSwcN1pykJn/s-l500.jpg"
+                    }
+                ]
+            },
+            "actions": {
+                "options": [
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "Sell Similar",
+                        "text": "Sell Similar",
+                        "action": {
+                            "_type": "Action",
+                            "URL": "https://www.ebay.com/sl/list?mode=SellLikeItem&itemId=227279108068",
+                            "type": "NAV",
+                            "name": "newWindow",
+                            "signInRequired": true
+                        },
+                        "accessibilityText": "Sell Similar"
+                    }
+                ],
+                "defaultOption": {
+                    "_type": "OptionValueSpan",
+                    "value": "Edit",
+                    "text": "Edit"
+                },
+                "accessibilityText": "Actions"
+            },
+            "listingPrice": {
+                "listingPrice": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$14.32"
+                        }
+                    ]
+                },
+                "listingShipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "+$8.90 shipping"
+                        }
+                    ]
+                }
+            },
+            "bids": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "-"
+                    }
+                ]
+            },
+            "watchers": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "0"
+                    }
+                ]
+            },
+            "promoted": {
+                "_type": "IconAndText",
+                "icon": {
+                    "_type": "Icon",
+                    "name": "tick"
+                }
+            },
+            "startDate": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Mar 30, 2026"
+                    }
+                ]
+            }
+        },
+        {
+            "listing": {
+                "image": {
+                    "_type": "Image",
+                    "title": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Standard ver. SET & SHOP POB",
+                    "URL": "//i.ebayimg.com/images/g/VvcAAeSwrudpykLV/s-l64.jpg"
+                },
+                "itemId": {
+                    "_type": "TextualDisplayValue",
+                    "value": "227279108968",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "227279108968"
+                        }
+                    ]
+                },
+                "title": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Standard ver. SET & SHOP POB"
+                        }
+                    ],
+                    "accessibilityText": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Standard ver. SET & SHOP POB",
+                    "action": {
+                        "_type": "Action",
+                        "URL": "https://www.ebay.com/itm/227279108968?nordt=true&orig_cvip=true&rt=nc",
+                        "type": "NAV",
+                        "name": "newWindow",
+                        "signInRequired": false,
+                        "tracking": {
+                            "eventFamily": "SHUB",
+                            "eventAction": "EXPC",
+                            "operationId": "4563492",
+                            "flushImmediately": false,
+                            "eventProperty": {
+                                "trkp": "itm%3A227279108968",
+                                "sid": "p2553753.m46525.l48757"
+                            }
+                        }
+                    },
+                    "postAccessibilityClippedText": "opens in new window or tab"
+                },
+                "formatList": [
+                    {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Fixed price"
+                            }
+                        ],
+                        "accessibilityText": "Fixed price"
+                    }
+                ],
+                "moreImages": [
+                    {
+                        "_type": "Image",
+                        "title": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Standard ver. SET & SHOP POB",
+                        "URL": "//i.ebayimg.com/images/g/VvcAAeSwrudpykLV/s-l500.jpg"
+                    }
+                ]
+            },
+            "actions": {
+                "options": [
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "Sell Similar",
+                        "text": "Sell Similar",
+                        "action": {
+                            "_type": "Action",
+                            "URL": "https://www.ebay.com/sl/list?mode=SellLikeItem&itemId=227279108968",
+                            "type": "NAV",
+                            "name": "newWindow",
+                            "signInRequired": true
+                        },
+                        "accessibilityText": "Sell Similar"
+                    }
+                ],
+                "defaultOption": {
+                    "_type": "OptionValueSpan",
+                    "value": "Edit",
+                    "text": "Edit"
+                },
+                "accessibilityText": "Actions"
+            },
+            "listingPrice": {
+                "listingPrice": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$71.92"
+                        }
+                    ]
+                },
+                "listingShipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "+$16.50 shipping"
+                        }
+                    ]
+                }
+            },
+            "bids": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "-"
+                    }
+                ]
+            },
+            "watchers": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "1"
+                    }
+                ]
+            },
+            "promoted": {
+                "_type": "IconAndText",
+                "icon": {
+                    "_type": "Icon",
+                    "name": "tick"
+                }
+            },
+            "startDate": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Mar 30, 2026"
+                    }
+                ]
+            }
+        },
+        {
+            "listing": {
+                "image": {
+                    "_type": "Image",
+                    "title": "PSL BABYMONSTER 3rd MINI ALBUM CHOOM ALBUM JAPAN POB PHOTO CARD OFFICIAL",
+                    "URL": "//i.ebayimg.com/images/g/9s4AAeSw2-Zp1V9B/s-l64.jpg"
+                },
+                "itemId": {
+                    "_type": "TextualDisplayValue",
+                    "value": "168293467348",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "168293467348"
+                        }
+                    ]
+                },
+                "title": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "PSL BABYMONSTER 3rd MINI ALBUM CHOOM ALBUM JAPAN POB PHOTO CARD OFFICIAL"
+                        }
+                    ],
+                    "accessibilityText": "PSL BABYMONSTER 3rd MINI ALBUM CHOOM ALBUM JAPAN POB PHOTO CARD OFFICIAL",
+                    "action": {
+                        "_type": "Action",
+                        "URL": "https://www.ebay.com/itm/168293467348?nordt=true&orig_cvip=true&rt=nc",
+                        "type": "NAV",
+                        "name": "newWindow",
+                        "signInRequired": false,
+                        "tracking": {
+                            "eventFamily": "SHUB",
+                            "eventAction": "EXPC",
+                            "operationId": "4563492",
+                            "flushImmediately": false,
+                            "eventProperty": {
+                                "trkp": "itm%3A168293467348",
+                                "sid": "p2553753.m46525.l48757"
+                            }
+                        }
+                    },
+                    "postAccessibilityClippedText": "opens in new window or tab"
+                },
+                "formatList": [
+                    {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Fixed price"
+                            }
+                        ],
+                        "accessibilityText": "Fixed price"
+                    }
+                ],
+                "moreImages": [
+                    {
+                        "_type": "Image",
+                        "title": "PSL BABYMONSTER 3rd MINI ALBUM CHOOM ALBUM JAPAN POB PHOTO CARD OFFICIAL",
+                        "URL": "//i.ebayimg.com/images/g/9s4AAeSw2-Zp1V9B/s-l500.jpg"
+                    }
+                ]
+            },
+            "actions": {
+                "options": [
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "Sell Similar",
+                        "text": "Sell Similar",
+                        "action": {
+                            "_type": "Action",
+                            "URL": "https://www.ebay.com/sl/list?mode=SellLikeItem&itemId=168293467348",
+                            "type": "NAV",
+                            "name": "newWindow",
+                            "signInRequired": true
+                        },
+                        "accessibilityText": "Sell Similar"
+                    }
+                ],
+                "defaultOption": {
+                    "_type": "OptionValueSpan",
+                    "value": "Edit",
+                    "text": "Edit"
+                },
+                "accessibilityText": "Actions"
+            },
+            "listingPrice": {
+                "listingPrice": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$23.99"
+                        }
+                    ]
+                },
+                "listingShipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "+$15.99 shipping"
+                        }
+                    ]
+                }
+            },
+            "bids": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "-"
+                    }
+                ]
+            },
+            "watchers": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "0"
+                    }
+                ]
+            },
+            "promoted": {
+                "_type": "IconAndText",
+                "icon": {
+                    "_type": "Icon",
+                    "name": "tick"
+                }
+            },
+            "startDate": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Apr 7, 2026"
+                    }
+                ]
+            }
+        },
+        {
+            "listing": {
+                "image": {
+                    "_type": "Image",
+                    "title": "[EXCLUSIVE POB] Babymonster - 3rd Mini Album Choom 3 ver. SET 3CD+Pre-Order Gift",
+                    "URL": "//i.ebayimg.com/images/g/mCIAAeSw-2Bpyd97/s-l64.jpg"
+                },
+                "itemId": {
+                    "_type": "TextualDisplayValue",
+                    "value": "327075791560",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "327075791560"
+                        }
+                    ]
+                },
+                "title": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "[EXCLUSIVE POB] Babymonster - 3rd Mini Album Choom 3 ver. SET 3CD+Pre-Order Gift"
+                        }
+                    ],
+                    "accessibilityText": "[EXCLUSIVE POB] Babymonster - 3rd Mini Album Choom 3 ver. SET 3CD+Pre-Order Gift",
+                    "action": {
+                        "_type": "Action",
+                        "URL": "https://www.ebay.com/itm/327075791560?nordt=true&orig_cvip=true&rt=nc",
+                        "type": "NAV",
+                        "name": "newWindow",
+                        "signInRequired": false,
+                        "tracking": {
+                            "eventFamily": "SHUB",
+                            "eventAction": "EXPC",
+                            "operationId": "4563492",
+                            "flushImmediately": false,
+                            "eventProperty": {
+                                "trkp": "itm%3A327075791560",
+                                "sid": "p2553753.m46525.l48757"
+                            }
+                        }
+                    },
+                    "postAccessibilityClippedText": "opens in new window or tab"
+                },
+                "formatList": [
+                    {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Fixed price"
+                            }
+                        ],
+                        "accessibilityText": "Fixed price"
+                    }
+                ],
+                "moreImages": [
+                    {
+                        "_type": "Image",
+                        "title": "[EXCLUSIVE POB] Babymonster - 3rd Mini Album Choom 3 ver. SET 3CD+Pre-Order Gift",
+                        "URL": "//i.ebayimg.com/images/g/mCIAAeSw-2Bpyd97/s-l500.jpg"
+                    }
+                ]
+            },
+            "actions": {
+                "options": [
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "Sell Similar",
+                        "text": "Sell Similar",
+                        "action": {
+                            "_type": "Action",
+                            "URL": "https://www.ebay.com/sl/list?mode=SellLikeItem&itemId=327075791560",
+                            "type": "NAV",
+                            "name": "newWindow",
+                            "signInRequired": true
+                        },
+                        "accessibilityText": "Sell Similar"
+                    }
+                ],
+                "defaultOption": {
+                    "_type": "OptionValueSpan",
+                    "value": "Edit",
+                    "text": "Edit"
+                },
+                "accessibilityText": "Actions"
+            },
+            "listingPrice": {
+                "listingPrice": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$67.90"
+                        }
+                    ]
+                },
+                "listingShipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "+$27.50 shipping"
+                        }
+                    ]
+                }
+            },
+            "bids": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "-"
+                    }
+                ]
+            },
+            "watchers": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "0"
+                    }
+                ]
+            },
+            "promoted": {
+                "_type": "IconAndText",
+                "text": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "-"
+                        }
+                    ]
+                }
+            },
+            "startDate": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Mar 30, 2026"
+                    }
+                ]
+            }
+        },
+        {
+            "listing": {
+                "image": {
+                    "_type": "Image",
+                    "title": "[Exclusive POB] Babymonster - Choom Jewel version CD+Pre-Order Benefit",
+                    "URL": "//i.ebayimg.com/images/g/xm0AAeSw3-dpyhar/s-l64.jpg"
+                },
+                "itemId": {
+                    "_type": "TextualDisplayValue",
+                    "value": "406813591999",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "406813591999"
+                        }
+                    ]
+                },
+                "title": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "[Exclusive POB] Babymonster - Choom Jewel version CD+Pre-Order Benefit"
+                        }
+                    ],
+                    "accessibilityText": "[Exclusive POB] Babymonster - Choom Jewel version CD+Pre-Order Benefit",
+                    "action": {
+                        "_type": "Action",
+                        "URL": "https://www.ebay.com/itm/406813591999?nordt=true&orig_cvip=true&rt=nc",
+                        "type": "NAV",
+                        "name": "newWindow",
+                        "signInRequired": false,
+                        "tracking": {
+                            "eventFamily": "SHUB",
+                            "eventAction": "EXPC",
+                            "operationId": "4563492",
+                            "flushImmediately": false,
+                            "eventProperty": {
+                                "trkp": "itm%3A406813591999",
+                                "sid": "p2553753.m46525.l48757"
+                            }
+                        }
+                    },
+                    "postAccessibilityClippedText": "opens in new window or tab"
+                },
+                "formatList": [
+                    {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Fixed price"
+                            }
+                        ],
+                        "accessibilityText": "Fixed price"
+                    }
+                ],
+                "moreImages": [
+                    {
+                        "_type": "Image",
+                        "title": "[Exclusive POB] Babymonster - Choom Jewel version CD+Pre-Order Benefit",
+                        "URL": "//i.ebayimg.com/images/g/xm0AAeSw3-dpyhar/s-l500.jpg"
+                    }
+                ]
+            },
+            "actions": {
+                "options": [
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "Sell Similar",
+                        "text": "Sell Similar",
+                        "action": {
+                            "_type": "Action",
+                            "URL": "https://www.ebay.com/sl/list?mode=SellLikeItem&itemId=406813591999",
+                            "type": "NAV",
+                            "name": "newWindow",
+                            "signInRequired": true
+                        },
+                        "accessibilityText": "Sell Similar"
+                    }
+                ],
+                "defaultOption": {
+                    "_type": "OptionValueSpan",
+                    "value": "Edit",
+                    "text": "Edit"
+                },
+                "accessibilityText": "Actions"
+            },
+            "listingPrice": {
+                "listingPrice": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$15.50"
+                        }
+                    ]
+                },
+                "listingShipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "+$12.90 shipping"
+                        }
+                    ]
+                }
+            },
+            "bids": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "-"
+                    }
+                ]
+            },
+            "watchers": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "0"
+                    }
+                ]
+            },
+            "promoted": {
+                "_type": "IconAndText",
+                "text": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "-"
+                        }
+                    ]
+                }
+            },
+            "startDate": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Mar 29, 2026"
+                    }
+                ]
+            }
+        },
+        {
+            "listing": {
+                "image": {
+                    "_type": "Image",
+                    "title": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Standard ver. & SHOP POB",
+                    "URL": "//i.ebayimg.com/images/g/oHAAAeSwU5VpykK2/s-l64.jpg"
+                },
+                "itemId": {
+                    "_type": "TextualDisplayValue",
+                    "value": "227279108724",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "227279108724"
+                        }
+                    ]
+                },
+                "title": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Standard ver. & SHOP POB"
+                        }
+                    ],
+                    "accessibilityText": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Standard ver. & SHOP POB",
+                    "action": {
+                        "_type": "Action",
+                        "URL": "https://www.ebay.com/itm/227279108724?nordt=true&orig_cvip=true&rt=nc",
+                        "type": "NAV",
+                        "name": "newWindow",
+                        "signInRequired": false,
+                        "tracking": {
+                            "eventFamily": "SHUB",
+                            "eventAction": "EXPC",
+                            "operationId": "4563492",
+                            "flushImmediately": false,
+                            "eventProperty": {
+                                "trkp": "itm%3A227279108724",
+                                "sid": "p2553753.m46525.l48757"
+                            }
+                        }
+                    },
+                    "postAccessibilityClippedText": "opens in new window or tab"
+                },
+                "formatList": [
+                    {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Fixed price"
+                            }
+                        ],
+                        "accessibilityText": "Fixed price"
+                    }
+                ],
+                "moreImages": [
+                    {
+                        "_type": "Image",
+                        "title": "Pre-order BABYMONSTER 3rd Mini Album CHOOM Standard ver. & SHOP POB",
+                        "URL": "//i.ebayimg.com/images/g/oHAAAeSwU5VpykK2/s-l500.jpg"
+                    }
+                ]
+            },
+            "actions": {
+                "options": [
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "Sell Similar",
+                        "text": "Sell Similar",
+                        "action": {
+                            "_type": "Action",
+                            "URL": "https://www.ebay.com/sl/list?mode=SellLikeItem&itemId=227279108724",
+                            "type": "NAV",
+                            "name": "newWindow",
+                            "signInRequired": true
+                        },
+                        "accessibilityText": "Sell Similar"
+                    }
+                ],
+                "defaultOption": {
+                    "_type": "OptionValueSpan",
+                    "value": "Edit",
+                    "text": "Edit"
+                },
+                "accessibilityText": "Actions"
+            },
+            "listingPrice": {
+                "listingPrice": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$28.48"
+                        }
+                    ]
+                },
+                "listingShipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "+$8.00 shipping"
+                        }
+                    ]
+                }
+            },
+            "bids": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "-"
+                    }
+                ]
+            },
+            "watchers": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "0"
+                    }
+                ]
+            },
+            "promoted": {
+                "_type": "IconAndText",
+                "icon": {
+                    "_type": "Icon",
+                    "name": "tick"
+                }
+            },
+            "startDate": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Mar 30, 2026"
+                    }
+                ]
+            }
+        },
+        {
+            "listing": {
+                "image": {
+                    "_type": "Image",
+                    "title": "[Exclusive POB] Babymonster - Choom Jewel 6 versions SET 6CD+Pre-Order Benefit",
+                    "URL": "//i.ebayimg.com/images/g/xm0AAeSw3-dpyhar/s-l64.jpg"
+                },
+                "itemId": {
+                    "_type": "TextualDisplayValue",
+                    "value": "327075744930",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "327075744930"
+                        }
+                    ]
+                },
+                "title": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "[Exclusive POB] Babymonster - Choom Jewel 6 versions SET 6CD+Pre-Order Benefit"
+                        }
+                    ],
+                    "accessibilityText": "[Exclusive POB] Babymonster - Choom Jewel 6 versions SET 6CD+Pre-Order Benefit",
+                    "action": {
+                        "_type": "Action",
+                        "URL": "https://www.ebay.com/itm/327075744930?nordt=true&orig_cvip=true&rt=nc",
+                        "type": "NAV",
+                        "name": "newWindow",
+                        "signInRequired": false,
+                        "tracking": {
+                            "eventFamily": "SHUB",
+                            "eventAction": "EXPC",
+                            "operationId": "4563492",
+                            "flushImmediately": false,
+                            "eventProperty": {
+                                "trkp": "itm%3A327075744930",
+                                "sid": "p2553753.m46525.l48757"
+                            }
+                        }
+                    },
+                    "postAccessibilityClippedText": "opens in new window or tab"
+                },
+                "formatList": [
+                    {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Fixed price"
+                            }
+                        ],
+                        "accessibilityText": "Fixed price"
+                    }
+                ],
+                "moreImages": [
+                    {
+                        "_type": "Image",
+                        "title": "[Exclusive POB] Babymonster - Choom Jewel 6 versions SET 6CD+Pre-Order Benefit",
+                        "URL": "//i.ebayimg.com/images/g/xm0AAeSw3-dpyhar/s-l500.jpg"
+                    }
+                ]
+            },
+            "actions": {
+                "options": [
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "Sell Similar",
+                        "text": "Sell Similar",
+                        "action": {
+                            "_type": "Action",
+                            "URL": "https://www.ebay.com/sl/list?mode=SellLikeItem&itemId=327075744930",
+                            "type": "NAV",
+                            "name": "newWindow",
+                            "signInRequired": true
+                        },
+                        "accessibilityText": "Sell Similar"
+                    }
+                ],
+                "defaultOption": {
+                    "_type": "OptionValueSpan",
+                    "value": "Edit",
+                    "text": "Edit"
+                },
+                "accessibilityText": "Actions"
+            },
+            "listingPrice": {
+                "listingPrice": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$92.90"
+                        }
+                    ]
+                },
+                "listingShipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "+$21.90 shipping"
+                        }
+                    ]
+                }
+            },
+            "bids": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "-"
+                    }
+                ]
+            },
+            "watchers": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "0"
+                    }
+                ]
+            },
+            "promoted": {
+                "_type": "IconAndText",
+                "text": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "-"
+                        }
+                    ]
+                }
+            },
+            "startDate": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Mar 29, 2026"
+                    }
+                ]
+            }
+        },
+        {
+            "listing": {
+                "image": {
+                    "_type": "Image",
+                    "title": "[EXCLUSIVE POB] Babymonster - 3rd Mini Album Choom Random ver. CD+Pre-Order Gift",
+                    "URL": "//i.ebayimg.com/images/g/mCIAAeSw-2Bpyd97/s-l64.jpg"
+                },
+                "itemId": {
+                    "_type": "TextualDisplayValue",
+                    "value": "406813658779",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "406813658779"
+                        }
+                    ]
+                },
+                "title": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "[EXCLUSIVE POB] Babymonster - 3rd Mini Album Choom Random ver. CD+Pre-Order Gift"
+                        }
+                    ],
+                    "accessibilityText": "[EXCLUSIVE POB] Babymonster - 3rd Mini Album Choom Random ver. CD+Pre-Order Gift",
+                    "action": {
+                        "_type": "Action",
+                        "URL": "https://www.ebay.com/itm/406813658779?nordt=true&orig_cvip=true&rt=nc",
+                        "type": "NAV",
+                        "name": "newWindow",
+                        "signInRequired": false,
+                        "tracking": {
+                            "eventFamily": "SHUB",
+                            "eventAction": "EXPC",
+                            "operationId": "4563492",
+                            "flushImmediately": false,
+                            "eventProperty": {
+                                "trkp": "itm%3A406813658779",
+                                "sid": "p2553753.m46525.l48757"
+                            }
+                        }
+                    },
+                    "postAccessibilityClippedText": "opens in new window or tab"
+                },
+                "formatList": [
+                    {
+                        "_type": "TextualDisplay",
+                        "textSpans": [
+                            {
+                                "_type": "TextSpan",
+                                "text": "Fixed price"
+                            }
+                        ],
+                        "accessibilityText": "Fixed price"
+                    }
+                ],
+                "moreImages": [
+                    {
+                        "_type": "Image",
+                        "title": "[EXCLUSIVE POB] Babymonster - 3rd Mini Album Choom Random ver. CD+Pre-Order Gift",
+                        "URL": "//i.ebayimg.com/images/g/mCIAAeSw-2Bpyd97/s-l500.jpg"
+                    }
+                ]
+            },
+            "actions": {
+                "options": [
+                    {
+                        "_type": "OptionValueSpan",
+                        "value": "Sell Similar",
+                        "text": "Sell Similar",
+                        "action": {
+                            "_type": "Action",
+                            "URL": "https://www.ebay.com/sl/list?mode=SellLikeItem&itemId=406813658779",
+                            "type": "NAV",
+                            "name": "newWindow",
+                            "signInRequired": true
+                        },
+                        "accessibilityText": "Sell Similar"
+                    }
+                ],
+                "defaultOption": {
+                    "_type": "OptionValueSpan",
+                    "value": "Edit",
+                    "text": "Edit"
+                },
+                "accessibilityText": "Actions"
+            },
+            "listingPrice": {
+                "listingPrice": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "$22.50"
+                        }
+                    ]
+                },
+                "listingShipping": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "+$17.90 shipping"
+                        }
+                    ]
+                }
+            },
+            "bids": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "-"
+                    }
+                ]
+            },
+            "watchers": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "0"
+                    }
+                ]
+            },
+            "promoted": {
+                "_type": "IconAndText",
+                "text": {
+                    "_type": "TextualDisplay",
+                    "textSpans": [
+                        {
+                            "_type": "TextSpan",
+                            "text": "-"
+                        }
+                    ]
+                }
+            },
+            "startDate": {
+                "_type": "TextualDisplay",
+                "textSpans": [
+                    {
+                        "_type": "TextSpan",
+                        "text": "Mar 30, 2026"
+                    }
+                ]
+            }
+        }
+    ],
+    "pagination": {
+        "summary": {
+            "_type": "TextualDisplay",
+            "textSpans": [
+                {
+                    "_type": "TextSpan",
+                    "text": "Results: 1 - 10"
+                }
+            ],
+            "accessibilityText": "Results: 1 - 10"
+        },
+        "first": {
+            "_type": "PaginationTextualDisplay",
+            "disabled": false,
+            "textSpans": [
+                {
+                    "_type": "TextSpan"
+                }
+            ],
+            "accessibilityText": "Go to first page",
+            "action": {
+                "_type": "Action",
+                "type": "OPERATION",
+                "name": "paginationFirst",
+                "tracking": {
+                    "eventFamily": "SHUB",
+                    "eventAction": "EXPC",
+                    "operationId": "4563492",
+                    "flushImmediately": false,
+                    "eventProperty": {
+                        "sid": "p2553753.m45323.l46818"
+                    }
+                }
+            }
+        },
+        "prev": {
+            "_type": "PaginationTextualDisplay",
+            "disabled": true,
+            "textSpans": [
+                {
+                    "_type": "TextSpan"
+                }
+            ],
+            "accessibilityText": "Go to previous page",
+            "action": {
+                "_type": "Action",
+                "type": "OPERATION",
+                "name": "paginationPrev",
+                "tracking": {
+                    "eventFamily": "SHUB",
+                    "eventAction": "EXPC",
+                    "operationId": "4563492",
+                    "flushImmediately": false,
+                    "eventProperty": {
+                        "sid": "p2553753.m45323.l46819"
+                    }
+                }
+            }
+        },
+        "current": {
+            "_type": "TextualDisplay",
+            "textSpans": [
+                {
+                    "_type": "TextSpan",
+                    "text": "Page 1"
+                }
+            ],
+            "accessibilityText": "Page 1"
+        },
+        "next": {
+            "_type": "PaginationTextualDisplay",
+            "disabled": true,
+            "textSpans": [
+                {
+                    "_type": "TextSpan"
+                }
+            ],
+            "accessibilityText": "Go to next page",
+            "action": {
+                "_type": "Action",
+                "type": "OPERATION",
+                "name": "paginationNext",
+                "tracking": {
+                    "eventFamily": "SHUB",
+                    "eventAction": "EXPC",
+                    "operationId": "4563492",
+                    "flushImmediately": false,
+                    "eventProperty": {
+                        "sid": "p2553753.m45323.l46821"
+                    }
+                }
+            }
+        },
+        "itemsPerPage": {
+            "options": [
+                {
+                    "_type": "OptionValueSpan",
+                    "value": "10",
+                    "selected": false,
+                    "text": "10"
+                },
+                {
+                    "_type": "OptionValueSpan",
+                    "value": "20",
+                    "selected": false,
+                    "text": "20"
+                },
+                {
+                    "_type": "OptionValueSpan",
+                    "value": "50",
+                    "selected": true,
+                    "text": "50"
+                }
+            ],
+            "accessibilityText": "Results per page",
+            "label": "Results per page"
+        },
+        "currentPageNum": 1
+    },
+    "meta": {
+        "name": "searchResults"
+    },
+    "debugUrl": ""
+}
