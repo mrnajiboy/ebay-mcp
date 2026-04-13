@@ -13,6 +13,8 @@ export default tseslint.config(
       'node_modules/**',
       'dist/**',
       'coverage/**',
+      'tests/fixtures/**',
+      'tests/curl/**',
       'docs/**',
       'public/**',
       '*.config.js',
