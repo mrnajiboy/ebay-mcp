@@ -15,7 +15,7 @@ type ResolvedSocialSignals = Awaited<ReturnType<typeof getSocialValidationSignal
 type ResolvedTerapeakSignals = Awaited<ReturnType<typeof getTerapeakValidationSignals>>;
 type ResolvedResearchSignals = Awaited<ReturnType<typeof getPreviousComebackResearchSignals>>;
 
-type ProviderDebugStatus = 'ok' | 'partial' | 'stub' | 'unavailable' | 'error';
+type ProviderDebugStatus = 'ok' | 'partial' | 'stub' | 'unavailable' | 'error' | 'skipped';
 
 function addMinutes(timestamp: string, minutes: number): string {
   return new Date(new Date(timestamp).getTime() + minutes * 60 * 1000).toISOString();
@@ -71,20 +71,89 @@ function getWriteSource(value: unknown, source: string): string {
   return isMeaningfulWriteValue(value) ? source : 'none';
 }
 
+function hasSoldVelocityEvidence(
+  soldVelocity: {
+    day1Sold: number | null;
+    day2Sold: number | null;
+    day3Sold: number | null;
+    day4Sold: number | null;
+    day5Sold: number | null;
+    daysTracked: number | null;
+  }
+): boolean {
+  return Object.values(soldVelocity).some((value) => value !== null);
+}
+
+function hasPrimaryResearchSoldSignals(terapeak: ResolvedTerapeakSignals): boolean {
+  return (
+    terapeak.provider === 'ebay_research_ui' &&
+    (terapeak.researchSoldPriceUsd !== null ||
+      terapeak.soldListingsCount !== null ||
+      terapeak.recentSoldCount7d !== null ||
+      hasSoldVelocityEvidence(terapeak.soldVelocity))
+  );
+}
+
+function createSkippedSoldSignals(): Awaited<ReturnType<typeof getEbaySoldValidationSignals>> {
+  return {
+    provider: 'third_party_sold_api',
+    confidence: 'Low',
+    soldResultsCount: null,
+    soldAveragePriceUsd: null,
+    soldMedianPriceUsd: null,
+    soldMinPriceUsd: null,
+    soldMaxPriceUsd: null,
+    soldItemsSample: [],
+    soldVelocity: {
+      day1Sold: null,
+      day2Sold: null,
+      day3Sold: null,
+      day4Sold: null,
+      day5Sold: null,
+      daysTracked: null,
+    },
+    recentSoldCount7d: null,
+    soldBucketDebug: {
+      status: 'skipped',
+      notes: ['legacy sold fallback was skipped because first-party research sold signals were sufficient'],
+      totalItemsExamined: 0,
+      withSoldAt: 0,
+      missingSoldAt: 0,
+      dateParseFailures: 0,
+      futureDated: 0,
+      bucketedItems: 0,
+    },
+    query: null,
+    queryCandidates: [],
+    queryDiagnostics: [],
+    selectedQuery: undefined,
+    selectedQueryTier: null,
+    selectedQueryFamily: null,
+    broadAlbumQuery: null,
+    subtypeSpecificQuery: null,
+    querySelectionReason:
+      'Legacy sold fallback was skipped because first-party research sold signals were sufficient.',
+    responseUrl: null,
+    status: 'skipped',
+    errorMessage: undefined,
+    queryResolution: undefined,
+  };
+}
+
 function resolvePreferredSoldMetric(
-  soldValue: number | null,
   terapeakValue: number | null,
+  soldValue: number | null,
   ebayValue: number | null
 ): {
   value: number | null;
   source: 'sold' | 'terapeak' | 'ebay' | 'none';
 } {
-  if (soldValue !== null) {
-    return { value: soldValue, source: 'sold' };
-  }
-
   if (terapeakValue !== null) {
     return { value: terapeakValue, source: 'terapeak' };
+  }
+
+  if (soldValue !== null) {
+    return { value: soldValue, source: 'sold' };
   }
 
   if (ebayValue !== null) {
@@ -342,8 +411,11 @@ export async function runValidation(
       effectiveContext,
     };
     const ebay = await getEbayValidationSignals(api, effectiveRequest);
-    const sold = await getEbaySoldValidationSignals(effectiveRequest);
     const terapeak = await getTerapeakValidationSignals(api, effectiveRequest);
+    const primaryResearchSoldSignalsAvailable = hasPrimaryResearchSoldSignals(terapeak);
+    const sold = primaryResearchSoldSignalsAvailable
+      ? createSkippedSoldSignals()
+      : await getEbaySoldValidationSignals(effectiveRequest);
     const social = await getSocialValidationSignals(effectiveRequest);
     const chart = getChartValidationSignals(effectiveRequest);
     const research = await getPreviousComebackResearchSignals(effectiveRequest);
@@ -354,33 +426,33 @@ export async function runValidation(
     const mergedAvgShippingCostUsd = terapeak.avgShippingCostUsd ?? ebay.avgShippingCostUsd;
     const mergedCompetitionLevel = terapeak.competitionLevel ?? ebay.competitionLevel;
     const day1Sold = resolvePreferredSoldMetric(
-      sold.soldVelocity.day1Sold,
       terapeak.soldVelocity.day1Sold,
+      sold.soldVelocity.day1Sold,
       ebay.soldVelocity.day1Sold
     );
     const day2Sold = resolvePreferredSoldMetric(
-      sold.soldVelocity.day2Sold,
       terapeak.soldVelocity.day2Sold,
+      sold.soldVelocity.day2Sold,
       ebay.soldVelocity.day2Sold
     );
     const day3Sold = resolvePreferredSoldMetric(
-      sold.soldVelocity.day3Sold,
       terapeak.soldVelocity.day3Sold,
+      sold.soldVelocity.day3Sold,
       ebay.soldVelocity.day3Sold
     );
     const day4Sold = resolvePreferredSoldMetric(
-      sold.soldVelocity.day4Sold,
       terapeak.soldVelocity.day4Sold,
+      sold.soldVelocity.day4Sold,
       ebay.soldVelocity.day4Sold
     );
     const day5Sold = resolvePreferredSoldMetric(
-      sold.soldVelocity.day5Sold,
       terapeak.soldVelocity.day5Sold,
+      sold.soldVelocity.day5Sold,
       ebay.soldVelocity.day5Sold
     );
     const daysTracked = resolvePreferredSoldMetric(
-      sold.soldVelocity.daysTracked,
       terapeak.soldVelocity.daysTracked,
+      sold.soldVelocity.daysTracked,
       ebay.soldVelocity.daysTracked
     );
     const soldVelocity = {
@@ -406,6 +478,35 @@ export async function runValidation(
       Boolean(ebay.queryResolution?.queryContextUsed)
     );
     const mergedSignals = { effectiveContext, ebay, sold, terapeak, social, chart, research };
+    const activeSource =
+      terapeak.avgWatchersPerListing !== null ||
+      terapeak.preOrderListingsCount !== null ||
+      terapeak.competitionLevel !== null
+        ? 'ebay_research_ui'
+        : ebay.preOrderListingsCount !== null ||
+            ebay.marketPriceUsd !== null ||
+            ebay.competitionLevel !== null
+          ? 'ebay_browse'
+          : 'none';
+    const soldSource = primaryResearchSoldSignalsAvailable
+      ? 'ebay_research_ui'
+      : sold.soldMedianPriceUsd !== null ||
+          sold.soldResultsCount !== null ||
+          hasSoldVelocityEvidence(sold.soldVelocity)
+        ? 'third_party_sold_api'
+        : ebay.marketPriceUsd !== null
+          ? 'ebay_browse'
+          : 'none';
+    const providerResolution = {
+      activeSource,
+      soldSource,
+      soldFallbackUsed: !primaryResearchSoldSignalsAvailable && soldSource === 'third_party_sold_api',
+      fallbackReason: primaryResearchSoldSignalsAvailable
+        ? null
+        : soldSource === 'third_party_sold_api'
+          ? 'First-party research sold signals were unavailable or insufficient, so the legacy sold provider was used as automatic fallback.'
+          : 'First-party research sold signals were unavailable or insufficient, but no legacy sold fallback data was available.',
+    };
     const hasUsableHistoricalResearch =
       research.debug?.providerStatus !== undefined
         ? research.debug.providerStatus === 'ok'
@@ -564,6 +665,7 @@ export async function runValidation(
         soldResultsCount: sold.soldResultsCount,
         omittedOptionalWrites,
         writeResolution,
+        providerResolution,
         sourceSet: ['ebay', 'sold', 'terapeak', 'social', 'chart', 'research'],
         providers: buildProviderDebug(
           effectiveRequest,

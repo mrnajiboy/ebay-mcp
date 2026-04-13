@@ -67,10 +67,20 @@ function hasUsableTrackingQuery(effectiveContext: ValidationEffectiveContext): b
 }
 
 function resolvePreferredSoldValue(
-  soldValue: number | null,
-  researchValue: number | null
+  researchValue: number | null,
+  soldValue: number | null
 ): number | null {
-  return soldValue ?? researchValue;
+  return researchValue ?? soldValue;
+}
+
+function hasResearchSoldEvidence(signals: ValidationRecommendationInput): boolean {
+  return (
+    signals.terapeak.provider === 'ebay_research_ui' &&
+    (signals.terapeak.researchSoldPriceUsd !== null ||
+      signals.terapeak.soldListingsCount !== null ||
+      signals.terapeak.recentSoldCount7d !== null ||
+      Object.values(signals.terapeak.soldVelocity).some((value) => value !== null))
+  );
 }
 
 export function buildValidationRecommendation(
@@ -131,16 +141,16 @@ export function buildValidationRecommendation(
         'release');
   const mergedSoldVelocity = {
     day1Sold: resolvePreferredSoldValue(
-      signals.sold.soldVelocity.day1Sold,
-      signals.terapeak.soldVelocity.day1Sold
+      signals.terapeak.soldVelocity.day1Sold,
+      signals.sold.soldVelocity.day1Sold
     ),
     day2Sold: resolvePreferredSoldValue(
-      signals.sold.soldVelocity.day2Sold,
-      signals.terapeak.soldVelocity.day2Sold
+      signals.terapeak.soldVelocity.day2Sold,
+      signals.sold.soldVelocity.day2Sold
     ),
     day3Sold: resolvePreferredSoldValue(
-      signals.sold.soldVelocity.day3Sold,
-      signals.terapeak.soldVelocity.day3Sold
+      signals.terapeak.soldVelocity.day3Sold,
+      signals.sold.soldVelocity.day3Sold
     ),
   };
   const recentSoldCount = [
@@ -152,18 +162,14 @@ export function buildValidationRecommendation(
     signals.sold.soldMedianPriceUsd !== null ||
     signals.sold.soldResultsCount !== null ||
     Object.values(signals.sold.soldVelocity).some((value) => value !== null);
-  const hasResearchSoldEvidence =
-    signals.terapeak.provider === 'ebay_research_ui' &&
-    (signals.terapeak.soldListingsCount !== null ||
-      signals.terapeak.recentSoldCount7d !== null ||
-      Object.values(signals.terapeak.soldVelocity).some((value) => value !== null));
+  const researchSoldEvidence = hasResearchSoldEvidence(signals);
   const effectiveSoldComparablePrice =
-    signals.sold.soldMedianPriceUsd ??
-    (hasResearchSoldEvidence ? signals.terapeak.researchSoldPriceUsd : null);
-  const effectiveSoldConfidence = hasSoldProviderEvidence
-    ? signals.sold.confidence
-    : hasResearchSoldEvidence
-      ? signals.terapeak.confidence
+    (researchSoldEvidence ? signals.terapeak.researchSoldPriceUsd : null) ??
+    signals.sold.soldMedianPriceUsd;
+  const effectiveSoldConfidence = researchSoldEvidence
+    ? signals.terapeak.confidence
+    : hasSoldProviderEvidence
+      ? signals.sold.confidence
       : 'Low';
   const hasUsableHistoricalResearch =
     signals.research.debug?.providerStatus !== undefined

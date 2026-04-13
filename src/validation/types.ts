@@ -216,7 +216,7 @@ export interface EbaySoldValidationSignals {
   subtypeSpecificQuery?: string | null;
   querySelectionReason?: string;
   responseUrl: string | null;
-  status: 'ok' | 'unavailable' | 'error';
+  status: 'ok' | 'unavailable' | 'error' | 'skipped';
   errorMessage?: string;
   queryResolution?: ProviderQueryResolutionDebug;
 }
