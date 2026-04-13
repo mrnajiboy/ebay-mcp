@@ -1268,7 +1268,9 @@ function parseActiveAggregate(
     listingPriceMaxUsd: listingPriceRange.max,
     avgShippingUsd: parseCurrencyValue(findAggregateMetricText(module, ['Avg shipping'])),
     freeShippingPct: parsePercentValue(findAggregateMetricText(module, ['Free shipping'])),
-    totalActiveListings: parseNumberLike(findAggregateMetricText(module, ['Total active listings'])),
+    totalActiveListings: parseNumberLike(
+      findAggregateMetricText(module, ['Total active listings'])
+    ),
     promotedListingsPct: parsePercentValue(findAggregateMetricText(module, ['Promoted listings'])),
   };
 }
