@@ -127,6 +127,30 @@ interface RedditQueryDiagnostic {
   note?: string;
 }
 
+interface RedditSearchCountFailureContext {
+  endpointTried: string;
+  alternateEndpointTried: string | null;
+  statusCode: number | null;
+  userAgentUsed: string;
+  note: string;
+}
+
+class RedditSearchCountError extends Error {
+  readonly endpointTried: string;
+  readonly alternateEndpointTried: string | null;
+  readonly statusCode: number | null;
+  readonly userAgentUsed: string;
+
+  constructor(context: RedditSearchCountFailureContext) {
+    super(context.note);
+    this.name = 'RedditSearchCountError';
+    this.endpointTried = context.endpointTried;
+    this.alternateEndpointTried = context.alternateEndpointTried;
+    this.statusCode = context.statusCode;
+    this.userAgentUsed = context.userAgentUsed;
+  }
+}
+
 interface TwitterDebug {
   checked: boolean;
   rawItemTitleInput?: string;
@@ -575,13 +599,13 @@ async function fetchRedditSearchCount(
     const primaryFailure = getAxiosFailureDebug(primaryError);
 
     if (primaryFailure.responseStatus !== 403) {
-      throw {
+      throw new RedditSearchCountError({
         endpointTried: REDDIT_PRIMARY_ENDPOINT,
         alternateEndpointTried: null,
         statusCode: primaryFailure.responseStatus,
         userAgentUsed: userAgent,
         note: primaryFailure.note,
-      };
+      });
     }
 
     const fallbackUrl = buildRedditSearchUrl(REDDIT_FALLBACK_ENDPOINT, query, pageLimit);
@@ -603,13 +627,13 @@ async function fetchRedditSearchCount(
       };
     } catch (fallbackError) {
       const fallbackFailure = getAxiosFailureDebug(fallbackError);
-      throw {
+      throw new RedditSearchCountError({
         endpointTried: REDDIT_PRIMARY_ENDPOINT,
         alternateEndpointTried: REDDIT_FALLBACK_ENDPOINT,
         statusCode: fallbackFailure.responseStatus,
         userAgentUsed: userAgent,
         note: `Primary endpoint failed (${primaryFailure.note}); alternate endpoint failed (${fallbackFailure.note}).`,
-      };
+      });
     }
   }
 }
@@ -1114,14 +1138,14 @@ export async function getSocialValidationSignals(
         }
       } catch (error) {
         const failure =
-          typeof error === 'object' && error !== null && 'note' in error
-            ? (error as {
-                endpointTried?: string;
-                alternateEndpointTried?: string | null;
-                statusCode?: number | null;
-                userAgentUsed?: string;
-                note: string;
-              })
+          error instanceof RedditSearchCountError
+            ? {
+                endpointTried: error.endpointTried,
+                alternateEndpointTried: error.alternateEndpointTried,
+                statusCode: error.statusCode,
+                userAgentUsed: error.userAgentUsed,
+                note: error.message,
+              }
             : {
                 endpointTried: REDDIT_PRIMARY_ENDPOINT,
                 alternateEndpointTried: null,

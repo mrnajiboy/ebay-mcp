@@ -972,15 +972,12 @@ export async function getTerapeakValidationSignals(
     const writeSources: Record<string, string> = {
       activeAvgWatchersPerListing:
         activeAvgWatchersPerListing !== null ? 'research_active' : 'none',
-      avgWatchersPerListing:
-        activeAvgWatchersPerListing !== null ? 'research_active' : 'none',
+      avgWatchersPerListing: activeAvgWatchersPerListing !== null ? 'research_active' : 'none',
       activeListingsCount: activeListingsCount !== null ? 'research_active' : 'none',
-      preOrderListingsCount:
-        activeListingsCount !== null ? 'research_active' : 'none',
+      preOrderListingsCount: activeListingsCount !== null ? 'research_active' : 'none',
       activeAvgPriceUsd: activeAvgPriceUsd !== null ? 'research_active' : 'none',
       activeAvgShippingUsd: activeAvgShippingUsd !== null ? 'research_active' : 'none',
-      competitionLevel:
-        activeListingsCount !== null ? 'research_active' : 'none',
+      competitionLevel: activeListingsCount !== null ? 'research_active' : 'none',
       soldAvgPriceUsd: soldAvgPriceUsd !== null ? 'research_sold' : 'none',
       soldMedianPriceUsd: soldMedianPriceUsd !== null ? 'research_sold' : 'none',
       soldAvgShippingUsd: soldAvgShippingUsd !== null ? 'research_sold' : 'none',
