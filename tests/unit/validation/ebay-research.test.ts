@@ -244,8 +244,8 @@ describe('fetchEbayResearch()', () => {
       { name: 'sid', value: 'cookie-a', domain: '.ebay.com', path: '/' },
     ]);
 
-    const activeFixture = await readFixture('../../fixtures/ebay-research-active-babymonster-choom-pob.ndjson');
-    const soldFixture = await readFixture('../../fixtures/ebay-research-sold-babymonster-choom-pob.ndjson');
+    const activeFixture = await readFixture('./fixtures/ebay-research-active-babymonster-choom-pob.ndjson');
+    const soldFixture = await readFixture('./fixtures/ebay-research-sold-babymonster-choom-pob.ndjson');
     const { fetchEbayResearch } = await import('../../../src/validation/providers/ebay-research.js');
 
     axiosGetMock
