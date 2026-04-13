@@ -8,6 +8,7 @@ import {
   type ResearchStorageState,
   storeEbayResearchSessionToKv,
 } from '../validation/providers/ebay-research.js';
+import type { EbayResearchSessionStoreBackend } from '../validation/providers/ebay-research-session-store.js';
 import { loadChromium } from './playwright-runtime.js';
 
 const configuredMarketplace = process.env.EBAY_RESEARCH_BOOTSTRAP_MARKETPLACE?.trim();
@@ -16,7 +17,7 @@ const marketplace =
 const researchUrl = `https://www.ebay.com/sh/research?marketplace=${encodeURIComponent(marketplace)}`;
 
 function getExpectedVerificationSessionSource(
-  selectedStore: 'cloudflare_kv' | 'upstash-redis' | 'filesystem' | 'none'
+  selectedStore: EbayResearchSessionStoreBackend
 ): 'kv' | 'filesystem' | null {
   if (selectedStore === 'cloudflare_kv' || selectedStore === 'upstash-redis') {
     return 'kv';
@@ -63,21 +64,35 @@ async function main(): Promise<void> {
     );
 
     await page.goto(researchUrl, { waitUntil: 'domcontentloaded' });
-    if (!page.url().includes('/sh/research')) {
+    const currentUrl = page.url();
+    if (!currentUrl.includes('/sh/research')) {
       throw new Error(
-        `Research UI access could not be confirmed before persistence (currentUrl=${page.url()}).`
+        `Research UI access could not be confirmed before persistence (currentUrl=${currentUrl}).`
       );
     }
 
     const storageState = await context.storageState<ResearchStorageState>();
-    const storageStateBytes = Buffer.byteLength(JSON.stringify(storageState), 'utf8');
     await storeEbayResearchSessionToKv(marketplace, storageState, 'storage_state');
     clearEbayResearchAuthCache();
     const persistence = await inspectEbayResearchSessionPersistence(marketplace);
 
     console.log(
-      `[eBayResearchSessionBootstrap] Stored eBay Research storage state to ${persistence.sessionStoreSelected} (${storageStateBytes} bytes)`
+      `[eBayResearchSessionBootstrap] wrote storage state to ${persistence.sessionStoreSelected} key=${persistence.canonicalStateKey ?? 'null'} bytes=${persistence.storageStateBytes}`
     );
+    console.log(
+      `[eBayResearchSessionBootstrap] canonical storage-state key ${persistence.canonicalStateKey ?? 'null'} exists=${persistence.storageStateExists} bytes=${persistence.storageStateBytes} valid=${persistence.storageStateValid}`
+    );
+    console.log(
+      `[eBayResearchSessionBootstrap] fresh-client canonical key ${persistence.freshCanonicalReadback.key ?? 'null'} exists=${persistence.freshCanonicalReadback.exists} type=${persistence.freshCanonicalReadback.valueType} bytes=${persistence.freshCanonicalReadback.bytes} valid=${persistence.freshCanonicalReadback.validPlaywrightStorageStateJson} configuredFrom=${persistence.freshCanonicalReadback.configuredFrom} scope=${persistence.freshCanonicalReadback.stateKeyScope} connection=${persistence.freshCanonicalReadback.connection ?? 'null'} credentialFingerprint=${persistence.freshCanonicalReadback.credentialFingerprint ?? 'null'} error=${persistence.freshCanonicalReadback.error ?? 'null'}`
+    );
+    console.log(
+      `[eBayResearchSessionBootstrap] metadata key ${persistence.canonicalMetaKey ?? 'null'} exists=${persistence.metadataExists}`
+    );
+    if (persistence.storeTargetConnection) {
+      console.log(
+        `[eBayResearchSessionBootstrap] target=${persistence.storeTargetConnection} credentialsConfigured=${persistence.storeCredentialsConfigured}`
+      );
+    }
 
     const verification: EbayResearchAuthInspection =
       await inspectEbayResearchAuthState(marketplace);
@@ -100,11 +115,14 @@ async function main(): Promise<void> {
           ok: true,
           marketplace,
           persistedTo: persistence.sessionStoreSelected,
+          storeTargetConnection: persistence.storeTargetConnection,
+          storeCredentialsConfigured: persistence.storeCredentialsConfigured,
           canonicalKeys: {
             storageState: persistence.canonicalStateKey,
             metadata: persistence.canonicalMetaKey,
           },
           persistence,
+          inspectCommand: 'pnpm run research:inspect-session',
           refreshCommand: 'pnpm run research:bootstrap',
           verification,
         },

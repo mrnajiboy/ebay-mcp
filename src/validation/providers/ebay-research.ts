@@ -4,10 +4,11 @@ import { existsSync } from 'node:fs';
 import { readFile, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
+  createFreshEbayResearchSessionStoreResolution,
   createEbayResearchSessionStoreResolution,
-  getEbayResearchSessionLegacyKeys,
+  getEbayResearchSessionStoreScopeSummary,
+  getEbayResearchSessionStoreTargetSummary,
   isKvEbayResearchSessionStoreBackend,
-  KvBackedEbayResearchSessionStore,
   type EbayResearchSessionStoreBackend,
   type EbayResearchSessionStoreMeta,
   type EbayResearchSessionStoreResolution,
@@ -200,16 +201,6 @@ interface ResearchAuthState {
   notes: string[];
 }
 
-interface PersistedResearchSession {
-  cookies: ResearchCookie[];
-  storageState?: ResearchStorageState | null;
-  updatedAt: string;
-  expiresAt: string | null;
-  marketplace: string;
-  source: ResearchSessionStrategy;
-  sessionSource?: ResearchSessionSource;
-}
-
 interface PersistedKvStorageStateRecord {
   raw: string;
   parsed: ResearchStorageState | null;
@@ -217,7 +208,6 @@ interface PersistedKvStorageStateRecord {
   meta: EbayResearchSessionStoreMeta | null;
   updatedAt: string | null;
   source: string | null;
-  legacyKeyUsed?: string | null;
 }
 
 interface ResearchSessionValidationResult {
@@ -309,8 +299,193 @@ function logResearchSession(message: string): void {
   console.log(`${RESEARCH_SESSION_LOG_PREFIX} ${message}`);
 }
 
+function describeStoredValueType(value: unknown): string {
+  if (value === null) {
+    return 'null';
+  }
+
+  if (Array.isArray(value)) {
+    return 'array';
+  }
+
+  return typeof value;
+}
+
+function getStoredValueBytes(value: unknown): number {
+  if (typeof value === 'string') {
+    return Buffer.byteLength(value, 'utf8');
+  }
+
+  if (value === null || value === undefined) {
+    return 0;
+  }
+
+  try {
+    return Buffer.byteLength(JSON.stringify(value), 'utf8');
+  } catch {
+    return 0;
+  }
+}
+
+function getStoredStorageStateValidityFromUnknown(value: unknown): boolean | null {
+  if (typeof value === 'string') {
+    return getStoredStorageStateValidity(value);
+  }
+
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  return normalizeStorageState(value) !== null;
+}
+
 function resolveResearchSessionStore(marketplace: string): EbayResearchSessionStoreResolution {
   return createEbayResearchSessionStoreResolution(marketplace);
+}
+
+export interface EbayResearchFreshStoreValueInspection {
+  attempted: boolean;
+  backend: EbayResearchSessionStoreBackend;
+  configuredFrom: 'env' | 'legacy_token_store' | 'default';
+  rawConfiguredValue: string | null;
+  connection: string | null;
+  credentialsConfigured: boolean;
+  credentialFingerprint: string | null;
+  environment: string;
+  marketplace: string;
+  stateKeyScope: 'base' | 'scoped';
+  key: string | null;
+  exists: boolean;
+  valueType: string;
+  bytes: number;
+  validPlaywrightStorageStateJson: boolean | null;
+  summary: string | null;
+  error: string | null;
+}
+
+function truncateForLog(value: string, maxLength = 100): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength)}…`;
+}
+
+function summarizeStoredValueWithoutContent(value: unknown): string | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+      return 'string(len=0, empty=true)';
+    }
+
+    const parsedSummary = (() => {
+      try {
+        const parsed = JSON.parse(trimmed) as unknown;
+        if (Array.isArray(parsed)) {
+          return `jsonParse=array(len=${parsed.length})`;
+        }
+
+        if (parsed && typeof parsed === 'object') {
+          return `jsonParse=object(keys=${Object.keys(parsed).slice(0, 5).join(',')})`;
+        }
+
+        return `jsonParse=${typeof parsed}`;
+      } catch {
+        return 'jsonParse=failed';
+      }
+    })();
+
+    return truncateForLog(
+      `string(len=${value.length}, startsWith=${JSON.stringify(trimmed.slice(0, 1))}, ${parsedSummary})`
+    );
+  }
+
+  if (Array.isArray(value)) {
+    return truncateForLog(`array(len=${value.length})`);
+  }
+
+  if (typeof value === 'object') {
+    return truncateForLog(`object(keys=${Object.keys(value).slice(0, 8).join(',')})`);
+  }
+
+  return truncateForLog(`primitive(type=${typeof value})`);
+}
+
+async function inspectFreshCanonicalStorageState(
+  marketplace: string
+): Promise<EbayResearchFreshStoreValueInspection> {
+  const resolution = createFreshEbayResearchSessionStoreResolution(marketplace);
+  const target = getEbayResearchSessionStoreTargetSummary(resolution.selected);
+  const scope = getEbayResearchSessionStoreScopeSummary(marketplace);
+
+  if (!resolution.store || !resolution.stateKey) {
+    return {
+      attempted: false,
+      backend: resolution.selected,
+      configuredFrom: resolution.configuredFrom,
+      rawConfiguredValue: resolution.rawConfiguredValue,
+      connection: target.connection,
+      credentialsConfigured: target.credentialsConfigured,
+      credentialFingerprint: target.credentialFingerprint,
+      environment: scope.environment,
+      marketplace: scope.marketplace,
+      stateKeyScope: scope.stateKeyScope,
+      key: resolution.stateKey,
+      exists: false,
+      valueType: 'null',
+      bytes: 0,
+      validPlaywrightStorageStateJson: null,
+      summary: null,
+      error: resolution.error,
+    };
+  }
+
+  try {
+    const rawStorageState = await resolution.store.getStorageState();
+    return {
+      attempted: true,
+      backend: resolution.selected,
+      configuredFrom: resolution.configuredFrom,
+      rawConfiguredValue: resolution.rawConfiguredValue,
+      connection: target.connection,
+      credentialsConfigured: target.credentialsConfigured,
+      credentialFingerprint: target.credentialFingerprint,
+      environment: scope.environment,
+      marketplace: scope.marketplace,
+      stateKeyScope: scope.stateKeyScope,
+      key: resolution.stateKey,
+      exists: typeof rawStorageState === 'string' && rawStorageState.length > 0,
+      valueType: describeStoredValueType(rawStorageState),
+      bytes: getStoredValueBytes(rawStorageState),
+      validPlaywrightStorageStateJson: getStoredStorageStateValidityFromUnknown(rawStorageState),
+      summary: summarizeStoredValueWithoutContent(rawStorageState),
+      error: null,
+    };
+  } catch (error) {
+    return {
+      attempted: true,
+      backend: resolution.selected,
+      configuredFrom: resolution.configuredFrom,
+      rawConfiguredValue: resolution.rawConfiguredValue,
+      connection: target.connection,
+      credentialsConfigured: target.credentialsConfigured,
+      credentialFingerprint: target.credentialFingerprint,
+      environment: scope.environment,
+      marketplace: scope.marketplace,
+      stateKeyScope: scope.stateKeyScope,
+      key: resolution.stateKey,
+      exists: false,
+      valueType: 'error',
+      bytes: 0,
+      validPlaywrightStorageStateJson: null,
+      summary: null,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }
 
 function getSessionSourceForStoreBackend(
@@ -407,6 +582,18 @@ function storageStateFromCookies(cookies: ResearchCookie[]): ResearchStorageStat
     cookies,
     origins: [],
   } satisfies ResearchStorageState;
+}
+
+function getStoredStorageStateValidity(value: string | null): boolean | null {
+  if (typeof value !== 'string' || value.length === 0) {
+    return null;
+  }
+
+  try {
+    return normalizeStorageState(JSON.parse(value) as unknown) !== null;
+  } catch {
+    return false;
+  }
 }
 
 function getPlaywrightChromiumChannel(): string | undefined {
@@ -577,14 +764,6 @@ function getResearchAuthValidationCacheKey(marketplace: string, cookies: Researc
     .digest('hex');
 }
 
-async function readResearchLegacySessionFromStore(
-  store: KvBackedEbayResearchSessionStore,
-  marketplace: string
-): Promise<PersistedResearchSession | null> {
-  const legacyKeys = getEbayResearchSessionLegacyKeys(marketplace);
-  return await store.getLegacyValue<PersistedResearchSession>(legacyKeys.sessionKey);
-}
-
 async function readResearchStorageStateFromStore(
   resolution: EbayResearchSessionStoreResolution
 ): Promise<PersistedKvStorageStateRecord | null> {
@@ -614,39 +793,6 @@ async function readResearchStorageStateFromStore(
     meta,
     updatedAt: typeof meta?.updatedAt === 'string' ? meta.updatedAt : null,
     source: typeof meta?.source === 'string' ? meta.source : null,
-  };
-}
-
-async function readResearchLegacyStorageStateFromStore(
-  store: KvBackedEbayResearchSessionStore,
-  marketplace: string
-): Promise<PersistedKvStorageStateRecord | null> {
-  const legacyKeys = getEbayResearchSessionLegacyKeys(marketplace);
-  const rawValue = await store.getLegacyValue<string>(legacyKeys.storageStateKey);
-  if (typeof rawValue !== 'string' || rawValue.trim().length === 0) {
-    return null;
-  }
-
-  const [updatedAt, source] = await Promise.all([
-    store.getLegacyValue<string>(legacyKeys.updatedAtKey),
-    store.getLegacyValue<string>(legacyKeys.sourceKey),
-  ]);
-
-  let parsed: ResearchStorageState | null;
-  try {
-    parsed = normalizeStorageState(JSON.parse(rawValue) as unknown);
-  } catch {
-    parsed = null;
-  }
-
-  return {
-    raw: rawValue,
-    parsed,
-    bytes: Buffer.byteLength(rawValue, 'utf8'),
-    meta: null,
-    updatedAt: typeof updatedAt === 'string' ? updatedAt : null,
-    source: typeof source === 'string' ? source : null,
-    legacyKeyUsed: legacyKeys.storageStateKey,
   };
 }
 
@@ -706,24 +852,32 @@ async function persistResearchSessionToStore(options: {
     sessionSource: options.sessionSource ?? getSessionSourceForStoreBackend(resolution.selected),
     storageStateBytes,
   };
-  const persistedSession: PersistedResearchSession = {
-    cookies: persistedCookies,
-    storageState: persistedStorageState ?? storageStateFromCookies(persistedCookies),
-    updatedAt,
-    expiresAt: expiryMs ? new Date(expiryMs).toISOString() : null,
-    marketplace: options.marketplace,
-    source: options.source,
-    sessionSource: options.sessionSource ?? getSessionSourceForStoreBackend(resolution.selected),
-  };
-  const legacyKeys = getEbayResearchSessionLegacyKeys(options.marketplace);
+
+  logResearchSession(
+    `Persisting canonical eBay Research storage state backend=${resolution.selected} stateKey=${resolution.stateKey ?? 'null'} metaKey=${resolution.metaKey ?? 'null'} ttlSeconds=${ttlSeconds} bytes=${storageStateBytes}`
+  );
 
   await Promise.all([
     resolution.store.setStorageState(serializedStorageState, { ttlSeconds }),
     resolution.store.setMeta(meta, { ttlSeconds }),
-    ...(resolution.store instanceof KvBackedEbayResearchSessionStore
-      ? [resolution.store.setLegacyValue(legacyKeys.sessionKey, persistedSession, ttlSeconds)]
-      : []),
   ]);
+
+  const [canonicalReadback, metaReadback] = await Promise.all([
+    resolution.store.getStorageState() as Promise<unknown>,
+    resolution.store.getMeta(),
+  ]);
+  const freshCanonicalReadback = await inspectFreshCanonicalStorageState(options.marketplace);
+
+  logResearchSession(
+    `Canonical storage-state readback key=${resolution.stateKey ?? 'null'} type=${describeStoredValueType(canonicalReadback)} bytes=${getStoredValueBytes(canonicalReadback)} valid=${String(getStoredStorageStateValidityFromUnknown(canonicalReadback))}`
+  );
+  logResearchSession(
+    `Fresh-client canonical readback backend=${freshCanonicalReadback.backend} key=${freshCanonicalReadback.key ?? 'null'} exists=${String(freshCanonicalReadback.exists)} type=${freshCanonicalReadback.valueType} bytes=${freshCanonicalReadback.bytes} valid=${String(freshCanonicalReadback.validPlaywrightStorageStateJson)} scope=${freshCanonicalReadback.stateKeyScope} environment=${freshCanonicalReadback.environment} marketplace=${freshCanonicalReadback.marketplace} configuredFrom=${freshCanonicalReadback.configuredFrom} rawConfiguredValue=${freshCanonicalReadback.rawConfiguredValue ?? 'null'} connection=${freshCanonicalReadback.connection ?? 'null'} credentialFingerprint=${freshCanonicalReadback.credentialFingerprint ?? 'null'} summary=${freshCanonicalReadback.summary ?? 'null'} error=${freshCanonicalReadback.error ?? 'null'}`
+  );
+  logResearchSession(
+    `Metadata readback key=${resolution.metaKey ?? 'null'} exists=${String(metaReadback !== null)} storageStateBytes=${typeof metaReadback?.storageStateBytes === 'number' ? metaReadback.storageStateBytes : 'null'} updatedAt=${typeof metaReadback?.updatedAt === 'string' ? metaReadback.updatedAt : 'null'}`
+  );
+
   logResearchSession(
     `Stored eBay Research storage state to ${resolution.selected} (${storageStateBytes} bytes)`
   );
@@ -744,15 +898,6 @@ async function deleteResearchSessionFromStore(marketplace: string): Promise<void
 
   try {
     await resolution.store.deleteStorageState();
-    if (resolution.store instanceof KvBackedEbayResearchSessionStore) {
-      const legacyKeys = getEbayResearchSessionLegacyKeys(marketplace);
-      await resolution.store.deleteLegacyKeys([
-        legacyKeys.storageStateKey,
-        legacyKeys.updatedAtKey,
-        legacyKeys.sourceKey,
-        legacyKeys.sessionKey,
-      ]);
-    }
   } catch {
     // Ignore KV invalidation failures so auth diagnostics can still surface.
   }
@@ -1888,7 +2033,6 @@ async function resolveResearchAuthState(marketplace: string): Promise<ResearchAu
   if (storeResolution.store && isKvEbayResearchSessionStoreBackend(storeResolution.selected)) {
     logResearchSession(`Attempting to load storage state from ${storeResolution.selected}`);
     const kvStorageStateRecord = await readResearchStorageStateFromStore(storeResolution);
-    let shouldAttemptLegacyKvFallback = true;
     if (kvStorageStateRecord) {
       diagnostics.kvStorageStateBytes = kvStorageStateRecord.bytes;
       diagnostics.storageStateBytes = kvStorageStateRecord.bytes;
@@ -1936,7 +2080,6 @@ async function resolveResearchAuthState(marketplace: string): Promise<ResearchAu
             return value;
           }
           logResearchSession('Auth validation failed');
-          shouldAttemptLegacyKvFallback = false;
           if (isExplicitResearchAuthRejection(validation)) {
             await deleteResearchSessionFromStore(marketplace);
             notes.push(
@@ -1959,209 +2102,15 @@ async function resolveResearchAuthState(marketplace: string): Promise<ResearchAu
         );
         await deleteCanonicalResearchStorageStateFromStore(marketplace);
         notes.push(
-          `Deleted malformed canonical eBay Research storage state from ${storeResolution.selected} before attempting legacy fallback.`
+          `Deleted malformed canonical eBay Research storage state from ${storeResolution.selected} after parse failure.`
         );
       }
     } else {
       logResearchSession(`No storage state found in ${storeResolution.selected}`);
-    }
-
-    const legacyStore =
-      storeResolution.store instanceof KvBackedEbayResearchSessionStore
-        ? storeResolution.store
-        : null;
-    const legacyStorageStateRecord =
-      shouldAttemptLegacyKvFallback && legacyStore
-        ? await readResearchLegacyStorageStateFromStore(legacyStore, marketplace)
-        : null;
-    if (shouldAttemptLegacyKvFallback && legacyStorageStateRecord?.parsed) {
       notes.push(
-        `Loaded legacy eBay Research storage-state keys from ${storeResolution.selected}; canonical key migration is recommended.`
+        `No canonical eBay Research storage state was found in ${storeResolution.selected}.`
       );
-      const resolvedSession = await resolveStorageStateCookies(
-        legacyStorageStateRecord.parsed,
-        `${storeResolution.selected} legacy KV storage state`,
-        notes
-      );
-      if (resolvedSession && resolvedSession.cookies.length > 0) {
-        diagnostics.kvLoadSucceeded = true;
-        if (storeResolution.selected === 'cloudflare_kv') {
-          diagnostics.cfKvLoadSucceeded = true;
-        }
-        if (storeResolution.selected === 'upstash-redis') {
-          diagnostics.upstashLoadSucceeded = true;
-        }
-        diagnostics.kvStorageStateBytes = legacyStorageStateRecord.bytes;
-        diagnostics.storageStateBytes = legacyStorageStateRecord.bytes;
-        diagnostics.authValidationAttempted = true;
-        const validation = await validateResearchAuthState({
-          marketplace,
-          cookies: resolvedSession.cookies,
-          sourceLabel: `${storeResolution.selected} legacy KV storage state`,
-        });
-        diagnostics.authValidationSucceeded = validation.ok;
-        notes.push(validation.note);
-        if (!validation.ok) {
-          if (isExplicitResearchAuthRejection(validation)) {
-            await deleteResearchSessionFromStore(marketplace);
-            notes.push(
-              `Deleted invalid legacy eBay Research storage-state keys from ${storeResolution.selected} after explicit auth rejection.`
-            );
-          } else {
-            notes.push(
-              `Preserved legacy eBay Research storage-state keys in ${storeResolution.selected} because validation did not return an explicit auth rejection.`
-            );
-          }
-        } else {
-          logResearchSession('Auth validation succeeded');
-          const value: ResearchAuthState = {
-            cookies: resolvedSession.cookies,
-            storageState: resolvedSession.storageState,
-            authState: 'loaded',
-            sessionStrategy: 'storage_state',
-            ...diagnostics,
-            sessionSource: 'kv',
-            notes: [
-              ...notes,
-              `Restored eBay Research storage state from ${storeResolution.selected}.`,
-            ],
-          };
-          researchAuthCache[marketplace] = {
-            expiresAt: Date.now() + RESEARCH_COOKIE_CACHE_TTL_MS,
-            value,
-          };
-          return value;
-        }
-      }
     }
-
-    const persistedSession =
-      shouldAttemptLegacyKvFallback && legacyStore
-        ? await readResearchLegacySessionFromStore(legacyStore, marketplace)
-        : null;
-    if (shouldAttemptLegacyKvFallback && persistedSession?.storageState) {
-      notes.push(
-        `Loaded legacy eBay Research session payload from ${storeResolution.selected}; canonical key migration is recommended.`
-      );
-      const resolvedSession = await resolveStorageStateCookies(
-        persistedSession.storageState,
-        `${storeResolution.selected} legacy KV storage state`,
-        notes
-      );
-      if (resolvedSession && resolvedSession.cookies.length > 0) {
-        diagnostics.kvLoadSucceeded = true;
-        if (storeResolution.selected === 'cloudflare_kv') {
-          diagnostics.cfKvLoadSucceeded = true;
-        }
-        if (storeResolution.selected === 'upstash-redis') {
-          diagnostics.upstashLoadSucceeded = true;
-        }
-        diagnostics.kvStorageStateBytes = Buffer.byteLength(
-          JSON.stringify(persistedSession.storageState),
-          'utf8'
-        );
-        diagnostics.storageStateBytes = diagnostics.kvStorageStateBytes;
-        diagnostics.authValidationAttempted = true;
-        const validation = await validateResearchAuthState({
-          marketplace,
-          cookies: resolvedSession.cookies,
-          sourceLabel: `${storeResolution.selected} legacy KV storage state`,
-        });
-        diagnostics.authValidationSucceeded = validation.ok;
-        notes.push(validation.note);
-        if (!validation.ok) {
-          if (isExplicitResearchAuthRejection(validation)) {
-            await deleteResearchSessionFromStore(marketplace);
-            notes.push(
-              `Deleted invalid legacy eBay Research KV session from ${storeResolution.selected} after explicit auth rejection.`
-            );
-          } else {
-            notes.push(
-              `Preserved legacy eBay Research KV session in ${storeResolution.selected} because validation did not return an explicit auth rejection.`
-            );
-          }
-        } else {
-          logResearchSession('Auth validation succeeded');
-          const value: ResearchAuthState = {
-            cookies: resolvedSession.cookies,
-            storageState: resolvedSession.storageState,
-            authState: 'loaded',
-            sessionStrategy: 'storage_state',
-            ...diagnostics,
-            sessionSource: 'kv',
-            notes: [
-              ...notes,
-              `Restored eBay Research storage state from ${storeResolution.selected}.`,
-            ],
-          };
-          researchAuthCache[marketplace] = {
-            expiresAt: Date.now() + RESEARCH_COOKIE_CACHE_TTL_MS,
-            value,
-          };
-          return value;
-        }
-      }
-    }
-
-    if (shouldAttemptLegacyKvFallback && persistedSession?.cookies?.length) {
-      diagnostics.kvLoadSucceeded = true;
-      if (storeResolution.selected === 'cloudflare_kv') {
-        diagnostics.cfKvLoadSucceeded = true;
-      }
-      if (storeResolution.selected === 'upstash-redis') {
-        diagnostics.upstashLoadSucceeded = true;
-      }
-      diagnostics.authValidationAttempted = true;
-      const validation = await validateResearchAuthState({
-        marketplace,
-        cookies: persistedSession.cookies,
-        sourceLabel: `${storeResolution.selected} legacy KV cookie session`,
-      });
-      diagnostics.authValidationSucceeded = validation.ok;
-      notes.push(validation.note);
-      if (!validation.ok) {
-        if (isExplicitResearchAuthRejection(validation)) {
-          await deleteResearchSessionFromStore(marketplace);
-          notes.push(
-            `Deleted invalid legacy eBay Research cookie session from ${storeResolution.selected} after explicit auth rejection.`
-          );
-        } else {
-          notes.push(
-            `Preserved legacy eBay Research cookie session in ${storeResolution.selected} because validation did not return an explicit auth rejection.`
-          );
-        }
-      } else {
-        diagnostics.storageStateBytes = Buffer.byteLength(
-          JSON.stringify(
-            persistedSession.storageState ?? storageStateFromCookies(persistedSession.cookies)
-          ),
-          'utf8'
-        );
-        logResearchSession('Auth validation succeeded');
-        const value: ResearchAuthState = {
-          cookies: persistedSession.cookies,
-          storageState:
-            persistedSession.storageState ?? storageStateFromCookies(persistedSession.cookies),
-          authState: 'loaded',
-          sessionStrategy: persistedSession.source ?? 'kv_store',
-          ...diagnostics,
-          sessionSource: 'kv',
-          notes: [
-            ...notes,
-            `Restored eBay Research cookie session from ${storeResolution.selected}.`,
-          ],
-        };
-        researchAuthCache[marketplace] = {
-          expiresAt: Date.now() + RESEARCH_COOKIE_CACHE_TTL_MS,
-          value,
-        };
-        return value;
-      }
-    }
-
-    notes.push(
-      `No persisted eBay Research session was found in ${storeResolution.selected} under canonical or legacy keys.`
-    );
   } else if (storeResolution.selected !== 'none') {
     notes.push(
       storeResolution.error
@@ -2735,11 +2684,20 @@ export async function storeEbayResearchSessionToKv(
 export interface EbayResearchSessionPersistenceInspection {
   sessionStoreConfigured: EbayResearchSessionStoreBackend;
   sessionStoreSelected: EbayResearchSessionStoreBackend;
+  sessionStoreConfiguredFrom: 'env' | 'legacy_token_store' | 'default';
+  sessionStoreRawConfiguredValue: string | null;
+  storeTargetConnection: string | null;
+  storeCredentialsConfigured: boolean;
+  storeCredentialFingerprint: string | null;
+  researchEnvironment: string;
+  storageStateKeyScope: 'base' | 'scoped';
   canonicalStateKey: string | null;
   canonicalMetaKey: string | null;
   storageStateExists: boolean;
   metadataExists: boolean;
   storageStateBytes: number;
+  storageStateValid: boolean | null;
+  freshCanonicalReadback: EbayResearchFreshStoreValueInspection;
   error: string | null;
 }
 
@@ -2747,15 +2705,27 @@ export async function inspectEbayResearchSessionPersistence(
   marketplace: string
 ): Promise<EbayResearchSessionPersistenceInspection> {
   const resolution = resolveResearchSessionStore(marketplace);
+  const target = getEbayResearchSessionStoreTargetSummary(resolution.selected);
+  const scope = getEbayResearchSessionStoreScopeSummary(marketplace);
+  const freshCanonicalReadback = await inspectFreshCanonicalStorageState(marketplace);
   if (!resolution.store) {
     return {
       sessionStoreConfigured: resolution.configured,
       sessionStoreSelected: resolution.selected,
+      sessionStoreConfiguredFrom: resolution.configuredFrom,
+      sessionStoreRawConfiguredValue: resolution.rawConfiguredValue,
+      storeTargetConnection: target.connection,
+      storeCredentialsConfigured: target.credentialsConfigured,
+      storeCredentialFingerprint: target.credentialFingerprint,
+      researchEnvironment: scope.environment,
+      storageStateKeyScope: scope.stateKeyScope,
       canonicalStateKey: resolution.stateKey,
       canonicalMetaKey: resolution.metaKey,
       storageStateExists: false,
       metadataExists: false,
       storageStateBytes: 0,
+      storageStateValid: null,
+      freshCanonicalReadback,
       error: resolution.error,
     };
   }
@@ -2765,15 +2735,26 @@ export async function inspectEbayResearchSessionPersistence(
     resolution.store.getMeta(),
   ]);
 
+  const canonicalStorageStateValid = getStoredStorageStateValidity(rawStorageState);
+
   return {
     sessionStoreConfigured: resolution.configured,
     sessionStoreSelected: resolution.selected,
+    sessionStoreConfiguredFrom: resolution.configuredFrom,
+    sessionStoreRawConfiguredValue: resolution.rawConfiguredValue,
+    storeTargetConnection: target.connection,
+    storeCredentialsConfigured: target.credentialsConfigured,
+    storeCredentialFingerprint: target.credentialFingerprint,
+    researchEnvironment: scope.environment,
+    storageStateKeyScope: scope.stateKeyScope,
     canonicalStateKey: resolution.stateKey,
     canonicalMetaKey: resolution.metaKey,
     storageStateExists: typeof rawStorageState === 'string' && rawStorageState.length > 0,
     metadataExists: meta !== null,
     storageStateBytes:
       typeof rawStorageState === 'string' ? Buffer.byteLength(rawStorageState, 'utf8') : 0,
+    storageStateValid: canonicalStorageStateValid,
+    freshCanonicalReadback,
     error: resolution.error,
   };
 }

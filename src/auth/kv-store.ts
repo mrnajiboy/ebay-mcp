@@ -284,6 +284,11 @@ function createKVStoreInstance(backend: KVStoreBackend, rawEnv?: string | null):
   }
 }
 
+export function createFreshKVStoreForBackend(backend: string): KVStore {
+  const normalizedBackend = normalizeKVStoreBackend(backend);
+  return createKVStoreInstance(normalizedBackend, backend);
+}
+
 export function createKVStoreForBackend(backend: string): KVStore {
   const normalizedBackend = normalizeKVStoreBackend(backend);
   const existing = _kvStoreSingletonsByBackend.get(normalizedBackend);

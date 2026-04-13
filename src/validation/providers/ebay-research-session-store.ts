@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -52,14 +53,24 @@ export interface EbayResearchSessionStoreResolution {
   error: string | null;
 }
 
+export interface EbayResearchSessionStoreTargetSummary {
+  backend: EbayResearchSessionStoreBackend;
+  backendName: string;
+  connection: string | null;
+  credentialsConfigured: boolean;
+  credentialFingerprint: string | null;
+}
+
+export interface EbayResearchSessionStoreScopeSummary {
+  environment: string;
+  marketplace: string;
+  stateKeyScope: 'base' | 'scoped';
+}
+
 export const EBAY_RESEARCH_STORAGE_STATE_KEY = 'ebay_research_storage_state_json';
 export const EBAY_RESEARCH_STORAGE_STATE_META_KEY = 'ebay_research_storage_state_meta';
-export const EBAY_RESEARCH_STORAGE_STATE_UPDATED_AT_LEGACY_KEY =
-  'ebay_research_storage_state_updated_at';
-export const EBAY_RESEARCH_STORAGE_STATE_SOURCE_LEGACY_KEY = 'ebay_research_storage_state_source';
 
 const EBAY_RESEARCH_SESSION_STORE_ENV_KEY = 'EBAY_RESEARCH_SESSION_STORE';
-const RESEARCH_SESSION_KEY_PREFIX = 'ebay-research:session';
 
 let cloudflareKvSingleton: KVStore | null | undefined;
 let upstashKvSingleton: KVStore | null | undefined;
@@ -68,8 +79,21 @@ function resolvePath(pathValue: string): string {
   return resolve(process.cwd(), pathValue);
 }
 
+function sanitizeConnectionForDisplay(value: string): string {
+  try {
+    const parsed = new URL(value);
+    return `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
+  } catch {
+    return value;
+  }
+}
+
 function getResearchEnvironment(): string {
   return (process.env.EBAY_ENVIRONMENT ?? 'production').trim() || 'production';
+}
+
+function createCredentialFingerprint(value: string): string {
+  return createHash('sha256').update(value).digest('hex').slice(0, 12);
 }
 
 function getFilesystemStorageStatePath(): string {
@@ -85,6 +109,22 @@ function getFilesystemMetaPath(): string {
   }
 
   return `${getFilesystemStorageStatePath()}.meta.json`;
+}
+
+function normalizeStoredJsonString(value: unknown): string | null {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return null;
+  }
 }
 
 function getScopedKey(baseKey: string, marketplace: string): string {
@@ -106,18 +146,14 @@ export function getEbayResearchSessionStoreKeys(marketplace: string): {
   };
 }
 
-export function getEbayResearchSessionLegacyKeys(marketplace: string): {
-  storageStateKey: string;
-  updatedAtKey: string;
-  sourceKey: string;
-  sessionKey: string;
-} {
+export function getEbayResearchSessionStoreScopeSummary(
+  marketplace: string
+): EbayResearchSessionStoreScopeSummary {
   const environment = getResearchEnvironment();
   return {
-    storageStateKey: getScopedKey(EBAY_RESEARCH_STORAGE_STATE_KEY, marketplace),
-    updatedAtKey: getScopedKey(EBAY_RESEARCH_STORAGE_STATE_UPDATED_AT_LEGACY_KEY, marketplace),
-    sourceKey: getScopedKey(EBAY_RESEARCH_STORAGE_STATE_SOURCE_LEGACY_KEY, marketplace),
-    sessionKey: `${RESEARCH_SESSION_KEY_PREFIX}:${environment}:${marketplace}`,
+    environment,
+    marketplace,
+    stateKeyScope: environment === 'production' && marketplace === 'EBAY-US' ? 'base' : 'scoped',
   };
 }
 
@@ -210,6 +246,57 @@ export function resolveEbayResearchSessionStoreBackend(): {
   };
 }
 
+export function getEbayResearchSessionStoreTargetSummary(
+  backend: EbayResearchSessionStoreBackend = resolveEbayResearchSessionStoreBackend().selected
+): EbayResearchSessionStoreTargetSummary {
+  switch (backend) {
+    case 'cloudflare_kv': {
+      const accountId = process.env.CLOUDFLARE_ACCOUNT_ID?.trim() ?? '';
+      const namespaceId = process.env.CLOUDFLARE_KV_NAMESPACE_ID?.trim() ?? '';
+      const apiToken = process.env.CLOUDFLARE_API_TOKEN?.trim() ?? '';
+      return {
+        backend,
+        backendName: 'cloudflare_kv',
+        connection:
+          accountId && namespaceId ? `account=${accountId} namespace=${namespaceId}` : null,
+        credentialsConfigured: Boolean(accountId && namespaceId && apiToken),
+        credentialFingerprint:
+          accountId && namespaceId && apiToken
+            ? createCredentialFingerprint(`${accountId}:${namespaceId}:${apiToken}`)
+            : null,
+      };
+    }
+    case 'upstash-redis': {
+      const url = process.env.UPSTASH_REDIS_REST_URL?.trim() ?? '';
+      const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim() ?? '';
+      return {
+        backend,
+        backendName: 'upstash-redis',
+        connection: url ? sanitizeConnectionForDisplay(url) : null,
+        credentialsConfigured: Boolean(url && token),
+        credentialFingerprint: url && token ? createCredentialFingerprint(`${url}:${token}`) : null,
+      };
+    }
+    case 'filesystem':
+      return {
+        backend,
+        backendName: 'filesystem',
+        connection: getFilesystemStorageStatePath(),
+        credentialsConfigured: true,
+        credentialFingerprint: null,
+      };
+    case 'none':
+    default:
+      return {
+        backend,
+        backendName: 'none',
+        connection: null,
+        credentialsConfigured: false,
+        credentialFingerprint: null,
+      };
+  }
+}
+
 async function readJsonFile<T>(filePath: string): Promise<T | null> {
   if (!existsSync(filePath)) {
     return null;
@@ -234,7 +321,7 @@ export abstract class KvBackedEbayResearchSessionStore implements EbayResearchSe
   }
 
   async getStorageState(): Promise<string | null> {
-    return await this.kvStore.get<string>(this.stateKey);
+    return normalizeStoredJsonString(await this.kvStore.get<unknown>(this.stateKey));
   }
 
   async setStorageState(
@@ -257,18 +344,6 @@ export abstract class KvBackedEbayResearchSessionStore implements EbayResearchSe
 
   async deleteStorageState(): Promise<void> {
     await Promise.all([this.kvStore.delete(this.stateKey), this.kvStore.delete(this.metaKey)]);
-  }
-
-  async getLegacyValue<T>(key: string): Promise<T | null> {
-    return await this.kvStore.get<T>(key);
-  }
-
-  async setLegacyValue<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
-    await this.kvStore.put(key, value, ttlSeconds);
-  }
-
-  async deleteLegacyKeys(keys: string[]): Promise<void> {
-    await Promise.all(keys.map(async (key) => await this.kvStore.delete(key)));
   }
 }
 
@@ -356,6 +431,18 @@ function getOrCreateSelectedKvStore(
   return kvStoreModule.createKVStore();
 }
 
+function createFreshSelectedKvStore(
+  backend: Extract<EbayResearchSessionStoreBackend, 'cloudflare_kv' | 'upstash-redis'>
+): KVStore {
+  const explicitBackend = backend === 'cloudflare_kv' ? 'cloudflare-kv' : 'upstash-redis';
+
+  if (typeof kvStoreModule.createFreshKVStoreForBackend === 'function') {
+    return kvStoreModule.createFreshKVStoreForBackend(explicitBackend);
+  }
+
+  return getOrCreateSelectedKvStore(backend);
+}
+
 function getCloudflareSingleton(): KVStore {
   cloudflareKvSingleton ??= getOrCreateSelectedKvStore('cloudflare_kv');
 
@@ -390,6 +477,68 @@ export function createEbayResearchSessionStoreResolution(
           stateKey: keys.storageStateKey,
           metaKey: keys.metaKey,
           store: new UpstashKvSessionStore(getUpstashSingleton(), marketplace),
+          error: null,
+        };
+      case 'filesystem': {
+        const store = new FilesystemSessionStore();
+        return {
+          ...backend,
+          stateKey: store.stateKey,
+          metaKey: store.metaKey,
+          store,
+          error: null,
+        };
+      }
+      case 'none':
+      default:
+        return {
+          ...backend,
+          stateKey: null,
+          metaKey: null,
+          store: null,
+          error: null,
+        };
+    }
+  } catch (error) {
+    return {
+      ...backend,
+      stateKey:
+        backend.selected === 'filesystem' ? getFilesystemStorageStatePath() : keys.storageStateKey,
+      metaKey: backend.selected === 'filesystem' ? getFilesystemMetaPath() : keys.metaKey,
+      store: null,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+export function createFreshEbayResearchSessionStoreResolution(
+  marketplace: string
+): EbayResearchSessionStoreResolution {
+  const backend = resolveEbayResearchSessionStoreBackend();
+  const keys = getEbayResearchSessionStoreKeys(marketplace);
+
+  try {
+    switch (backend.selected) {
+      case 'cloudflare_kv':
+        return {
+          ...backend,
+          stateKey: keys.storageStateKey,
+          metaKey: keys.metaKey,
+          store: new CloudflareKvSessionStore(
+            createFreshSelectedKvStore('cloudflare_kv'),
+            marketplace
+          ),
+          error: null,
+        };
+      case 'upstash-redis':
+        return {
+          ...backend,
+          stateKey: keys.storageStateKey,
+          metaKey: keys.metaKey,
+          store: new UpstashKvSessionStore(
+            createFreshSelectedKvStore('upstash-redis'),
+            marketplace
+          ),
           error: null,
         };
       case 'filesystem': {
