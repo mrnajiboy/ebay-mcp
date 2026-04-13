@@ -767,10 +767,19 @@ export async function getTerapeakValidationSignals(
     return {
       avgWatchersPerListing: null,
       preOrderListingsCount: null,
+      activeAvgPriceUsd: null,
+      activeAvgShippingUsd: null,
+      activeListingsCount: null,
+      activeAvgWatchersPerListing: null,
+      soldAvgPriceUsd: null,
+      soldMedianPriceUsd: null,
+      soldAvgShippingUsd: null,
       marketPriceUsd: null,
       researchSoldPriceUsd: null,
       avgShippingCostUsd: null,
       competitionLevel: null,
+      soldSellThroughPct: null,
+      soldTotalRevenueUsd: null,
       previousPobAvgPriceUsd: null,
       previousPobSellThroughPct: null,
       currentListingsCount: null,
@@ -822,10 +831,19 @@ export async function getTerapeakValidationSignals(
       return {
         avgWatchersPerListing: null,
         preOrderListingsCount: null,
+        activeAvgPriceUsd: null,
+        activeAvgShippingUsd: null,
+        activeListingsCount: null,
+        activeAvgWatchersPerListing: null,
+        soldAvgPriceUsd: null,
+        soldMedianPriceUsd: null,
+        soldAvgShippingUsd: null,
         marketPriceUsd: null,
         researchSoldPriceUsd: null,
         avgShippingCostUsd: null,
         competitionLevel: null,
+        soldSellThroughPct: null,
+        soldTotalRevenueUsd: null,
         previousPobAvgPriceUsd: previousPobResearch?.sold.avgSoldPriceUsd ?? null,
         previousPobSellThroughPct: previousPobResearch?.sold.sellThroughPct ?? null,
         currentListingsCount: null,
@@ -878,6 +896,16 @@ export async function getTerapeakValidationSignals(
           previousPobCandidateDiagnostics: previousOutcome.diagnostics,
           fallbackReasons: currentOutcome.fallbackReasons,
           writeSources: {
+            activeAvgPriceUsd: 'none',
+            activeAvgShippingUsd: 'none',
+            activeListingsCount: 'none',
+            activeAvgWatchersPerListing: 'none',
+            soldAvgPriceUsd: 'none',
+            soldMedianPriceUsd: 'none',
+            soldAvgShippingUsd: 'none',
+            soldListingsCount: 'none',
+            soldSellThroughPct: 'none',
+            soldTotalRevenueUsd: 'none',
             previousPobAvgPriceUsd:
               previousPobResearch?.sold.avgSoldPriceUsd !== null
                 ? 'research_previous_pob_sold'
@@ -931,24 +959,45 @@ export async function getTerapeakValidationSignals(
           previousPobResearch.sold.soldRows.length
         )
       : null;
+    const activeAvgPriceUsd = currentResearch.active.avgListingPriceUsd;
+    const activeAvgShippingUsd = currentResearch.active.avgShippingUsd;
+    const activeListingsCount = currentResearch.active.totalActiveListings;
+    const activeAvgWatchersPerListing = currentResearch.active.avgWatchersPerListing;
+    const soldAvgPriceUsd = currentResearch.sold.avgSoldPriceUsd ?? null;
+    const soldMedianPriceUsd = null;
+    const soldAvgShippingUsd = currentResearch.sold.avgShippingUsd ?? null;
+    const soldListingsCount = currentResearch.sold.totalSold;
+    const soldSellThroughPct = currentResearch.sold.sellThroughPct ?? null;
+    const soldTotalRevenueUsd = currentResearch.sold.totalItemSalesUsd ?? null;
     const writeSources: Record<string, string> = {
+      activeAvgWatchersPerListing:
+        activeAvgWatchersPerListing !== null ? 'research_active' : 'none',
       avgWatchersPerListing:
-        currentResearch.active.avgWatchersPerListing !== null ? 'research_active' : 'none',
+        activeAvgWatchersPerListing !== null ? 'research_active' : 'none',
+      activeListingsCount: activeListingsCount !== null ? 'research_active' : 'none',
       preOrderListingsCount:
-        currentResearch.active.totalActiveListings !== null ? 'research_active' : 'none',
+        activeListingsCount !== null ? 'research_active' : 'none',
+      activeAvgPriceUsd: activeAvgPriceUsd !== null ? 'research_active' : 'none',
+      activeAvgShippingUsd: activeAvgShippingUsd !== null ? 'research_active' : 'none',
       competitionLevel:
-        currentResearch.active.totalActiveListings !== null ? 'research_active' : 'none',
+        activeListingsCount !== null ? 'research_active' : 'none',
+      soldAvgPriceUsd: soldAvgPriceUsd !== null ? 'research_sold' : 'none',
+      soldMedianPriceUsd: soldMedianPriceUsd !== null ? 'research_sold' : 'none',
+      soldAvgShippingUsd: soldAvgShippingUsd !== null ? 'research_sold' : 'none',
+      soldListingsCount: soldListingsCount !== null ? 'research_sold' : 'none',
+      soldSellThroughPct: soldSellThroughPct !== null ? 'research_sold' : 'none',
+      soldTotalRevenueUsd: soldTotalRevenueUsd !== null ? 'research_sold' : 'none',
       avgShippingCostUsd:
-        currentResearch.sold.avgShippingUsd !== null
-          ? 'research_sold_avg_shipping'
-          : currentResearch.active.avgShippingUsd !== null
-            ? 'research_active_avg_shipping'
+        soldAvgShippingUsd !== null
+          ? 'research_sold'
+          : activeAvgShippingUsd !== null
+            ? 'research_active'
             : 'none',
       marketPriceUsd:
-        currentResearch.sold.avgSoldPriceUsd !== null
-          ? 'research_sold_avg'
-          : currentResearch.active.avgListingPriceUsd !== null
-            ? 'research_active_avg_listing'
+        soldAvgPriceUsd !== null
+          ? 'research_sold'
+          : activeAvgPriceUsd !== null
+            ? 'research_active'
             : 'none',
       previousPobAvgPriceUsd:
         previousPobResearch?.sold.avgSoldPriceUsd !== null ? 'research_previous_pob_sold' : 'none',
@@ -964,18 +1013,25 @@ export async function getTerapeakValidationSignals(
     };
 
     return {
-      avgWatchersPerListing: currentResearch.active.avgWatchersPerListing,
-      preOrderListingsCount: currentResearch.active.totalActiveListings,
-      marketPriceUsd:
-        currentResearch.sold.avgSoldPriceUsd ?? currentResearch.active.avgListingPriceUsd ?? null,
-      researchSoldPriceUsd: currentResearch.sold.avgSoldPriceUsd ?? null,
-      avgShippingCostUsd:
-        currentResearch.sold.avgShippingUsd ?? currentResearch.active.avgShippingUsd ?? null,
-      competitionLevel: currentResearch.active.totalActiveListings,
+      avgWatchersPerListing: activeAvgWatchersPerListing,
+      preOrderListingsCount: activeListingsCount,
+      activeAvgPriceUsd,
+      activeAvgShippingUsd,
+      activeListingsCount,
+      activeAvgWatchersPerListing,
+      soldAvgPriceUsd,
+      soldMedianPriceUsd,
+      soldAvgShippingUsd,
+      marketPriceUsd: soldAvgPriceUsd ?? activeAvgPriceUsd ?? null,
+      researchSoldPriceUsd: soldAvgPriceUsd,
+      avgShippingCostUsd: soldAvgShippingUsd ?? activeAvgShippingUsd ?? null,
+      competitionLevel: activeListingsCount,
+      soldSellThroughPct,
+      soldTotalRevenueUsd,
       previousPobAvgPriceUsd: previousPobResearch?.sold.avgSoldPriceUsd ?? null,
       previousPobSellThroughPct: previousPobResearch?.sold.sellThroughPct ?? null,
-      currentListingsCount: currentResearch.active.totalActiveListings,
-      soldListingsCount: currentResearch.sold.totalSold,
+      currentListingsCount: activeListingsCount,
+      soldListingsCount,
       soldVelocity: researchVelocity.soldVelocity,
       recentSoldCount7d: researchVelocity.recentSoldCount7d,
       soldBucketDebug: researchVelocity.soldBucketDebug,
@@ -1037,10 +1093,19 @@ export async function getTerapeakValidationSignals(
     return {
       avgWatchersPerListing: null,
       preOrderListingsCount: null,
+      activeAvgPriceUsd: null,
+      activeAvgShippingUsd: null,
+      activeListingsCount: null,
+      activeAvgWatchersPerListing: null,
+      soldAvgPriceUsd: null,
+      soldMedianPriceUsd: null,
+      soldAvgShippingUsd: null,
       marketPriceUsd: null,
       researchSoldPriceUsd: null,
       avgShippingCostUsd: null,
       competitionLevel: null,
+      soldSellThroughPct: null,
+      soldTotalRevenueUsd: null,
       previousPobAvgPriceUsd: null,
       previousPobSellThroughPct: null,
       currentListingsCount: null,

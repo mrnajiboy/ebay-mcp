@@ -120,6 +120,10 @@ interface RedditQueryDiagnostic {
   family?: string;
   recentResultCount?: number | null;
   pageLimitReached?: boolean | null;
+  endpointTried?: string;
+  alternateEndpointTried?: string | null;
+  statusCode?: number | null;
+  userAgentUsed?: string;
   note?: string;
 }
 
@@ -216,6 +220,10 @@ interface RedditDebug {
   recentResultCount?: number | null;
   pageLimit?: number;
   pageLimitReached?: boolean | null;
+  endpointTried?: string;
+  alternateEndpointTried?: string | null;
+  statusCode?: number | null;
+  userAgentUsed?: string;
   confidence?: ValidationSignalConfidence;
   note?: string;
   queryResolution?: QueryResolutionDebug;
@@ -245,6 +253,12 @@ type YouTubeQueryDiagnostics = YouTubeQueryDiagnostic[];
 type RedditQueryDiagnostics = RedditQueryDiagnostic[];
 
 const REDDIT_PAGE_LIMIT = 100;
+const REDDIT_PRIMARY_ENDPOINT = 'https://www.reddit.com/search.json';
+const REDDIT_FALLBACK_ENDPOINT = 'https://old.reddit.com/search.json';
+const DEFAULT_REDDIT_USER_AGENT =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 ebay-mcp-validation/1.0';
+const REDDIT_ACCEPT_HEADER = 'application/json,text/javascript,*/*;q=0.01';
+const REDDIT_ACCEPT_LANGUAGE_HEADER = 'en-US,en;q=0.9';
 const YOUTUBE_SEARCH_MAX_RESULTS = 50;
 const YOUTUBE_MAX_CANDIDATE_VIDEOS = 100;
 const YOUTUBE_VIDEOS_DETAILS_BATCH_SIZE = 50;
@@ -280,8 +294,8 @@ function buildYouTubeVideoUrl(videoId: string): string {
   return `https://www.youtube.com/watch?v=${videoId}`;
 }
 
-function buildRedditSearchUrl(query: string, pageLimit: number): string {
-  return `https://www.reddit.com/search.json?q=${encodeURIComponent(query)}&sort=new&t=week&limit=${pageLimit}`;
+function buildRedditSearchUrl(endpoint: string, query: string, pageLimit: number): string {
+  return `${endpoint}?q=${encodeURIComponent(query)}&sort=new&t=week&limit=${pageLimit}`;
 }
 
 function getConfidenceFromCount(count: number): ValidationSignalConfidence {
@@ -523,6 +537,83 @@ function getQueryPlanFamily(
   return queryPlan.at(index)?.family;
 }
 
+async function fetchRedditSearchCount(
+  query: string,
+  pageLimit: number,
+  userAgent: string
+): Promise<{
+  recentResultCount: number;
+  pageLimitReached: boolean;
+  endpointTried: string;
+  alternateEndpointTried: string | null;
+  statusCode: number | null;
+  userAgentUsed: string;
+}> {
+  const headers = {
+    'User-Agent': userAgent,
+    Accept: REDDIT_ACCEPT_HEADER,
+    'Accept-Language': REDDIT_ACCEPT_LANGUAGE_HEADER,
+  };
+  const primaryUrl = buildRedditSearchUrl(REDDIT_PRIMARY_ENDPOINT, query, pageLimit);
+
+  try {
+    const response = await axios.get<RedditSearchResponse>(primaryUrl, {
+      headers,
+      timeout: 15000,
+    });
+    const recentResultCount = response.data.data?.children?.length ?? 0;
+
+    return {
+      recentResultCount,
+      pageLimitReached: recentResultCount === pageLimit,
+      endpointTried: REDDIT_PRIMARY_ENDPOINT,
+      alternateEndpointTried: null,
+      statusCode: response.status,
+      userAgentUsed: userAgent,
+    };
+  } catch (primaryError) {
+    const primaryFailure = getAxiosFailureDebug(primaryError);
+
+    if (primaryFailure.responseStatus !== 403) {
+      throw {
+        endpointTried: REDDIT_PRIMARY_ENDPOINT,
+        alternateEndpointTried: null,
+        statusCode: primaryFailure.responseStatus,
+        userAgentUsed: userAgent,
+        note: primaryFailure.note,
+      };
+    }
+
+    const fallbackUrl = buildRedditSearchUrl(REDDIT_FALLBACK_ENDPOINT, query, pageLimit);
+
+    try {
+      const fallbackResponse = await axios.get<RedditSearchResponse>(fallbackUrl, {
+        headers,
+        timeout: 15000,
+      });
+      const recentResultCount = fallbackResponse.data.data?.children?.length ?? 0;
+
+      return {
+        recentResultCount,
+        pageLimitReached: recentResultCount === pageLimit,
+        endpointTried: REDDIT_PRIMARY_ENDPOINT,
+        alternateEndpointTried: REDDIT_FALLBACK_ENDPOINT,
+        statusCode: fallbackResponse.status,
+        userAgentUsed: userAgent,
+      };
+    } catch (fallbackError) {
+      const fallbackFailure = getAxiosFailureDebug(fallbackError);
+      throw {
+        endpointTried: REDDIT_PRIMARY_ENDPOINT,
+        alternateEndpointTried: REDDIT_FALLBACK_ENDPOINT,
+        statusCode: fallbackFailure.responseStatus,
+        userAgentUsed: userAgent,
+        note: `Primary endpoint failed (${primaryFailure.note}); alternate endpoint failed (${fallbackFailure.note}).`,
+      };
+    }
+  }
+}
+
 async function fetchYouTubeVideoDetails(
   youtubeApiKey: string,
   candidateVideoIds: string[]
@@ -583,7 +674,7 @@ export async function getSocialValidationSignals(
 
   const twitterToken = process.env.TWITTER_BEARER_TOKEN?.trim();
   const youtubeApiKey = process.env.YOUTUBE_API_KEY?.trim();
-  const redditUserAgent = process.env.REDDIT_USER_AGENT?.trim() ?? 'ebay-mcp-validation/1.0';
+  const redditUserAgent = process.env.REDDIT_USER_AGENT?.trim() ?? DEFAULT_REDDIT_USER_AGENT;
 
   if (twitterToken) {
     const twitterQueryPlanResolution = normalizeResolvedQueryPlan(
@@ -968,9 +1059,14 @@ export async function getSocialValidationSignals(
     const pageLimit = REDDIT_PAGE_LIMIT;
     const queryDiagnostics: RedditQueryDiagnostics = [];
     let selectedQuery = query;
-    let selectedSearchUrl = query ? buildRedditSearchUrl(query, pageLimit) : undefined;
+    let selectedSearchUrl = query
+      ? buildRedditSearchUrl(REDDIT_PRIMARY_ENDPOINT, query, pageLimit)
+      : undefined;
     let recentResultCount: number | null = null;
     let pageLimitReached: boolean | null = null;
+    let endpointTried = query ? REDDIT_PRIMARY_ENDPOINT : undefined;
+    let alternateEndpointTried: string | null = null;
+    let statusCode: number | null = null;
 
     debug.reddit = {
       checked: true,
@@ -980,41 +1076,82 @@ export async function getSocialValidationSignals(
       selectedQuery,
       searchUrl: selectedSearchUrl,
       pageLimit,
+      endpointTried,
+      alternateEndpointTried,
+      statusCode,
+      userAgentUsed: redditUserAgent,
       queryResolution: cloneQueryResolution(queryResolution),
     };
 
     for (const [index, candidate] of queryCandidates.entries()) {
-      const searchUrl = buildRedditSearchUrl(candidate, pageLimit);
+      const searchUrl = buildRedditSearchUrl(REDDIT_PRIMARY_ENDPOINT, candidate, pageLimit);
       try {
-        const response = await axios.get<RedditSearchResponse>(searchUrl, {
-          headers: { 'User-Agent': redditUserAgent },
-          params: { limit: pageLimit },
-          timeout: 15000,
-        });
-        const candidateCount = response.data.data?.children?.length ?? 0;
-        const candidateLimitReached = candidateCount === pageLimit;
+        const response = await fetchRedditSearchCount(candidate, pageLimit, redditUserAgent);
+        const candidateCount = response.recentResultCount;
+        const candidateLimitReached = response.pageLimitReached;
         queryDiagnostics.push({
           query: candidate,
           family: getQueryPlanFamily(queryPlan, index),
           recentResultCount: candidateCount,
           pageLimitReached: candidateLimitReached,
+          endpointTried: response.endpointTried,
+          alternateEndpointTried: response.alternateEndpointTried,
+          statusCode: response.statusCode,
+          userAgentUsed: response.userAgentUsed,
         });
 
         if (recentResultCount === null || candidateCount > recentResultCount) {
           recentResultCount = candidateCount;
           pageLimitReached = candidateLimitReached;
           selectedQuery = candidate;
-          selectedSearchUrl = searchUrl;
+          selectedSearchUrl =
+            response.alternateEndpointTried !== null
+              ? buildRedditSearchUrl(response.alternateEndpointTried, candidate, pageLimit)
+              : searchUrl;
+          endpointTried = response.endpointTried;
+          alternateEndpointTried = response.alternateEndpointTried;
+          statusCode = response.statusCode;
         }
       } catch (error) {
-        const failure = getAxiosFailureDebug(error);
+        const failure =
+          typeof error === 'object' && error !== null && 'note' in error
+            ? (error as {
+                endpointTried?: string;
+                alternateEndpointTried?: string | null;
+                statusCode?: number | null;
+                userAgentUsed?: string;
+                note: string;
+              })
+            : {
+                endpointTried: REDDIT_PRIMARY_ENDPOINT,
+                alternateEndpointTried: null,
+                statusCode: getAxiosFailureDebug(error).responseStatus,
+                userAgentUsed: redditUserAgent,
+                note: getAxiosFailureDebug(error).note,
+              };
         queryDiagnostics.push({
           query: candidate,
           family: getQueryPlanFamily(queryPlan, index),
           recentResultCount: null,
           pageLimitReached: null,
+          endpointTried: failure.endpointTried,
+          alternateEndpointTried: failure.alternateEndpointTried ?? null,
+          statusCode: failure.statusCode ?? null,
+          userAgentUsed: failure.userAgentUsed ?? redditUserAgent,
           note: failure.note,
         });
+
+        if (recentResultCount === null) {
+          selectedQuery = candidate;
+          const failedAlternateEndpoint = failure.alternateEndpointTried;
+          selectedSearchUrl =
+            typeof failedAlternateEndpoint === 'string'
+              ? buildRedditSearchUrl(failedAlternateEndpoint, candidate, pageLimit)
+              : searchUrl;
+          endpointTried = failure.endpointTried;
+          alternateEndpointTried = failedAlternateEndpoint ?? null;
+          statusCode = failure.statusCode ?? null;
+        }
       }
     }
 
@@ -1031,6 +1168,10 @@ export async function getSocialValidationSignals(
         recentResultCount,
         pageLimit,
         pageLimitReached,
+        endpointTried,
+        alternateEndpointTried,
+        statusCode,
+        userAgentUsed: redditUserAgent,
         confidence: getConfidenceFromCount(recentResultCount),
         note: 'Recent Reddit post sample count from the first page of weekly results, not total weekly discussion volume.',
         queryResolution: cloneQueryResolution(queryResolution),
@@ -1047,6 +1188,10 @@ export async function getSocialValidationSignals(
         recentResultCount: null,
         pageLimit,
         pageLimitReached: null,
+        endpointTried,
+        alternateEndpointTried,
+        statusCode,
+        userAgentUsed: redditUserAgent,
         confidence: 'Low',
         note: 'All Reddit discussion-oriented query candidates failed before a usable sample count was returned.',
         queryResolution: cloneQueryResolution(queryResolution),

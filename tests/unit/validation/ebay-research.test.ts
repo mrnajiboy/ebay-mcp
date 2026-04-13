@@ -333,17 +333,23 @@ describe('fetchEbayResearch()', () => {
   it('invalidates a rejected KV session so later auth sources can be used', async () => {
     process.env.EBAY_RESEARCH_SESSION_ALLOW_FILESYSTEM_FALLBACK = 'true';
 
-    kvGetMock
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({
-        cookies: [{ name: 'sid', value: 'cookie-a', domain: '.ebay.com', path: '/' }],
-        updatedAt: '2026-04-10T00:00:00.000Z',
-        expiresAt: null,
-        marketplace: 'EBAY-US',
-        source: 'kv_store',
-      });
+    let kvSessionAvailable = true;
+    kvGetMock.mockImplementation(async (key?: string) => {
+      if (key === 'ebay_research_storage_state_json' && kvSessionAvailable) {
+        return {
+          cookies: [{ name: 'sid', value: 'cookie-a', domain: '.ebay.com', path: '/' }],
+          updatedAt: '2026-04-10T00:00:00.000Z',
+          expiresAt: null,
+          marketplace: 'EBAY-US',
+          source: 'kv_store',
+        };
+      }
+
+      return null;
+    });
+    kvDeleteMock.mockImplementation(async () => {
+      kvSessionAvailable = false;
+    });
 
     const { clearEbayResearchAuthCache, fetchEbayResearch } = await import(
       '../../../src/validation/providers/ebay-research.js'
@@ -363,7 +369,7 @@ describe('fetchEbayResearch()', () => {
     const firstResponse = await fetchEbayResearch('ATEEZ GOLDEN HOUR');
 
     expect(firstResponse.debug.authState).toBe('expired');
-    expect(firstResponse.debug.sessionStrategy).toBe('kv_store');
+    expect(firstResponse.debug.sessionStrategy).toBe('storage_state');
     expect(firstResponse.debug.sessionSource).toBe('kv');
     expect(kvDeleteMock.mock.calls.length).toBeGreaterThan(0);
     clearEbayResearchAuthCache();
@@ -443,7 +449,7 @@ describe('fetchEbayResearch()', () => {
         return null;
       }
 
-      if (key.endsWith(':EBAY-US')) {
+      if (key === 'ebay_research_storage_state_json') {
         return {
           cookies: [{ name: 'sid', value: 'cookie-us', domain: '.ebay.com', path: '/' }],
           storageState: {
@@ -458,7 +464,7 @@ describe('fetchEbayResearch()', () => {
         };
       }
 
-      if (key.endsWith(':EBAY-GB')) {
+      if (key === 'ebay_research_storage_state_json:production:EBAY-GB') {
         return {
           cookies: [{ name: 'sid', value: 'cookie-gb', domain: '.ebay.com', path: '/' }],
           storageState: {
@@ -534,19 +540,32 @@ describe('fetchEbayResearch()', () => {
       'storage_state'
     );
 
-    expect(kvPutMock).toHaveBeenCalledWith(
+    expect(kvPutMock).toHaveBeenCalledTimes(2);
+    expect(kvPutMock).toHaveBeenNthCalledWith(
+      1,
+      'ebay_research_storage_state_json',
       expect.any(String),
-      expect.objectContaining({
-        cookies: [{ name: 'sid', value: 'cookie-ebay', domain: '.ebay.com', path: '/' }],
-        storageState: {
-          cookies: [{ name: 'sid', value: 'cookie-ebay', domain: '.ebay.com', path: '/' }],
-          origins: [
-            {
-              origin: 'https://www.ebay.com',
-              localStorage: [{ name: 'ebay-key', value: 'ebay-value' }],
-            },
-          ],
+      expect.any(Number)
+    );
+    expect(JSON.parse(String(kvPutMock.mock.calls[0]?.[1]))).toEqual({
+      cookies: [{ name: 'sid', value: 'cookie-ebay', domain: '.ebay.com', path: '/' }],
+      origins: [
+        {
+          origin: 'https://www.ebay.com',
+          localStorage: [{ name: 'ebay-key', value: 'ebay-value' }],
         },
+      ],
+    });
+    expect(kvPutMock).toHaveBeenNthCalledWith(
+      2,
+      'ebay_research_storage_state_meta',
+      expect.objectContaining({
+        backend: 'cloudflare_kv',
+        marketplace: 'EBAY-US',
+        source: 'storage_state',
+        sessionSource: 'kv',
+        storageStateBytes: expect.any(Number),
+        updatedAt: '2026-04-12T00:00:00.000Z',
       }),
       expect.any(Number)
     );

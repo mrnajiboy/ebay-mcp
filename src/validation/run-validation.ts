@@ -198,9 +198,18 @@ function buildProviderDebug(
   const terapeakFields = getFieldPresence({
     avgWatchersPerListing: terapeak.avgWatchersPerListing,
     preOrderListingsCount: terapeak.preOrderListingsCount,
+    activeAvgPriceUsd: terapeak.activeAvgPriceUsd,
+    activeAvgShippingUsd: terapeak.activeAvgShippingUsd,
+    activeListingsCount: terapeak.activeListingsCount,
+    activeAvgWatchersPerListing: terapeak.activeAvgWatchersPerListing,
+    soldAvgPriceUsd: terapeak.soldAvgPriceUsd,
+    soldMedianPriceUsd: terapeak.soldMedianPriceUsd,
+    soldAvgShippingUsd: terapeak.soldAvgShippingUsd,
     marketPriceUsd: terapeak.marketPriceUsd,
     avgShippingCostUsd: terapeak.avgShippingCostUsd,
     competitionLevel: terapeak.competitionLevel,
+    soldSellThroughPct: terapeak.soldSellThroughPct,
+    soldTotalRevenueUsd: terapeak.soldTotalRevenueUsd,
     previousPobAvgPriceUsd: terapeak.previousPobAvgPriceUsd,
     previousPobSellThroughPct: terapeak.previousPobSellThroughPct,
     day1Sold: terapeak.soldVelocity.day1Sold,
@@ -419,12 +428,51 @@ export async function runValidation(
     const social = await getSocialValidationSignals(effectiveRequest);
     const chart = getChartValidationSignals(effectiveRequest);
     const research = await getPreviousComebackResearchSignals(effectiveRequest);
-    const mergedAvgWatchers = terapeak.avgWatchersPerListing ?? ebay.avgWatchersPerListing;
-    const mergedPreorderListings = terapeak.preOrderListingsCount ?? ebay.preOrderListingsCount;
+    const mergedAvgWatchers =
+      terapeak.activeAvgWatchersPerListing ?? ebay.avgWatchersPerListing;
+    const mergedPreorderListings = terapeak.activeListingsCount ?? ebay.preOrderListingsCount;
+    const activeAvgPriceUsd = terapeak.activeAvgPriceUsd ?? ebay.marketPriceUsd;
+    const activeAvgShippingUsd = terapeak.activeAvgShippingUsd ?? ebay.avgShippingCostUsd;
+    const activeListingsCount = mergedPreorderListings;
+    const activeAvgWatchersPerListing = mergedAvgWatchers;
+    const soldAvgPriceUsd = terapeak.soldAvgPriceUsd ?? sold.soldAveragePriceUsd;
+    const soldMedianPriceUsd = terapeak.soldMedianPriceUsd ?? sold.soldMedianPriceUsd;
+    const soldAvgShippingUsd = terapeak.soldAvgShippingUsd;
+    const soldListingsCount = terapeak.soldListingsCount ?? sold.soldResultsCount;
+    const soldSellThroughPct = terapeak.soldSellThroughPct;
+    const soldTotalRevenueUsd = terapeak.soldTotalRevenueUsd;
     const marketPriceUsd =
-      terapeak.marketPriceUsd ?? sold.soldMedianPriceUsd ?? ebay.marketPriceUsd;
-    const mergedAvgShippingCostUsd = terapeak.avgShippingCostUsd ?? ebay.avgShippingCostUsd;
-    const mergedCompetitionLevel = terapeak.competitionLevel ?? ebay.competitionLevel;
+      terapeak.soldAvgPriceUsd ??
+      terapeak.activeAvgPriceUsd ??
+      sold.soldMedianPriceUsd ??
+      ebay.marketPriceUsd;
+    const mergedAvgShippingCostUsd =
+      terapeak.soldAvgShippingUsd ?? terapeak.activeAvgShippingUsd ?? ebay.avgShippingCostUsd;
+    const mergedCompetitionLevel = terapeak.activeListingsCount ?? ebay.competitionLevel;
+    const finalFieldSources = {
+      marketPriceUsd:
+        terapeak.soldAvgPriceUsd !== null
+          ? 'research_sold'
+          : terapeak.activeAvgPriceUsd !== null
+            ? 'research_active'
+            : marketPriceUsd !== null
+              ? 'fallback_provider'
+              : 'none',
+      avgShippingCostUsd:
+        terapeak.soldAvgShippingUsd !== null
+          ? 'research_sold'
+          : terapeak.activeAvgShippingUsd !== null
+            ? 'research_active'
+            : mergedAvgShippingCostUsd !== null
+              ? 'fallback_provider'
+              : 'none',
+      competitionLevel:
+        terapeak.activeListingsCount !== null
+          ? 'research_active'
+          : mergedCompetitionLevel !== null
+            ? 'fallback_provider'
+            : 'none',
+    };
     const day1Sold = resolvePreferredSoldMetric(
       terapeak.soldVelocity.day1Sold,
       sold.soldVelocity.day1Sold,
@@ -479,9 +527,10 @@ export async function runValidation(
     );
     const mergedSignals = { effectiveContext, ebay, sold, terapeak, social, chart, research };
     const activeSource =
-      terapeak.avgWatchersPerListing !== null ||
-      terapeak.preOrderListingsCount !== null ||
-      terapeak.competitionLevel !== null
+      terapeak.activeAvgWatchersPerListing !== null ||
+      terapeak.activeListingsCount !== null ||
+      terapeak.activeAvgPriceUsd !== null ||
+      terapeak.activeAvgShippingUsd !== null
         ? 'ebay_research_ui'
         : ebay.preOrderListingsCount !== null ||
             ebay.marketPriceUsd !== null ||
@@ -491,6 +540,7 @@ export async function runValidation(
     const soldSource = primaryResearchSoldSignalsAvailable
       ? 'ebay_research_ui'
       : sold.soldMedianPriceUsd !== null ||
+          sold.soldAveragePriceUsd !== null ||
           sold.soldResultsCount !== null ||
           hasSoldVelocityEvidence(sold.soldVelocity)
         ? 'third_party_sold_api'
@@ -551,27 +601,77 @@ export async function runValidation(
     };
     const writeResolution = {
       avgWatchersPerListing:
-        terapeak.avgWatchersPerListing !== null
-          ? (terapeak.queryDebug.writeSources?.avgWatchersPerListing ?? 'terapeak')
-          : getWriteSource(ebay.avgWatchersPerListing, 'ebay'),
+        activeAvgWatchersPerListing !== null
+          ? terapeak.activeAvgWatchersPerListing !== null
+            ? (terapeak.queryDebug.writeSources?.activeAvgWatchersPerListing ?? 'research_active')
+            : 'ebay'
+          : 'none',
       preOrderListingsCount:
-        terapeak.preOrderListingsCount !== null
-          ? (terapeak.queryDebug.writeSources?.preOrderListingsCount ?? 'terapeak')
-          : getWriteSource(ebay.preOrderListingsCount, 'ebay'),
+        activeListingsCount !== null
+          ? terapeak.activeListingsCount !== null
+            ? (terapeak.queryDebug.writeSources?.activeListingsCount ?? 'research_active')
+            : 'ebay'
+          : 'none',
+      activeAvgPriceUsd:
+        activeAvgPriceUsd !== null
+          ? terapeak.activeAvgPriceUsd !== null
+            ? (terapeak.queryDebug.writeSources?.activeAvgPriceUsd ?? 'research_active')
+            : 'ebay'
+          : 'none',
+      activeAvgShippingUsd:
+        activeAvgShippingUsd !== null
+          ? terapeak.activeAvgShippingUsd !== null
+            ? (terapeak.queryDebug.writeSources?.activeAvgShippingUsd ?? 'research_active')
+            : 'ebay'
+          : 'none',
+      activeListingsCount:
+        activeListingsCount !== null
+          ? terapeak.activeListingsCount !== null
+            ? (terapeak.queryDebug.writeSources?.activeListingsCount ?? 'research_active')
+            : 'ebay'
+          : 'none',
+      activeAvgWatchersPerListing:
+        activeAvgWatchersPerListing !== null
+          ? terapeak.activeAvgWatchersPerListing !== null
+            ? (terapeak.queryDebug.writeSources?.activeAvgWatchersPerListing ?? 'research_active')
+            : 'ebay'
+          : 'none',
+      soldAvgPriceUsd:
+        soldAvgPriceUsd !== null
+          ? terapeak.soldAvgPriceUsd !== null
+            ? (terapeak.queryDebug.writeSources?.soldAvgPriceUsd ?? 'research_sold')
+            : 'sold'
+          : 'none',
+      soldMedianPriceUsd:
+        soldMedianPriceUsd !== null
+          ? terapeak.soldMedianPriceUsd !== null
+            ? (terapeak.queryDebug.writeSources?.soldMedianPriceUsd ?? 'research_sold')
+            : 'sold'
+          : 'none',
+      soldAvgShippingUsd:
+        soldAvgShippingUsd !== null
+          ? (terapeak.queryDebug.writeSources?.soldAvgShippingUsd ?? 'research_sold')
+          : 'none',
+      soldListingsCount:
+        soldListingsCount !== null
+          ? terapeak.soldListingsCount !== null
+            ? (terapeak.queryDebug.writeSources?.soldListingsCount ?? 'research_sold')
+            : 'sold'
+          : 'none',
+      soldSellThroughPct:
+        soldSellThroughPct !== null
+          ? (terapeak.queryDebug.writeSources?.soldSellThroughPct ?? 'research_sold')
+          : 'none',
+      soldTotalRevenueUsd:
+        soldTotalRevenueUsd !== null
+          ? (terapeak.queryDebug.writeSources?.soldTotalRevenueUsd ?? 'research_sold')
+          : 'none',
       marketPriceUsd:
-        terapeak.marketPriceUsd !== null
-          ? (terapeak.queryDebug.writeSources?.marketPriceUsd ?? 'terapeak')
-          : sold.soldMedianPriceUsd !== null
-            ? 'sold'
-            : getWriteSource(ebay.marketPriceUsd, 'ebay'),
+        finalFieldSources.marketPriceUsd,
       avgShippingCostUsd:
-        terapeak.avgShippingCostUsd !== null
-          ? (terapeak.queryDebug.writeSources?.avgShippingCostUsd ?? 'terapeak')
-          : getWriteSource(ebay.avgShippingCostUsd, 'ebay'),
+        finalFieldSources.avgShippingCostUsd,
       competitionLevel:
-        terapeak.competitionLevel !== null
-          ? (terapeak.queryDebug.writeSources?.competitionLevel ?? 'terapeak')
-          : getWriteSource(ebay.competitionLevel, 'ebay'),
+        finalFieldSources.competitionLevel,
       twitterTrending: getWriteSource(social.twitterTrending, 'social'),
       youtubeViews24hMillions: getWriteSource(social.youtubeViews24hMillions, 'social'),
       redditPostsCount7d: getWriteSource(social.redditPostsCount7d, 'social'),
@@ -625,7 +725,17 @@ export async function runValidation(
       writes: {
         avgWatchersPerListing: mergedAvgWatchers,
         preOrderListingsCount: mergedPreorderListings,
+        activeAvgPriceUsd,
+        activeAvgShippingUsd,
+        activeListingsCount,
+        activeAvgWatchersPerListing,
         ...socialWrites,
+        soldAvgPriceUsd,
+        soldMedianPriceUsd,
+        soldAvgShippingUsd,
+        soldListingsCount,
+        soldSellThroughPct,
+        soldTotalRevenueUsd,
         marketPriceUsd,
         avgShippingCostUsd: mergedAvgShippingCostUsd,
         competitionLevel: mergedCompetitionLevel,
@@ -672,6 +782,7 @@ export async function runValidation(
         soldResultsCount: sold.soldResultsCount,
         omittedOptionalWrites,
         writeResolution,
+        finalFieldSources,
         providerResolution,
         sourceSet: ['ebay', 'sold', 'terapeak', 'social', 'chart', 'research'],
         providers: buildProviderDebug(
