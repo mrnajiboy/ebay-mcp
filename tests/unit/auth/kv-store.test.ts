@@ -141,22 +141,14 @@ describe('createKVStore() – backend selection', () => {
     }
   });
 
-  it('does not claim atomic putIfAbsent support for CloudflareKVStore', () => {
+  it('does not claim atomic putIfAbsent support for CloudflareKVStore', async () => {
     const cleanup = withCloudflareStubCreds();
     try {
       const store = new CloudflareKVStore();
-      let thrown: unknown;
 
-      try {
-        store.putIfAbsent?.('lock-key', { ok: true }, 60);
-      } catch (error) {
-        thrown = error;
-      }
-
-      expect(thrown).toBeInstanceOf(Error);
-      expect((thrown as Error).message).toContain(
-        'Atomic putIfAbsent is not supported for Cloudflare KV'
-      );
+      await expect(
+        Promise.resolve().then(() => store.putIfAbsent?.('lock-key', { ok: true }, 60))
+      ).rejects.toThrow('Atomic putIfAbsent is not supported for Cloudflare KV');
     } finally {
       cleanup();
     }
