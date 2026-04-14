@@ -145,7 +145,16 @@ describe('createKVStore() – backend selection', () => {
     const cleanup = withCloudflareStubCreds();
     try {
       const store = new CloudflareKVStore();
-      expect(() => store.putIfAbsent?.('lock-key', { ok: true }, 60)).toThrow(
+      let thrown: unknown;
+
+      try {
+        store.putIfAbsent?.('lock-key', { ok: true }, 60);
+      } catch (error) {
+        thrown = error;
+      }
+
+      expect(thrown).toBeInstanceOf(Error);
+      expect((thrown as Error).message).toContain(
         'Atomic putIfAbsent is not supported for Cloudflare KV'
       );
     } finally {
