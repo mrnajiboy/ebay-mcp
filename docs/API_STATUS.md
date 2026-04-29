@@ -3,11 +3,14 @@
 Auto-updated snapshot from the [eBay API Status RSS feed](https://developer.ebay.com/rss/api-status).
 Full list: [developer.ebay.com/support/api-status](https://developer.ebay.com/support/api-status).
 
-*Last updated: 2026-04-13T09:57:54.351Z*
+*Last updated: 2026-04-27T10:19:36.249Z*
 
 | Title | API | Site | Status | Last updated | Link |
 |-------|-----|------|--------|--------------|------|
-| MarketingAPI | MarketingAPI | Production | Resolved | Tue Apr 07 2026 | [Details](https://developer.ebay.com/support/api-status/Production/getcampaigns-is-now-treating-the-optional-campaign_status-as-required) |
+| api.ebay.com | api.ebay.com | Production | Unresolved | Sun Apr 26 2026 | [Details](https://developer.ebay.com/support/api-status/Production/dns-resolution-failure-for-api-ebay-com) |
+| Inventory API | Inventory API | Sandbox | Resolved | Tue Apr 21 2026 | [Details](https://developer.ebay.com/support/api-status/Sandbox/publishoffer-api-is-returning-500-system-error) |
+| Buy Feed API | Buy Feed API | Production | Resolved | Mon Apr 20 2026 | [Details](https://developer.ebay.com/support/api-status/Production/resolved-some-feeds-are-delayed) |
+| MarketingAPI | MarketingAPI | Production | Resolved | Tue Apr 07 2026 | [Details](https://developer.ebay.com/support/api-status/Production/resolved-getcampaigns-is-now-treating-the-optional-campaign_status-as-required) |
 | Inventory Mapping API | Inventory Mapping API | Production | Resolved | Tue Mar 31 2026 | [Details](https://developer.ebay.com/support/api-status/Production/resolved-inventory-mapping-api-outage) |
 | Feed Files | Feed Files | Production | Resolved | Tue Mar 31 2026 | [Details](https://developer.ebay.com/support/api-status/Production/resolved-feed-files-are-unavailable-1) |
 | feed files | feed files | Production | Resolved | Mon Mar 30 2026 | [Details](https://developer.ebay.com/support/api-status/Production/resolved-feed-files-are-unavailable) |
@@ -19,9 +22,6 @@ Full list: [developer.ebay.com/support/api-status](https://developer.ebay.com/su
 | Trading API | Trading API | Production | Resolved | Wed Oct 29 2025 | [Details](https://developer.ebay.com/support/api-status/Production/resolved-trading-api-reviseitem-reviseinventorystatus-enditem-api-calls-returning-seller-not-found-error) |
 | Inventory API | Inventory API | Production | Resolved | Thu Oct 23 2025 | [Details](https://developer.ebay.com/support/api-status/Production/resolved-inventory-api-returning-invalid-tax-information-you-need-to-specify-the-tax-state) |
 | Trading API | Trading API | Production | Resolved | Tue Oct 21 2025 | [Details](https://developer.ebay.com/support/api-status/Production/resolved-trading-api-getstore-method-returns-store-not-found-for-user) |
-| Trading API | Trading API | Sandbox | Resolved | Fri Oct 17 2025 | [Details](https://developer.ebay.com/support/api-status/Sandbox/resolved-sandbox-publishoffer-fails-with-http-500) |
-| Developer Portal | Developer Portal | Production | Resolved | Mon Oct 13 2025 | [Details](https://developer.ebay.com/support/api-status/Production/resolved-activate-developer-account-support-is-not-working) |
-| Notification API | Notification API | Production | Resolved | Mon Sep 29 2025 | [Details](https://developer.ebay.com/support/api-status/Production/resolved-gettopics-api-returning-500-internal-server-error) |
 
 ---
 
