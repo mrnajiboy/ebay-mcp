@@ -54,6 +54,32 @@ function getServerBaseUrl(): string {
   return CONFIG.publicBaseUrl || `http://localhost:${CONFIG.port}`;
 }
 
+function getExpectedOAuthCallbackUrl(serverUrl = getServerBaseUrl()): string {
+  return `${serverUrl.replace(/\/+$/, '')}/oauth/callback`;
+}
+
+function isLocalDevelopmentBaseUrl(baseUrl: string): boolean {
+  if (!baseUrl) {
+    return false;
+  }
+
+  try {
+    const { hostname } = new URL(baseUrl);
+    const normalizedHost = hostname.toLowerCase();
+
+    return (
+      normalizedHost === 'localhost' ||
+      normalizedHost === '127.0.0.1' ||
+      normalizedHost === '::1' ||
+      normalizedHost === 'ebay-local.test' ||
+      normalizedHost.endsWith('.localhost') ||
+      normalizedHost.endsWith('.test')
+    );
+  } catch {
+    return false;
+  }
+}
+
 function htmlEscape(value: string): string {
   return value
     .replace(/&/g, '&')
@@ -917,6 +943,8 @@ function mountEnvRouter(
       serverLogger.info(`[${prefix || 'root'}/authorize] Redirecting to eBay OAuth`, {
         state: stateRecord.state,
         environment,
+        ruName: ebayConfig.redirectUri,
+        expectedCallbackUrl: getExpectedOAuthCallbackUrl(serverUrl),
       });
       res.redirect(oauthUrl);
     } catch (error) {
@@ -1038,6 +1066,13 @@ function mountEnvRouter(
         undefined,
         stateRecord.state
       );
+      serverLogger.info(`[${prefix || 'root'}/oauth/start] Redirecting to eBay OAuth`, {
+        state: stateRecord.state,
+        environment,
+        ruName: ebayConfig.redirectUri,
+        expectedCallbackUrl: getExpectedOAuthCallbackUrl(serverUrl),
+        returnTo,
+      });
       res.redirect(oauthUrl);
     } catch (error) {
       res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
@@ -1305,6 +1340,8 @@ async function handleOAuthCallback(
       hasCode: !!code,
       hasState: !!state,
       oauthError,
+      expectedCallbackUrl: getExpectedOAuthCallbackUrl(serverUrl),
+      actualCallbackUrl: `${serverUrl}${req.originalUrl}`,
     });
 
     if (oauthError) {
@@ -1519,13 +1556,34 @@ async function main(): Promise<void> {
 
     const certPath = process.env.EBAY_LOCAL_TLS_CERT_PATH;
     const keyPath = process.env.EBAY_LOCAL_TLS_KEY_PATH;
-    const useHttps = CONFIG.publicBaseUrl.startsWith('https://') && !!certPath && !!keyPath;
+    const localTlsEligible = isLocalDevelopmentBaseUrl(CONFIG.publicBaseUrl);
+    const useHttps =
+      CONFIG.publicBaseUrl.startsWith('https://') && localTlsEligible && !!certPath && !!keyPath;
 
     const serverUrl = getServerBaseUrl();
+
+    serverLogger.info('[startup] Public OAuth URL diagnostics', {
+      publicBaseUrl: CONFIG.publicBaseUrl || '(unset)',
+      serverUrl,
+      expectedCallbackUrl: getExpectedOAuthCallbackUrl(serverUrl),
+      localTlsEligible,
+      hasLocalTlsCertPath: !!certPath,
+      hasLocalTlsKeyPath: !!keyPath,
+      useHttps,
+    });
+
+    if (CONFIG.publicBaseUrl.startsWith('https://') && !localTlsEligible && (certPath || keyPath)) {
+      serverLogger.warn('[startup] Ignoring local TLS certificate settings for hosted base URL', {
+        publicBaseUrl: CONFIG.publicBaseUrl,
+        hasLocalTlsCertPath: !!certPath,
+        hasLocalTlsKeyPath: !!keyPath,
+      });
+    }
 
     const onListening = (): void => {
       const protocol = useHttps ? 'HTTPS' : 'HTTP';
       console.log(`Server running at ${serverUrl} [${protocol}]`);
+      console.log(`OAuth callback:  ${getExpectedOAuthCallbackUrl(serverUrl)}`);
       console.log(`MCP (default):    ${serverUrl}/mcp`);
       console.log(`MCP (sandbox):    ${serverUrl}/sandbox/mcp`);
       console.log(`MCP (production): ${serverUrl}/production/mcp`);
