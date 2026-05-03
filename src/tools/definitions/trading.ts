@@ -1,6 +1,76 @@
 import { z } from 'zod';
 import type { ToolDefinition } from './account.js';
 
+// Schema for Trading API price fields that include currency
+const PriceWithCurrencySchema = z.union([
+  z.string(),
+  z.object({
+    value: z.string().or(z.number()).describe('Price value'),
+    currencyID: z.string().optional().describe('Currency code, e.g., USD, EUR, GBP'),
+  }),
+]);
+
+// Schema for Trading API item specifics (NameValueList)
+const ItemSpecificsSchema = z.array(
+  z.object({
+    name: z.string().describe('Specific name, e.g., Brand, Colour, Size'),
+    value: z.union([z.string(), z.array(z.string())]).describe('Specific value(s)'),
+  })
+);
+
+// Schema for Trading API item object
+const TradingItemSchema = z.object({
+  // Required fields
+  Title: z.string().describe('Item title (max 80 characters)'),
+  PrimaryCategory: z.object({
+    CategoryID: z.string().describe('eBay category ID, e.g., "15032"'),
+  }).describe('Primary category for the listing'),
+  StartPrice: PriceWithCurrencySchema.describe('Starting price or fixed price'),
+  ConditionID: z.union([z.number(), z.string()]).describe('eBay condition ID, e.g., 1000 for New'),
+  Country: z.string().describe('ISO country code, e.g., US, GB, DE'),
+  Currency: z.string().optional().describe('Currency code, e.g., USD, EUR, GBP'),
+  DispatchTimeMax: z.union([z.number(), z.string()]).describe('Max dispatch time in days'),
+  ListingDuration: z.string().describe('Listing duration, e.g., GMS (Good Month), GN (Good Week)'),
+  ListingType: z.literal('FixedPriceItem').describe('Must be "FixedPriceItem"'),
+  Quantity: z.union([z.number(), z.string()]).describe('Number of items available'),
+  SKU: z.string().describe('Stock keeping unit / inventory identifier'),
+
+  // Optional fields
+  Subtitle: z.string().optional().describe('Item subtitle (max 35 characters)'),
+  Description: z.string().optional().describe('HTML description of the item'),
+  ItemSpecifics: ItemSpecificsSchema.optional().describe('Product specifics/attributes'),
+  PicturesDetails: z.object({
+    GalleryType: z.string().optional().describe('Gallery type, e.g., Plus, Summary'),
+    PictureURL: z.array(z.string()).describe('Array of image URLs'),
+  }).optional().describe('Picture details for the listing'),
+  ShippingDetails: z.object({
+    ShippingServiceOptions: z.object({
+      ShippingServicePriority: z.string().optional().describe('Shipping priority (1-9)'),
+      ShippingServiceID: z.string().describe('eBay shipping service ID'),
+      ShippingServiceCost: PriceWithCurrencySchema.describe('Shipping cost'),
+      ShippingType: z.string().describe('Shipping type: Flat, FlatPlusHandling, or Calculated'),
+    }).describe('Domestic shipping service options'),
+    InternationalShippingServiceOption: z.array(
+      z.object({
+        ShippingServicePriority: z.string().optional().describe('Shipping priority (1-9)'),
+        ShippingServiceID: z.string().describe('eBay shipping service ID'),
+        ShippingServiceCost: PriceWithCurrencySchema.describe('Shipping cost'),
+        ShippingType: z.string().describe('Shipping type'),
+        Country: z.array(z.string()).describe('Array of destination country codes'),
+      })
+    ).optional().describe('International shipping service options'),
+    HandlingTime: z.union([z.number(), z.string()]).optional().describe('Handling time in days'),
+  }).optional().describe('Shipping details for the listing'),
+  ReturnPolicy: z.object({
+    ReturnsAcceptedOption: z.string().describe('Returns accepted: Yes or No'),
+    ReturnsWithinOption: z.string().describe('Return window, e.g., Days30, Days60, Days90'),
+    Description: z.string().describe('Return policy description'),
+    RefundOption: z.string().optional().describe('Refund type: MoneyBack or Replacement'),
+  }).optional().describe('Return policy for the listing'),
+  PaymentMethods: z.array(z.string()).optional().describe('Accepted payment methods'),
+  ProxyItem: z.boolean().optional().describe('Whether this is a proxy item'),
+});
+
 export const tradingTools: ToolDefinition[] = [
   {
     name: 'ebay_get_active_listings',
@@ -26,11 +96,7 @@ export const tradingTools: ToolDefinition[] = [
     description:
       'Create a new fixed-price listing.\n\nUses the Trading API (AddFixedPriceItem). Requires complete item details.\n\nRequired: User OAuth token.',
     inputSchema: {
-      item: z
-        .record(z.string(), z.unknown())
-        .describe(
-          'Item details object. Required fields: Title, PrimaryCategory.CategoryID, StartPrice, ConditionID, Country, Currency, DispatchTimeMax, ListingDuration, ListingType ("FixedPriceItem"), Quantity, SKU.'
-        ),
+      item: TradingItemSchema.describe('Trading API item object with eBay-specific field structure.'),
     },
     annotations: { readOnlyHint: false },
   },

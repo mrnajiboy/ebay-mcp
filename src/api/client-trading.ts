@@ -50,6 +50,198 @@ export class TradingApiClient {
     return this.baseUrl;
   }
 
+  /**
+   * Transform a Trading API item object into a structure that fast-xml-parser
+   * can serialize into valid eBay Trading API XML.
+   *
+   * Handles nested objects like PrimaryCategory, ShippingDetails, ReturnPolicy,
+   * PicturesDetails, and ItemSpecifics that require special XML structure.
+   */
+  private transformItemForXML(item: Record<string, unknown>): Record<string, unknown> {
+    const transformed: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(item)) {
+      if (value === undefined || value === null) continue;
+
+      switch (key) {
+        case 'PrimaryCategory':
+          if (typeof value === 'object') {
+            transformed[key] = { CategoryID: (value as any).CategoryID };
+          } else {
+            transformed[key] = value;
+          }
+          break;
+
+        case 'StartPrice':
+          transformed[key] = this.transformPrice(value as any);
+          break;
+
+        case 'ShippingDetails':
+          transformed[key] = this.transformShippingDetails(value as any);
+          break;
+
+        case 'ReturnPolicy':
+          transformed[key] = this.transformReturnPolicy(value as any);
+          break;
+
+        case 'PicturesDetails':
+          transformed[key] = this.transformPicturesDetails(value as any);
+          break;
+
+        case 'ItemSpecifics':
+          transformed[key] = this.transformItemSpecifics(value as any);
+          break;
+
+        case 'PaymentMethods':
+          // Ensure array of strings becomes array of PaymentMethod elements
+          if (Array.isArray(value)) {
+            transformed[key] = value;
+          } else {
+            transformed[key] = value;
+          }
+          break;
+
+        default:
+          transformed[key] = value;
+          break;
+      }
+    }
+
+    return transformed;
+  }
+
+  /**
+   * Transform price fields that may have currency attributes.
+   * eBay Trading API expects: <StartPrice currencyID="USD">34.99</StartPrice>
+   */
+  private transformPrice(price: string | { value: string | number; currencyID?: string }): any {
+    if (typeof price === 'string') {
+      return price;
+    }
+    // Use fast-xml-parser attribute convention: @_<attrName> for attributes, #text for content
+    return {
+      '#text': String(price.value),
+      ...(price.currencyID && { '@_currencyID': price.currencyID }),
+    };
+  }
+
+  /**
+   * Transform ShippingDetails into proper nested XML structure.
+   */
+  private transformShippingDetails(sd: Record<string, unknown>): Record<string, unknown> {
+    const transformed: Record<string, unknown> = {};
+
+    if (sd.HandlingTime !== undefined) {
+      transformed.HandlingTime = sd.HandlingTime;
+    }
+
+    if (sd.ShippingServiceOptions) {
+      const options = sd.ShippingServiceOptions as Record<string, unknown>;
+      const serviceOption: Record<string, unknown> = {};
+
+      if (options.ShippingServicePriority) {
+        serviceOption.ShippingServicePriority = options.ShippingServicePriority;
+      }
+      if (options.ShippingServiceID) {
+        serviceOption.ShippingServiceID = options.ShippingServiceID;
+      }
+      if (options.ShippingServiceCost) {
+        serviceOption.ShippingServiceCost = this.transformPrice(
+          options.ShippingServiceCost as any
+        );
+      }
+      if (options.ShippingType) {
+        serviceOption.ShippingType = options.ShippingType;
+      }
+
+      transformed.ShippingServiceOptions = serviceOption;
+    }
+
+    if (sd.InternationalShippingServiceOption) {
+      const intlOptions = sd.InternationalShippingServiceOption as Record<string, unknown>[];
+      transformed.InternationalShippingServiceOption = intlOptions.map((option) => {
+        const transformedOption: Record<string, unknown> = {};
+        if (option.ShippingServicePriority) {
+          transformedOption.ShippingServicePriority = option.ShippingServicePriority;
+        }
+        if (option.ShippingServiceID) {
+          transformedOption.ShippingServiceID = option.ShippingServiceID;
+        }
+        if (option.ShippingServiceCost) {
+          transformedOption.ShippingServiceCost = this.transformPrice(
+            option.ShippingServiceCost as any
+          );
+        }
+        if (option.ShippingType) {
+          transformedOption.ShippingType = option.ShippingType;
+        }
+        if (option.Country) {
+          transformedOption.Country = Array.isArray(option.Country)
+            ? option.Country
+            : [option.Country];
+        }
+        return transformedOption;
+      });
+    }
+
+    return transformed;
+  }
+
+  /**
+   * Transform ReturnPolicy into proper nested XML structure.
+   */
+  private transformReturnPolicy(rp: Record<string, unknown>): Record<string, unknown> {
+    const transformed: Record<string, unknown> = {};
+
+    if (rp.ReturnsAcceptedOption !== undefined) {
+      transformed.ReturnsAcceptedOption = rp.ReturnsAcceptedOption;
+    }
+    if (rp.ReturnsWithinOption !== undefined) {
+      transformed.ReturnsWithinOption = rp.ReturnsWithinOption;
+    }
+    if (rp.Description !== undefined) {
+      transformed.Description = rp.Description;
+    }
+    if (rp.RefundOption !== undefined) {
+      transformed.RefundOption = rp.RefundOption;
+    }
+
+    return transformed;
+  }
+
+  /**
+   * Transform PicturesDetails into proper nested XML structure.
+   */
+  private transformPicturesDetails(pd: Record<string, unknown>): Record<string, unknown> {
+    const transformed: Record<string, unknown> = {};
+
+    if (pd.GalleryType) {
+      transformed.GalleryType = pd.GalleryType;
+    }
+    if (pd.PictureURL) {
+      const urls = pd.PictureURL as unknown[];
+      transformed.PictureURL = Array.isArray(urls) ? urls : [urls];
+    }
+
+    return transformed;
+  }
+
+  /**
+   * Transform ItemSpecifics into proper NameValueList XML structure.
+   * eBay expects:
+   * <ItemSpecifics>
+   *   <NameValueList><Name>Brand</Name><Value>Nike</Value></NameValueList>
+   * </ItemSpecifics>
+   */
+  private transformItemSpecifics(specifics: Array<{ name: string; value: string | string[] }>): any {
+    if (!Array.isArray(specifics)) return specifics;
+
+    return specifics.map((spec) => ({
+      Name: spec.name,
+      Value: Array.isArray(spec.value) ? spec.value : [spec.value],
+    }));
+  }
+
   async execute(
     callName: string,
     params: Record<string, unknown>
@@ -59,10 +251,16 @@ export class TradingApiClient {
     const requestTag = `${callName}Request`;
     const responseTag = `${callName}Response`;
 
+    // Transform Item field for proper XML serialization
+    const transformedParams: Record<string, unknown> = { ...params };
+    if (transformedParams.Item && typeof transformedParams.Item === 'object') {
+      transformedParams.Item = this.transformItemForXML(transformedParams.Item as Record<string, unknown>);
+    }
+
     const xmlObj: Record<string, unknown> = {};
     xmlObj[requestTag] = {
       '@_xmlns': 'urn:ebay:apis:eBLBaseComponents',
-      ...params,
+      ...transformedParams,
     };
 
     const xmlBody = `<?xml version="1.0" encoding="utf-8"?>\n${this.builder.build(xmlObj)}`;
