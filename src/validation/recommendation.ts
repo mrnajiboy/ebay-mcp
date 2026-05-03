@@ -9,6 +9,10 @@ import type {
   ValidationEffectiveContext,
   ValidationRunRequest,
 } from './types.js';
+import {
+  computeWeightedValidationScore,
+  shouldApplyAgeAwareCalibration,
+} from './threshold-calibration.js';
 
 interface ValidationRecommendationInput {
   ebay: EbayValidationSignals;
@@ -18,6 +22,10 @@ interface ValidationRecommendationInput {
   chart: ChartValidationSignals;
   research: PreviousComebackResearchSignals;
   effectiveContext: ValidationEffectiveContext;
+  // Optional: artist momentum score from Artist/Group table
+  // (not available in the base request; injected by the Airtable automation
+  //  via the effective-context or as a separate field)
+  momentumScore?: number | null;
 }
 
 function addHours(timestamp: string, hours: number): string {
@@ -178,6 +186,15 @@ export function buildValidationRecommendation(
         signals.research.previousComebackFirstWeekSales !== null ||
         signals.research.perplexityHistoricalContextScore > 0;
 
+  // ── Age-aware weighted scoring (threshold calibration) ─────────────────
+  // Computes a weighted composite score that adjusts momentum/velocity emphasis
+  // based on how many days the item has been tracked. New items (< 7 days)
+  // get 70% momentum weight (since velocity data is sparse), while established
+  // items get 70% velocity weight (since sales history is reliable).
+  const weightedScore = shouldApplyAgeAwareCalibration(request)
+    ? computeWeightedValidationScore(request, signals.momentumScore)
+    : null;
+
   let latestAiRecommendation = 'Continue watching until stronger market signal appears.';
   let latestAiConfidence: 'High' | 'Medium' | 'Low' = 'Medium';
   let monitoringNotes = `Baseline recommendation generated from current ${signals.effectiveContext.mode} validation state for ${subjectLabel}.`;
@@ -254,6 +271,16 @@ export function buildValidationRecommendation(
     monitoringNotes += ` Historical context (${signals.research.confidence}, score ${signals.research.perplexityHistoricalContextScore}/20): ${signals.research.historicalContextNotes}`;
   }
 
+  // Append weighted scoring summary to monitoring notes if available
+  if (weightedScore) {
+    monitoringNotes += `\nAge-weighted score: ${weightedScore.compositeScore}/100 (${weightedScore.classification}). ` +
+      `Item type: ${weightedScore.isNewItem ? 'new (<7 days)' : 'established (>=7 days)'}. ` +
+      `Weights: momentum ${Math.round(weightedScore.weights.momentum * 100)}%, ` +
+      `velocity ${Math.round(weightedScore.weights.velocity * 100)}%. ` +
+      `Effective thresholds — momentum BUY/Watch: ${weightedScore.effectiveThresholds.momentumBuy}/${weightedScore.effectiveThresholds.momentumWatch}, ` +
+      `velocity BUY/Watch: ${weightedScore.effectiveThresholds.velocityBuy}/${weightedScore.effectiveThresholds.velocityWatch}.`;
+  }
+
   return {
     buyDecision: request.validation.buyDecision,
     automationStatus: shouldAutoTrack ? 'Watching' : 'Paused',
@@ -263,5 +290,7 @@ export function buildValidationRecommendation(
     latestAiRecommendation,
     latestAiConfidence,
     monitoringNotes,
+    // Weighted scoring metadata (used by downstream Airtable formulas)
+    weightedValidationScore: weightedScore ?? undefined,
   };
 }

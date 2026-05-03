@@ -70,6 +70,9 @@ export interface ValidationCurrentMetrics {
   day4Sold: number | null;
   day5Sold: number | null;
   daysTracked: number | null;
+  // Artist momentum score from Artist/Group table (0-100+)
+  // Used for age-aware weighted threshold calibration
+  artistMomentumScore?: number | null;
 }
 
 export interface ValidationQueryContext {

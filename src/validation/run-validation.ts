@@ -545,6 +545,8 @@ export async function runValidation(
       chart,
       research,
       effectiveContext,
+      // Artist momentum score from Artist/Group table — passed via currentMetrics
+      momentumScore: effectiveRequest.validation.currentMetrics.artistMomentumScore ?? null,
     });
     const requestQueryResolution = buildProviderQueryResolutionDebug(
       effectiveRequest,
