@@ -146,9 +146,7 @@ export class TradingApiClient {
         serviceOption.ShippingServiceID = options.ShippingServiceID;
       }
       if (options.ShippingServiceCost) {
-        serviceOption.ShippingServiceCost = this.transformPrice(
-          options.ShippingServiceCost as any
-        );
+        serviceOption.ShippingServiceCost = this.transformPrice(options.ShippingServiceCost as any);
       }
       if (options.ShippingType) {
         serviceOption.ShippingType = options.ShippingType;
@@ -233,7 +231,7 @@ export class TradingApiClient {
    *   <NameValueList><Name>Brand</Name><Value>Nike</Value></NameValueList>
    * </ItemSpecifics>
    */
-  private transformItemSpecifics(specifics: Array<{ name: string; value: string | string[] }>): any {
+  private transformItemSpecifics(specifics: { name: string; value: string | string[] }[]): any {
     if (!Array.isArray(specifics)) return specifics;
 
     return specifics.map((spec) => ({
@@ -254,7 +252,9 @@ export class TradingApiClient {
     // Transform Item field for proper XML serialization
     const transformedParams: Record<string, unknown> = { ...params };
     if (transformedParams.Item && typeof transformedParams.Item === 'object') {
-      transformedParams.Item = this.transformItemForXML(transformedParams.Item as Record<string, unknown>);
+      transformedParams.Item = this.transformItemForXML(
+        transformedParams.Item as Record<string, unknown>
+      );
     }
 
     const xmlObj: Record<string, unknown> = {};

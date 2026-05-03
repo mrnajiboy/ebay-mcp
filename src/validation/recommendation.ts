@@ -12,6 +12,7 @@ import type {
 import {
   computeWeightedValidationScore,
   shouldApplyAgeAwareCalibration,
+  type WeightedScoreResult,
 } from './threshold-calibration.js';
 
 interface ValidationRecommendationInput {
@@ -103,6 +104,7 @@ export function buildValidationRecommendation(
   latestAiRecommendation: string;
   latestAiConfidence: 'High' | 'Medium' | 'Low';
   monitoringNotes: string;
+  weightedValidationScore?: WeightedScoreResult;
 } {
   const dDay = request.validation.dDay;
   const baseCadence: TrackingCadence =
@@ -273,7 +275,8 @@ export function buildValidationRecommendation(
 
   // Append weighted scoring summary to monitoring notes if available
   if (weightedScore) {
-    monitoringNotes += `\nAge-weighted score: ${weightedScore.compositeScore}/100 (${weightedScore.classification}). ` +
+    monitoringNotes +=
+      `\nAge-weighted score: ${weightedScore.compositeScore}/100 (${weightedScore.classification}). ` +
       `Item type: ${weightedScore.isNewItem ? 'new (<7 days)' : 'established (>=7 days)'}. ` +
       `Weights: momentum ${Math.round(weightedScore.weights.momentum * 100)}%, ` +
       `velocity ${Math.round(weightedScore.weights.velocity * 100)}%. ` +

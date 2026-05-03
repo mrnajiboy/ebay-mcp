@@ -1,7 +1,7 @@
 ---
 id: TASK-MCP.1
 title: Fix ebay_create_listing XML generation
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-03'
 updated_date: '2026-05-03'

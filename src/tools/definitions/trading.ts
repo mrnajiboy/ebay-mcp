@@ -22,9 +22,11 @@ const ItemSpecificsSchema = z.array(
 const TradingItemSchema = z.object({
   // Required fields
   Title: z.string().describe('Item title (max 80 characters)'),
-  PrimaryCategory: z.object({
-    CategoryID: z.string().describe('eBay category ID, e.g., "15032"'),
-  }).describe('Primary category for the listing'),
+  PrimaryCategory: z
+    .object({
+      CategoryID: z.string().describe('eBay category ID, e.g., "15032"'),
+    })
+    .describe('Primary category for the listing'),
   StartPrice: PriceWithCurrencySchema.describe('Starting price or fixed price'),
   ConditionID: z.union([z.number(), z.string()]).describe('eBay condition ID, e.g., 1000 for New'),
   Country: z.string().describe('ISO country code, e.g., US, GB, DE'),
@@ -39,34 +41,48 @@ const TradingItemSchema = z.object({
   Subtitle: z.string().optional().describe('Item subtitle (max 35 characters)'),
   Description: z.string().optional().describe('HTML description of the item'),
   ItemSpecifics: ItemSpecificsSchema.optional().describe('Product specifics/attributes'),
-  PicturesDetails: z.object({
-    GalleryType: z.string().optional().describe('Gallery type, e.g., Plus, Summary'),
-    PictureURL: z.array(z.string()).describe('Array of image URLs'),
-  }).optional().describe('Picture details for the listing'),
-  ShippingDetails: z.object({
-    ShippingServiceOptions: z.object({
-      ShippingServicePriority: z.string().optional().describe('Shipping priority (1-9)'),
-      ShippingServiceID: z.string().describe('eBay shipping service ID'),
-      ShippingServiceCost: PriceWithCurrencySchema.describe('Shipping cost'),
-      ShippingType: z.string().describe('Shipping type: Flat, FlatPlusHandling, or Calculated'),
-    }).describe('Domestic shipping service options'),
-    InternationalShippingServiceOption: z.array(
-      z.object({
-        ShippingServicePriority: z.string().optional().describe('Shipping priority (1-9)'),
-        ShippingServiceID: z.string().describe('eBay shipping service ID'),
-        ShippingServiceCost: PriceWithCurrencySchema.describe('Shipping cost'),
-        ShippingType: z.string().describe('Shipping type'),
-        Country: z.array(z.string()).describe('Array of destination country codes'),
-      })
-    ).optional().describe('International shipping service options'),
-    HandlingTime: z.union([z.number(), z.string()]).optional().describe('Handling time in days'),
-  }).optional().describe('Shipping details for the listing'),
-  ReturnPolicy: z.object({
-    ReturnsAcceptedOption: z.string().describe('Returns accepted: Yes or No'),
-    ReturnsWithinOption: z.string().describe('Return window, e.g., Days30, Days60, Days90'),
-    Description: z.string().describe('Return policy description'),
-    RefundOption: z.string().optional().describe('Refund type: MoneyBack or Replacement'),
-  }).optional().describe('Return policy for the listing'),
+  PicturesDetails: z
+    .object({
+      GalleryType: z.string().optional().describe('Gallery type, e.g., Plus, Summary'),
+      PictureURL: z.array(z.string()).describe('Array of image URLs'),
+    })
+    .optional()
+    .describe('Picture details for the listing'),
+  ShippingDetails: z
+    .object({
+      ShippingServiceOptions: z
+        .object({
+          ShippingServicePriority: z.string().optional().describe('Shipping priority (1-9)'),
+          ShippingServiceID: z.string().describe('eBay shipping service ID'),
+          ShippingServiceCost: PriceWithCurrencySchema.describe('Shipping cost'),
+          ShippingType: z.string().describe('Shipping type: Flat, FlatPlusHandling, or Calculated'),
+        })
+        .describe('Domestic shipping service options'),
+      InternationalShippingServiceOption: z
+        .array(
+          z.object({
+            ShippingServicePriority: z.string().optional().describe('Shipping priority (1-9)'),
+            ShippingServiceID: z.string().describe('eBay shipping service ID'),
+            ShippingServiceCost: PriceWithCurrencySchema.describe('Shipping cost'),
+            ShippingType: z.string().describe('Shipping type'),
+            Country: z.array(z.string()).describe('Array of destination country codes'),
+          })
+        )
+        .optional()
+        .describe('International shipping service options'),
+      HandlingTime: z.union([z.number(), z.string()]).optional().describe('Handling time in days'),
+    })
+    .optional()
+    .describe('Shipping details for the listing'),
+  ReturnPolicy: z
+    .object({
+      ReturnsAcceptedOption: z.string().describe('Returns accepted: Yes or No'),
+      ReturnsWithinOption: z.string().describe('Return window, e.g., Days30, Days60, Days90'),
+      Description: z.string().describe('Return policy description'),
+      RefundOption: z.string().optional().describe('Refund type: MoneyBack or Replacement'),
+    })
+    .optional()
+    .describe('Return policy for the listing'),
   PaymentMethods: z.array(z.string()).optional().describe('Accepted payment methods'),
   ProxyItem: z.boolean().optional().describe('Whether this is a proxy item'),
 });
@@ -96,7 +112,9 @@ export const tradingTools: ToolDefinition[] = [
     description:
       'Create a new fixed-price listing.\n\nUses the Trading API (AddFixedPriceItem). Requires complete item details.\n\nRequired: User OAuth token.',
     inputSchema: {
-      item: TradingItemSchema.describe('Trading API item object with eBay-specific field structure.'),
+      item: TradingItemSchema.describe(
+        'Trading API item object with eBay-specific field structure.'
+      ),
     },
     annotations: { readOnlyHint: false },
   },

@@ -20,8 +20,8 @@ import type { ValidationRunRequest } from './types.js';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const NEW_ITEM_THRESHOLD_DAYS = 7;        // < 7 days = new item
-const WEIGHT_TRANSITION_END = 14;         // full transition completes at day 14
+const NEW_ITEM_THRESHOLD_DAYS = 7; // < 7 days = new item
+const WEIGHT_TRANSITION_END = 14; // full transition completes at day 14
 
 // Momentum thresholds (out of 100)
 const MOMENTUM_THRESHOLDS = {
@@ -96,9 +96,10 @@ export interface WeightedScoreResult {
  * Days 7-14: Linear transition from new → established weights
  * Days 14+:  30% momentum / 70% velocity (established item weights)
  */
-export function calculateAgeAwareWeights(
-  daysTracked: number | null
-): { weights: ScoringWeights; isNewItem: boolean } {
+export function calculateAgeAwareWeights(daysTracked: number | null): {
+  weights: ScoringWeights;
+  isNewItem: boolean;
+} {
   if (daysTracked === null || daysTracked < 0) {
     return {
       weights: { ...NEW_ITEM_WEIGHTS },
@@ -121,8 +122,10 @@ export function calculateAgeAwareWeights(
   }
 
   // Linear interpolation between NEW_ITEM_THRESHOLD_DAYS and WEIGHT_TRANSITION_END
-  const progress = (daysTracked - NEW_ITEM_THRESHOLD_DAYS) / (WEIGHT_TRANSITION_END - NEW_ITEM_THRESHOLD_DAYS);
-  const momentumWeight = NEW_ITEM_WEIGHTS.momentum +
+  const progress =
+    (daysTracked - NEW_ITEM_THRESHOLD_DAYS) / (WEIGHT_TRANSITION_END - NEW_ITEM_THRESHOLD_DAYS);
+  const momentumWeight =
+    NEW_ITEM_WEIGHTS.momentum +
     (ESTABLISHED_ITEM_WEIGHTS.momentum - NEW_ITEM_WEIGHTS.momentum) * progress;
   const velocityWeight = 1 - momentumWeight;
 
@@ -147,9 +150,7 @@ export function calculateAgeAwareWeights(
  *
  * This gives ~25% leeway on the dominant signal while keeping the threshold meaningful.
  */
-export function calculateEffectiveThresholds(
-  weights: ScoringWeights
-): EffectiveThresholds {
+export function calculateEffectiveThresholds(weights: ScoringWeights): EffectiveThresholds {
   const momentumScale = 1 - weights.momentum + weights.momentum * 0.5;
   const velocityScale = 1 - weights.velocity + weights.velocity * 0.5;
 
@@ -193,7 +194,7 @@ function classifyVelocity(
  */
 function extractMomentumScore(request: ValidationRunRequest): number | null {
   // Check if currentMetrics has a momentum field (may be added by Airtable formula)
-  const metrics = request.validation.currentMetrics;
+  const _metrics = request.validation.currentMetrics;
 
   // Check artist-tier or momentum from the request
   // The momentum score comes from Artist/Group table, not directly in currentMetrics
@@ -220,9 +221,12 @@ function extractVelocityScore(request: ValidationRunRequest): number | null {
  */
 function classificationToScore(classification: 'BUY' | 'WATCH' | 'SKIP'): number {
   switch (classification) {
-    case 'BUY': return 80;
-    case 'WATCH': return 50;
-    case 'SKIP': return 20;
+    case 'BUY':
+      return 80;
+    case 'WATCH':
+      return 50;
+    case 'SKIP':
+      return 20;
   }
 }
 
@@ -276,27 +280,23 @@ export function computeWeightedValidationScore(
   const reasoning: string[] = [];
   reasoning.push(
     `Item age: ${daysTracked !== null ? `${daysTracked} days` : 'unknown'}, ` +
-    `type: ${isNewItem ? 'new' : 'established'}`
+      `type: ${isNewItem ? 'new' : 'established'}`
   );
   reasoning.push(
     `Weights: momentum ${Math.round(weights.momentum * 100)}%, ` +
-    `velocity ${Math.round(weights.velocity * 100)}%`
+      `velocity ${Math.round(weights.velocity * 100)}%`
   );
   reasoning.push(
     `Effective thresholds — momentum BUY/Watch: ${thresholds.momentumBuy}/${thresholds.momentumWatch}, ` +
-    `velocity BUY/Watch: ${thresholds.velocityBuy}/${thresholds.velocityWatch}`
+      `velocity BUY/Watch: ${thresholds.velocityBuy}/${thresholds.velocityWatch}`
   );
   if (momentumScore !== null) {
-    reasoning.push(
-      `Momentum: ${momentumScore}/100 → ${momentumClass}`
-    );
+    reasoning.push(`Momentum: ${momentumScore}/100 → ${momentumClass}`);
   } else {
     reasoning.push('Momentum: no data → treated as SKIP (neutral for new items)');
   }
   if (velocityScore !== null) {
-    reasoning.push(
-      `Velocity: ${velocityScore} units sold (day1-day5) → ${velocityClass}`
-    );
+    reasoning.push(`Velocity: ${velocityScore} units sold (day1-day5) → ${velocityClass}`);
   } else {
     reasoning.push('Velocity: no sales data → treated as neutral (WATCH)');
   }

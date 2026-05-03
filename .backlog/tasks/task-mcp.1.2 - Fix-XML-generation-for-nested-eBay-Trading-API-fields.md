@@ -1,7 +1,7 @@
 ---
 id: TASK-MCP.1.2
 title: Fix XML generation for nested eBay Trading API fields
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-03'
 updated_date: '2026-05-03'
