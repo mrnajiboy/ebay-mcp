@@ -32,7 +32,11 @@ const TradingItemSchema = z.object({
   Country: z.string().describe('ISO country code, e.g., US, GB, DE'),
   Currency: z.string().optional().describe('Currency code, e.g., USD, EUR, GBP'),
   DispatchTimeMax: z.union([z.number(), z.string()]).describe('Max dispatch time in days'),
-  ListingDuration: z.string().describe('Listing duration — use Days_30 (recommended), Days_7, Days_10, Days_14, Days_21, Days_30, Days_60, Days_90. GMS/GN may not be available for all accounts.'),
+  ListingDuration: z
+    .string()
+    .describe(
+      'Listing duration — use Days_30 (recommended), Days_7, Days_10, Days_14, Days_21, Days_30, Days_60, Days_90. GMS/GN may not be available for all accounts.'
+    ),
   ListingType: z.literal('FixedPriceItem').describe('Must be "FixedPriceItem"'),
   Quantity: z.union([z.number(), z.string()]).describe('Number of items available'),
   SKU: z.string().describe('Stock keeping unit / inventory identifier'),
@@ -76,8 +80,12 @@ const TradingItemSchema = z.object({
     .describe('Shipping details for the listing'),
   ReturnPolicy: z
     .object({
-      ReturnsAcceptedOption: z.string().describe('Returns accepted: ReturnsAccepted or ReturnsNotAccepted'),
-      ReturnsWithinOption: z.string().describe('Return window: Days_30, Days_60, Days_90 (with underscore)'),
+      ReturnsAcceptedOption: z
+        .string()
+        .describe('Returns accepted: ReturnsAccepted or ReturnsNotAccepted'),
+      ReturnsWithinOption: z
+        .string()
+        .describe('Return window: Days_30, Days_60, Days_90 (with underscore)'),
       Description: z.string().describe('Return policy description'),
       RefundOption: z.string().optional().describe('Refund type: MoneyBack or Replacement'),
     })
@@ -110,7 +118,7 @@ export const tradingTools: ToolDefinition[] = [
   {
     name: 'ebay_create_listing',
     description:
-      'Create a new fixed-price listing.\n\nUses the Trading API (AddFixedPriceItem). Requires complete item details.\n\nRequired: User OAuth token.',
+      'Create a new fixed-price listing.\\n\\nUses the Trading API (AddFixedPriceItem). Requires complete item details.\\n\\nIMPORTANT: Photos are REQUIRED and MUST be hosted on eBay servers. External URLs (even HTTPS) are rejected. To get eBay-hosted photo URLs:\\n1. Upload photos via eBay Seller Hub UI\\n2. Use the eBay Image Hosting API (if enabled for your app)\\n3. Reference existing eBay-hosted URLs from previous listings\\n\\nRequired: User OAuth token.',
     inputSchema: {
       item: TradingItemSchema.describe(
         'Trading API item object with eBay-specific field structure.'

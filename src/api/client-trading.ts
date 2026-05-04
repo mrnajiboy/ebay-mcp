@@ -80,9 +80,9 @@ export class TradingApiClient {
           transformed[key] = value;
           break;
 
-        case 'ListingDuration':
+        case 'ListingDuration': {
           // Normalize listing duration - map invalid/common values to valid ones
-          const duration = String(value);
+          const duration = value as string;
           if (duration === 'GMS' || duration === 'GN') {
             // GMS (Good Month) and GN (Good 'til Cancelled) may not be available
             transformed[key] = 'Days_30';
@@ -90,6 +90,7 @@ export class TradingApiClient {
             transformed[key] = value;
           }
           break;
+        }
 
         case 'ShippingDetails':
           transformed[key] = this.transformShippingDetails(value as any);
@@ -218,7 +219,7 @@ export class TradingApiClient {
     const transformed: Record<string, unknown> = {};
 
     if (rp.ReturnsAcceptedOption !== undefined) {
-      const val = String(rp.ReturnsAcceptedOption);
+      const val = rp.ReturnsAcceptedOption as string;
       // Map user-friendly values to eBay enum values
       if (val.toLowerCase() === 'yes') {
         transformed.ReturnsAcceptedOption = 'ReturnsAccepted';
@@ -229,7 +230,7 @@ export class TradingApiClient {
       }
     }
     if (rp.ReturnsWithinOption !== undefined) {
-      const val = String(rp.ReturnsWithinOption);
+      const val = rp.ReturnsWithinOption as string;
       // Map user-friendly values to eBay enum values (Days30 → Days_30)
       transformed.ReturnsWithinOption = val.replace(/^Days(\d+)$/, 'Days_$1');
     }
