@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.3.1](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v4.3.0...ebay-mcp-remote-edition-v4.3.1) (2026-05-04)
+
+
+### Bug Fixes
+
+* linting issues ([336fb5d](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/336fb5d9f28c223569930d69313bc8044ef5bf15))
+* major errors ([afa40fd](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/afa40fd672b15fd71b5d05b6babb096b59d8745f))
+* restored package-lock ([0e00f70](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/0e00f70a5d691a6e7399f8ca22df1c32a9d041af))
+
+
+### Dependencies
+
+* regress typescript version for compatibility ([636e9c9](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/636e9c9538b663c8d61371dc6a80d2df5b9351e4))
+
 ## [4.3.0](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v4.2.1...ebay-mcp-remote-edition-v4.3.0) (2026-05-04)
 
 
