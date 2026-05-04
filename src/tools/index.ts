@@ -64,6 +64,42 @@ import {
 export type { ToolDefinition };
 
 /**
+ * Normalize enum values that LLMs often send in wrong formats
+ * (lowercase, plural, hyphenated) to eBay API uppercase snake_case format
+ */
+function normalizeEnumValue(value: string): string {
+  return value
+    .toUpperCase()
+    .replace(/-/g, '_')
+    .replace(/S$/, ''); // Remove trailing S (e.g., "DAYS" -> "DAY")
+}
+
+/**
+ * Normalize time duration unit values
+ */
+function normalizeTimeUnit(value: string): string {
+  const normalized = value.toUpperCase().replace(/-/g, '_');
+  const timeUnitMap: Record<string, string> = {
+    DAY: 'DAY',
+    DAYS: 'DAY',
+    BUSINESS_DAY: 'BUSINESS_DAY',
+    BUSINESS_DAYS: 'BUSINESS_DAY',
+    CALENDAR_DAY: 'CALENDAR_DAY',
+    HOUR: 'HOUR',
+    HOURS: 'HOUR',
+    MINUTE: 'MINUTE',
+    MINUTES: 'MINUTE',
+    SECOND: 'SECOND',
+    SECONDS: 'SECOND',
+    MONTH: 'MONTH',
+    MONTHS: 'MONTH',
+    YEAR: 'YEAR',
+    YEARS: 'YEAR',
+  };
+  return timeUnitMap[normalized] || normalized;
+}
+
+/**
  * Get all tool definitions for the MCP server
  */
 export function getToolDefinitions(): ToolDefinition[] {
@@ -573,8 +609,17 @@ export async function executeTool(
       return await api.account.getReturnPolicies(args.marketplaceId as string);
 
     // Fulfillment Policy CRUD
-    case 'ebay_create_fulfillment_policy':
-      return await api.account.createFulfillmentPolicy(args.policy as Record<string, unknown>);
+    case 'ebay_create_fulfillment_policy': {
+      // Normalize handlingTime.unit to valid enum values (LLMs often send lowercase/plural)
+      const policy = args.policy as Record<string, unknown>;
+      if (policy && policy.handlingTime && typeof policy.handlingTime === 'object') {
+        const ht = policy.handlingTime as Record<string, unknown>;
+        if (typeof ht.unit === 'string') {
+          ht.unit = normalizeTimeUnit(ht.unit);
+        }
+      }
+      return await api.account.createFulfillmentPolicy(policy);
+    }
     case 'ebay_get_fulfillment_policy':
       return await api.account.getFulfillmentPolicy(args.fulfillmentPolicyId as string);
     case 'ebay_get_fulfillment_policy_by_name':
@@ -711,11 +756,24 @@ export async function executeTool(
       return await api.inventory.getInventoryItems(args.limit as number, args.offset as number);
     case 'ebay_get_inventory_item':
       return await api.inventory.getInventoryItem(args.sku as string);
-    case 'ebay_create_inventory_item':
+    case 'ebay_create_inventory_item': {
+      // Handle both patterns: nested inventoryItem OR flat fields
+      let inventoryItemData = args.inventoryItem as Record<string, unknown> | undefined;
+      if (!inventoryItemData || typeof inventoryItemData !== 'object') {
+        // Merge fallback fields into inventoryItem
+        const fallbackFields = ['availability', 'condition', 'conditionDescription', 'product', 'packageWeightAndSize'];
+        inventoryItemData = {};
+        for (const field of fallbackFields) {
+          if (args[field] !== undefined) {
+            inventoryItemData[field] = args[field];
+          }
+        }
+      }
       return await api.inventory.createOrReplaceInventoryItem(
         args.sku as string,
-        args.inventoryItem as Record<string, unknown>
+        inventoryItemData as Record<string, unknown>
       );
+    }
     case 'ebay_delete_inventory_item':
       return await api.inventory.deleteInventoryItem(args.sku as string);
 
@@ -782,13 +840,23 @@ export async function executeTool(
       );
     case 'ebay_get_offer':
       return await api.inventory.getOffer(args.offerId as string);
-    case 'ebay_create_offer':
-      return await api.inventory.createOffer(args.offer as Record<string, unknown>);
-    case 'ebay_update_offer':
+    case 'ebay_create_offer': {
+      const offer = args.offer as Record<string, unknown>;
+      if (offer && offer.format) {
+        offer.format = normalizeEnumValue(offer.format as string);
+      }
+      return await api.inventory.createOffer(offer);
+    }
+    case 'ebay_update_offer': {
+      const offer = args.offer as Record<string, unknown>;
+      if (offer && offer.format) {
+        offer.format = normalizeEnumValue(offer.format as string);
+      }
       return await api.inventory.updateOffer(
         args.offerId as string,
-        args.offer as Record<string, unknown>
+        offer
       );
+    }
     case 'ebay_delete_offer':
       return await api.inventory.deleteOffer(args.offerId as string);
     case 'ebay_publish_offer':

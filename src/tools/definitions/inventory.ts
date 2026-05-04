@@ -1,4 +1,4 @@
-import { MarketplaceId } from '@/types/ebay-enums.js';
+import { MarketplaceId, Condition } from '@/types/ebay-enums.js';
 import { z } from 'zod';
 import { zodToJsonSchema } from '@/utils/zod-compat.js';
 import {
@@ -70,10 +70,16 @@ export const inventoryTools: ToolDefinition[] = [
   {
     name: 'ebay_create_inventory_item',
     description:
-      'Create or replace an inventory item.\n\nRequired OAuth Scope: sell.inventory\nMinimum Scope: https://api.ebay.com/oauth/api_scope/sell.inventory',
+      'Create or replace an inventory item.\\n\\nRequired OAuth Scope: sell.inventory\\nMinimum Scope: https://api.ebay.com/oauth/api_scope/sell.inventory',
     inputSchema: {
       sku: z.string().describe('The seller-defined SKU'),
-      inventoryItem: inventoryItemSchema.describe('Inventory item details'),
+      inventoryItem: inventoryItemSchema.describe('Inventory item details (availability, condition, etc.)'),
+      // Accept individual inventory fields as top-level fallback for LLMs that don't wrap in inventoryItem
+      availability: z.any().optional().describe('[Fallback] Availability details if inventoryItem not provided'),
+      condition: z.nativeEnum(Condition).optional().describe('[Fallback] Item condition if inventoryItem not provided'),
+      conditionDescription: z.string().optional().describe('[Fallback] Condition description if inventoryItem not provided'),
+      product: z.any().optional().describe('[Fallback] Product details if inventoryItem not provided'),
+      packageWeightAndSize: z.any().optional().describe('[Fallback] Package weight/size if inventoryItem not provided'),
     },
     outputSchema: zodToJsonSchema(createInventoryItemOutputSchema, {
       name: 'CreateInventoryItemResponse',

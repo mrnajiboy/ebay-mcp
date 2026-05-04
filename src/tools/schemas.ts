@@ -36,7 +36,7 @@ import {
 
 export const timeDurationSchema = z
   .object({
-    unit: z.nativeEnum(TimeDurationUnit),
+    unit: z.string().describe('Time unit: DAY, BUSINESS_DAY, CALENDAR_DAY, HOUR, MINUTE, SECOND, MONTH, YEAR'),
     value: z.number(),
   })
   .passthrough();
@@ -280,7 +280,7 @@ export const offerSchema = z
   .object({
     sku: z.string(),
     marketplaceId: z.string(),
-    format: z.nativeEnum(FormatType),
+    format: z.string().describe('Listing format: FIXED_PRICE (recommended) or AUCTION'),
     availableQuantity: z.number().optional(),
     categoryId: z.string().optional(),
     listingDescription: z.string().optional(),
