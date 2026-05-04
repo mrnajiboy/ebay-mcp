@@ -52,25 +52,21 @@ export class MediaApi {
         Object.assign(body, { description });
       }
 
-      const createResponse = await axios.post(
-        `${baseUrl}${this.basePath}/image/from_url`,
-        body,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation',
-          },
-          timeout: 30000,
-        }
-      );
+      const createResponse = await axios.post(`${baseUrl}${this.basePath}/image/from_url`, body, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=representation',
+        },
+        timeout: 30000,
+      });
 
       // Extract image ID from response body or Location header
       const responseData = createResponse.data as Record<string, unknown>;
-      let imageId =
+      const imageId =
         typeof responseData.id === 'string'
           ? responseData.id
-          : createResponse.headers['location']?.split('/').pop();
+          : createResponse.headers.location?.split('/').pop();
 
       if (!imageId) {
         throw new Error('No image ID returned from create endpoint');
@@ -84,14 +80,13 @@ export class MediaApi {
         const data = error.response?.data;
         const message =
           typeof data === 'object' && data !== null && 'errors' in data
-            ? ((data as any).errors as any[])?.[0]?.longMessage ||
-              ((data as any).errors as any[])?.[0]?.message ||
+            ? (data.errors as any[])?.[0]?.longMessage ||
+              (data.errors as any[])?.[0]?.message ||
               error.message
             : error.message;
-        throw new Error(
-          `Failed to upload image from URL (status ${status}): ${message}`,
-          { cause: error }
-        );
+        throw new Error(`Failed to upload image from URL (status ${status}): ${message}`, {
+          cause: error,
+        });
       }
       throw new Error(
         `Failed to upload image from URL: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -117,8 +112,8 @@ export class MediaApi {
     try {
       const response = await axios.get(`${baseUrl}${this.basePath}/image/${imageId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
         },
         timeout: 30000,
       });
@@ -127,7 +122,7 @@ export class MediaApi {
       return {
         id: data.id as string,
         imageUrl: data.imageUrl as string,
-        description: typeof data.description === 'string' ? (data.description as string) : undefined,
+        description: typeof data.description === 'string' ? data.description : undefined,
       };
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -135,14 +130,13 @@ export class MediaApi {
         const data = error.response?.data;
         const message =
           typeof data === 'object' && data !== null && 'errors' in data
-            ? ((data as any).errors as any[])?.[0]?.longMessage ||
-              ((data as any).errors as any[])?.[0]?.message ||
+            ? (data.errors as any[])?.[0]?.longMessage ||
+              (data.errors as any[])?.[0]?.message ||
               error.message
             : error.message;
-        throw new Error(
-          `Failed to get image details (status ${status}): ${message}`,
-          { cause: error }
-        );
+        throw new Error(`Failed to get image details (status ${status}): ${message}`, {
+          cause: error,
+        });
       }
       throw new Error(
         `Failed to get image details: ${error instanceof Error ? error.message : 'Unknown error'}`,

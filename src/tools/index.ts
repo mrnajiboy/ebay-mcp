@@ -1976,20 +1976,30 @@ export async function executeTool(
     case 'ebay_upload_images': {
       const imageUrls = args.imageUrls as string[];
       const description = args.description as string | undefined;
-      const results: Array<{ success: boolean; id?: string; imageUrl?: string; error?: string; sourceUrl?: string }> = [];
+      const results: {
+        success: boolean;
+        id?: string;
+        imageUrl?: string;
+        error?: string;
+        sourceUrl?: string;
+      }[] = [];
 
       for (const imageUrl of imageUrls) {
         try {
           const result = await api.media.createImageFromUrl(imageUrl, description);
           results.push({ success: true, id: result.id, imageUrl: result.imageUrl });
         } catch (e) {
-          results.push({ success: false, error: e instanceof Error ? e.message : String(e), sourceUrl: imageUrl });
+          results.push({
+            success: false,
+            error: e instanceof Error ? e.message : String(e),
+            sourceUrl: imageUrl,
+          });
         }
       }
 
       return {
-        uploaded: results.filter(r => r.success).length,
-        failed: results.filter(r => !r.success).length,
+        uploaded: results.filter((r) => r.success).length,
+        failed: results.filter((r) => !r.success).length,
         results,
       };
     }
