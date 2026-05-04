@@ -771,7 +771,7 @@ export async function executeTool(
       }
       return await api.inventory.createOrReplaceInventoryItem(
         args.sku as string,
-        inventoryItemData as Record<string, unknown>
+        inventoryItemData
       );
     }
     case 'ebay_delete_inventory_item':
