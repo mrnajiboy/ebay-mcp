@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.1](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v4.2.0...ebay-mcp-remote-edition-v4.2.1) (2026-05-04)
+
+
+### Bug Fixes
+
+* create listing bug and agents.md ([b9185d1](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/b9185d1a97b68db67b24638dd0e124e9bd992c81))
+* create-listing and linting error ([3e18b64](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/3e18b64159f171ac853a8157aaee6b89ad3e2b74))
+* eBay create-listing XML transform hardening ([63c5279](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/63c52798427742f84396d026c83d5e8888e1a46c))
+* eslint fixes for client-trading XML transform ([9cfc599](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/9cfc599ce5e98d44f53ebc77ad1f100d54a23fb6))
+* public base url logic ([c172231](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/c172231ed6e220f809769b0934c684aa772fa882))
+* wrap ItemSpecifics in NameValueList for eBay Trading API XML ([58839cb](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/58839cb2198c7a9cf316aa5762f93d786a00e854))
+
+
+### Documentation
+
+* update API status snapshot [skip ci] ([2153556](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/2153556fe60b50bd49f465ae21d2fae8df0047bf))
+* update API status snapshot [skip ci] ([fc2dba3](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/fc2dba3af1b1fda7abb1a37c8b2a006fe9930edd))
+
 ## [4.2.0](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v4.1.0...ebay-mcp-remote-edition-v4.2.0) (2026-04-14)
 
 
