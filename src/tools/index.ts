@@ -1,5 +1,5 @@
 import type { EbaySellerApi } from '@/api/index.js';
-import { getOAuthAuthorizationUrl, validateScopes } from '@/config/environment.js';
+import { getOAuthAuthorizationUrl, validateScopes, getEbayConfig, getConfiguredEnvironment } from '@/config/environment.js';
 import {
   accountTools,
   analyticsTools,
@@ -443,12 +443,14 @@ export async function executeTool(
     }
 
     case 'ebay_display_credentials': {
-      // Get configuration from environment
-      const clientId = process.env.EBAY_CLIENT_ID ?? '';
-      const clientSecret = process.env.EBAY_CLIENT_SECRET ?? '';
-      const environment = process.env.EBAY_ENVIRONMENT ?? 'sandbox';
-      const redirectUri = process.env.EBAY_REDIRECT_URI ?? '';
-      const refreshToken = process.env.EBAY_USER_REFRESH_TOKEN ?? '';
+      // Use getEbayConfig for proper resolution (supports secret config file,
+      // per-environment overrides like EBAY_PRODUCTION_CLIENT_ID, etc.)
+      const environment = getConfiguredEnvironment();
+      const config = getEbayConfig(environment);
+      const clientId = config.clientId;
+      const clientSecret = config.clientSecret;
+      const redirectUri = config.redirectUri;
+      const refreshToken = config.refreshToken;
 
       // Get current token info from API
       const tokenInfo = api.getTokenInfo();
