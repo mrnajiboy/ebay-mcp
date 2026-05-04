@@ -1,5 +1,10 @@
 import type { EbaySellerApi } from '@/api/index.js';
-import { getOAuthAuthorizationUrl, validateScopes, getEbayConfig, getConfiguredEnvironment } from '@/config/environment.js';
+import {
+  getOAuthAuthorizationUrl,
+  validateScopes,
+  getEbayConfig,
+  getConfiguredEnvironment,
+} from '@/config/environment.js';
 import {
   accountTools,
   analyticsTools,
