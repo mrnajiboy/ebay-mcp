@@ -234,10 +234,22 @@ export class TradingApiClient {
   private transformItemSpecifics(specifics: { name: string; value: string | string[] }[]): any {
     if (!Array.isArray(specifics)) return specifics;
 
-    return specifics.map((spec) => ({
-      Name: spec.name,
-      Value: Array.isArray(spec.value) ? spec.value : [spec.value],
-    }));
+    // eBay expects: <ItemSpecifics><NameValueList><Name>...</Name><Value>...</Value></NameValueList>...</ItemSpecifics>
+    // fast-xml-parser XMLBuilder: when ItemSpecifics is in isArray list, it creates one <ItemSpecifics> per array item.
+    // So we wrap each spec in { NameValueList: { Name, Value } } and return as a single object.
+    // The caller (transformItemForXML) sets transformed['ItemSpecifics'] = this result.
+    // To get a single <ItemSpecifics> with multiple <NameValueList>, we need to NOT return an array
+    // but instead return the NameValueList array directly, and let the XMLBuilder handle it.
+    // Actually: the cleanest approach is to return the array of NameValueList objects,
+    // and since transformItemForXML assigns it to transformed['ItemSpecifics'], and
+    // ItemSpecifics IS in the isArray list, XMLBuilder will emit multiple <ItemSpecifics>.
+    // FIX: Return a single object with NameValueList array inside.
+    return {
+      NameValueList: specifics.map((spec) => ({
+        Name: spec.name,
+        Value: Array.isArray(spec.value) ? spec.value : [spec.value],
+      })),
+    };
   }
 
   async execute(
