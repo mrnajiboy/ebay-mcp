@@ -76,6 +76,21 @@ export class TradingApiClient {
           transformed[key] = this.transformPrice(value as any);
           break;
 
+        case 'Currency':
+          transformed[key] = value;
+          break;
+
+        case 'ListingDuration':
+          // Normalize listing duration - map invalid/common values to valid ones
+          const duration = String(value);
+          if (duration === 'GMS' || duration === 'GN') {
+            // GMS (Good Month) and GN (Good 'til Cancelled) may not be available
+            transformed[key] = 'Days_30';
+          } else {
+            transformed[key] = value;
+          }
+          break;
+
         case 'ShippingDetails':
           transformed[key] = this.transformShippingDetails(value as any);
           break;
@@ -104,6 +119,16 @@ export class TradingApiClient {
         default:
           transformed[key] = value;
           break;
+      }
+    }
+
+    // Ensure Currency is always present - extract from StartPrice if not provided
+    if (!transformed.Currency && item.StartPrice) {
+      const sp = item.StartPrice as { currencyID?: string };
+      if (typeof sp === 'object' && sp.currencyID) {
+        transformed.Currency = sp.currencyID;
+      } else {
+        transformed.Currency = 'USD';
       }
     }
 
@@ -187,15 +212,26 @@ export class TradingApiClient {
 
   /**
    * Transform ReturnPolicy into proper nested XML structure.
+   * Maps user-friendly values to eBay Trading API enum values.
    */
   private transformReturnPolicy(rp: Record<string, unknown>): Record<string, unknown> {
     const transformed: Record<string, unknown> = {};
 
     if (rp.ReturnsAcceptedOption !== undefined) {
-      transformed.ReturnsAcceptedOption = rp.ReturnsAcceptedOption;
+      const val = String(rp.ReturnsAcceptedOption);
+      // Map user-friendly values to eBay enum values
+      if (val.toLowerCase() === 'yes') {
+        transformed.ReturnsAcceptedOption = 'ReturnsAccepted';
+      } else if (val.toLowerCase() === 'no') {
+        transformed.ReturnsAcceptedOption = 'ReturnsNotAccepted';
+      } else {
+        transformed.ReturnsAcceptedOption = val;
+      }
     }
     if (rp.ReturnsWithinOption !== undefined) {
-      transformed.ReturnsWithinOption = rp.ReturnsWithinOption;
+      const val = String(rp.ReturnsWithinOption);
+      // Map user-friendly values to eBay enum values (Days30 → Days_30)
+      transformed.ReturnsWithinOption = val.replace(/^Days(\d+)$/, 'Days_$1');
     }
     if (rp.Description !== undefined) {
       transformed.Description = rp.Description;

@@ -32,7 +32,7 @@ const TradingItemSchema = z.object({
   Country: z.string().describe('ISO country code, e.g., US, GB, DE'),
   Currency: z.string().optional().describe('Currency code, e.g., USD, EUR, GBP'),
   DispatchTimeMax: z.union([z.number(), z.string()]).describe('Max dispatch time in days'),
-  ListingDuration: z.string().describe('Listing duration, e.g., GMS (Good Month), GN (Good Week)'),
+  ListingDuration: z.string().describe('Listing duration — use Days_30 (recommended), Days_7, Days_10, Days_14, Days_21, Days_30, Days_60, Days_90. GMS/GN may not be available for all accounts.'),
   ListingType: z.literal('FixedPriceItem').describe('Must be "FixedPriceItem"'),
   Quantity: z.union([z.number(), z.string()]).describe('Number of items available'),
   SKU: z.string().describe('Stock keeping unit / inventory identifier'),
@@ -76,8 +76,8 @@ const TradingItemSchema = z.object({
     .describe('Shipping details for the listing'),
   ReturnPolicy: z
     .object({
-      ReturnsAcceptedOption: z.string().describe('Returns accepted: Yes or No'),
-      ReturnsWithinOption: z.string().describe('Return window, e.g., Days30, Days60, Days90'),
+      ReturnsAcceptedOption: z.string().describe('Returns accepted: ReturnsAccepted or ReturnsNotAccepted'),
+      ReturnsWithinOption: z.string().describe('Return window: Days_30, Days_60, Days_90 (with underscore)'),
       Description: z.string().describe('Return policy description'),
       RefundOption: z.string().optional().describe('Refund type: MoneyBack or Replacement'),
     })
