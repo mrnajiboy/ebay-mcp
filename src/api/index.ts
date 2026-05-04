@@ -6,6 +6,7 @@ import { MessageApi } from '@/api/communication/message.js';
 import { NegotiationApi } from '@/api/communication/negotiation.js';
 import { NotificationApi } from '@/api/communication/notification.js';
 import { DeveloperApi } from '@/api/developer/developer.js';
+import { MediaApi } from '@/api/media/media.js';
 import { InventoryApi } from '@/api/listing-management/inventory.js';
 import { MetadataApi } from '@/api/listing-metadata/metadata.js';
 import { TaxonomyApi } from '@/api/listing-metadata/taxonomy.js';
@@ -43,6 +44,7 @@ export class EbaySellerApi {
   public translation: TranslationApi;
   public edelivery: EDeliveryApi;
   public developer: DeveloperApi;
+  public media: MediaApi;
   public trading: TradingApi;
 
   constructor(
@@ -72,6 +74,7 @@ export class EbaySellerApi {
     this.translation = new TranslationApi(this.client);
     this.edelivery = new EDeliveryApi(this.client);
     this.developer = new DeveloperApi(this.client);
+    this.media = new MediaApi(this.client);
     const tradingClient = new TradingApiClient(this.client);
     this.trading = new TradingApi(tradingClient);
   }
