@@ -79,7 +79,8 @@ export class TradingApi {
   }
 
   async createListing(item: Record<string, unknown>): Promise<Record<string, unknown>> {
-    return await this.client.execute('AddFixedPriceItem', { Item: item });
+    const transformed = this.client.transformItemForXML(item);
+    return await this.client.execute('AddFixedPriceItem', { Item: transformed });
   }
 
   async reviseListing(

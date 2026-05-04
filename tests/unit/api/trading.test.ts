@@ -4,10 +4,13 @@ import type { TradingApiClient } from '@/api/client-trading.js';
 
 describe('TradingApi', () => {
   let api: TradingApi;
-  let mockClient: { execute: ReturnType<typeof vi.fn> };
+  let mockClient: { execute: ReturnType<typeof vi.fn>; transformItemForXML: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    mockClient = { execute: vi.fn() };
+    mockClient = {
+      execute: vi.fn(),
+      transformItemForXML: vi.fn((item) => item), // passthrough mock
+    };
     api = new TradingApi(mockClient as unknown as TradingApiClient);
   });
 

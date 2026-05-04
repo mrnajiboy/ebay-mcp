@@ -57,7 +57,7 @@ export class TradingApiClient {
    * Handles nested objects like PrimaryCategory, ShippingDetails, ReturnPolicy,
    * PicturesDetails, and ItemSpecifics that require special XML structure.
    */
-  private transformItemForXML(item: Record<string, unknown>): Record<string, unknown> {
+  public transformItemForXML(item: Record<string, unknown>): Record<string, unknown> {
     const transformed: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(item)) {
