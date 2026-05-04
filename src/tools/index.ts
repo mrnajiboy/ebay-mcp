@@ -68,10 +68,7 @@ export type { ToolDefinition };
  * (lowercase, plural, hyphenated) to eBay API uppercase snake_case format
  */
 function normalizeEnumValue(value: string): string {
-  return value
-    .toUpperCase()
-    .replace(/-/g, '_')
-    .replace(/S$/, ''); // Remove trailing S (e.g., "DAYS" -> "DAY")
+  return value.toUpperCase().replace(/-/g, '_').replace(/S$/, ''); // Remove trailing S (e.g., "DAYS" -> "DAY")
 }
 
 /**
@@ -612,7 +609,7 @@ export async function executeTool(
     case 'ebay_create_fulfillment_policy': {
       // Normalize handlingTime.unit to valid enum values (LLMs often send lowercase/plural)
       const policy = args.policy as Record<string, unknown>;
-      if (policy && policy.handlingTime && typeof policy.handlingTime === 'object') {
+      if (policy?.handlingTime && typeof policy.handlingTime === 'object') {
         const ht = policy.handlingTime as Record<string, unknown>;
         if (typeof ht.unit === 'string') {
           ht.unit = normalizeTimeUnit(ht.unit);
@@ -761,7 +758,13 @@ export async function executeTool(
       let inventoryItemData = args.inventoryItem as Record<string, unknown> | undefined;
       if (!inventoryItemData || typeof inventoryItemData !== 'object') {
         // Merge fallback fields into inventoryItem
-        const fallbackFields = ['availability', 'condition', 'conditionDescription', 'product', 'packageWeightAndSize'];
+        const fallbackFields = [
+          'availability',
+          'condition',
+          'conditionDescription',
+          'product',
+          'packageWeightAndSize',
+        ];
         inventoryItemData = {};
         for (const field of fallbackFields) {
           if (args[field] !== undefined) {
@@ -842,20 +845,17 @@ export async function executeTool(
       return await api.inventory.getOffer(args.offerId as string);
     case 'ebay_create_offer': {
       const offer = args.offer as Record<string, unknown>;
-      if (offer && offer.format) {
+      if (offer?.format) {
         offer.format = normalizeEnumValue(offer.format as string);
       }
       return await api.inventory.createOffer(offer);
     }
     case 'ebay_update_offer': {
       const offer = args.offer as Record<string, unknown>;
-      if (offer && offer.format) {
+      if (offer?.format) {
         offer.format = normalizeEnumValue(offer.format as string);
       }
-      return await api.inventory.updateOffer(
-        args.offerId as string,
-        offer
-      );
+      return await api.inventory.updateOffer(args.offerId as string, offer);
     }
     case 'ebay_delete_offer':
       return await api.inventory.deleteOffer(args.offerId as string);
@@ -1598,9 +1598,7 @@ export async function executeTool(
     }
     case 'ebay_send_offer_to_interested_buyers': {
       const validated = sendOfferToInterestedBuyersSchema.parse(args);
-      return await api.negotiation.sendOfferToInterestedBuyers(
-        validated as Record<string, unknown>
-      );
+      return await api.negotiation.sendOfferToInterestedBuyers(validated);
     }
     case 'ebay_find_eligible_items': {
       const validated = findEligibleItemsSchema.parse(args);
@@ -1626,7 +1624,7 @@ export async function executeTool(
     }
     case 'ebay_send_message': {
       const validated = sendMessageSchema.parse(args);
-      return await api.message.sendMessage(validated as Record<string, unknown>);
+      return await api.message.sendMessage(validated);
     }
     case 'ebay_reply_to_message': {
       // This is a deprecated method that maps to sendMessage
@@ -1653,11 +1651,11 @@ export async function executeTool(
     }
     case 'ebay_bulk_update_conversation': {
       const validated = bulkUpdateConversationSchema.parse(args);
-      return await api.message.bulkUpdateConversation(validated as Record<string, unknown>);
+      return await api.message.bulkUpdateConversation(validated);
     }
     case 'ebay_update_conversation': {
       const validated = updateConversationSchema.parse(args);
-      return await api.message.updateConversation(validated as Record<string, unknown>);
+      return await api.message.updateConversation(validated);
     }
 
     // Communication - Notification
@@ -1667,7 +1665,7 @@ export async function executeTool(
     }
     case 'ebay_update_notification_config': {
       const validated = updateConfigSchema.parse(args);
-      return await api.notification.updateConfig(validated as Record<string, unknown>);
+      return await api.notification.updateConfig(validated);
     }
     case 'ebay_get_notification_destinations':
       return await api.notification.getDestinations(
@@ -1713,10 +1711,7 @@ export async function executeTool(
     }
     case 'ebay_update_notification_destination': {
       const validated = updateDestinationSchema.parse(args);
-      return await api.notification.updateDestination(
-        validated.destination_id,
-        validated as Record<string, unknown>
-      );
+      return await api.notification.updateDestination(validated.destination_id, validated);
     }
     case 'ebay_delete_notification_destination': {
       const validated = deleteDestinationSchema.parse(args);
@@ -1753,10 +1748,7 @@ export async function executeTool(
     }
     case 'ebay_update_notification_subscription': {
       const validated = updateSubscriptionSchema.parse(args);
-      return await api.notification.updateSubscription(
-        validated.subscription_id,
-        validated as Record<string, unknown>
-      );
+      return await api.notification.updateSubscription(validated.subscription_id, validated);
     }
     case 'ebay_delete_notification_subscription': {
       const validated = deleteSubscriptionSchema.parse(args);
@@ -1787,10 +1779,7 @@ export async function executeTool(
     }
     case 'ebay_create_notification_subscription_filter': {
       const validated = createSubscriptionFilterSchema.parse(args);
-      return await api.notification.createSubscriptionFilter(
-        validated.subscription_id,
-        validated as Record<string, unknown>
-      );
+      return await api.notification.createSubscriptionFilter(validated.subscription_id, validated);
     }
     case 'ebay_get_notification_subscription_filter': {
       const validated = getSubscriptionFilterSchema.parse(args);
@@ -1818,7 +1807,7 @@ export async function executeTool(
     }
     case 'ebay_leave_feedback_for_buyer': {
       const validated = leaveFeedbackForBuyerSchema.parse(args);
-      return await api.feedback.leaveFeedbackForBuyer(validated as Record<string, unknown>);
+      return await api.feedback.leaveFeedbackForBuyer(validated);
     }
     case 'ebay_get_feedback_summary': {
       getFeedbackRatingSummarySchema.parse(args); // Validate empty args

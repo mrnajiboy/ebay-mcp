@@ -389,7 +389,7 @@ class EndpointTester {
       'createFulfillmentPolicy',
       'POST /sell/account/v1/fulfillment_policy',
       async () => {
-        const result = await this.api.account.createFulfillmentPolicy(testFulfillmentPolicy as any);
+        const result = await this.api.account.createFulfillmentPolicy(testFulfillmentPolicy);
         createdFulfillmentPolicyId = result.fulfillmentPolicyId;
         return result;
       },
@@ -415,7 +415,7 @@ class EndpointTester {
           this.api.account.updateFulfillmentPolicy(createdFulfillmentPolicyId!, {
             ...testFulfillmentPolicy,
             name: `Updated Fulfillment ${Date.now()}`,
-          } as any),
+          }),
         { fulfillmentPolicyId: createdFulfillmentPolicyId }
       );
 
@@ -456,7 +456,7 @@ class EndpointTester {
       'createPaymentPolicy',
       'POST /sell/account/v1/payment_policy',
       async () => {
-        const result = await this.api.account.createPaymentPolicy(testPaymentPolicy as any);
+        const result = await this.api.account.createPaymentPolicy(testPaymentPolicy);
         createdPaymentPolicyId = result.paymentPolicyId;
         return result;
       },
@@ -480,7 +480,7 @@ class EndpointTester {
           this.api.account.updatePaymentPolicy(createdPaymentPolicyId!, {
             ...testPaymentPolicy,
             name: `Updated Payment ${Date.now()}`,
-          } as any),
+          }),
         { payment_policy_id: createdPaymentPolicyId }
       );
 
@@ -518,7 +518,7 @@ class EndpointTester {
       'createReturnPolicy',
       'POST /sell/account/v1/return_policy',
       async () => {
-        const result = await this.api.account.createReturnPolicy(testReturnPolicy as any);
+        const result = await this.api.account.createReturnPolicy(testReturnPolicy);
         createdReturnPolicyId = result.returnPolicyId;
         return result;
       },
@@ -542,7 +542,7 @@ class EndpointTester {
           this.api.account.updateReturnPolicy(createdReturnPolicyId!, {
             ...testReturnPolicy,
             name: `Updated Return ${Date.now()}`,
-          } as any),
+          }),
         { return_policy_id: createdReturnPolicyId }
       );
 
@@ -576,7 +576,7 @@ class EndpointTester {
       'createCustomPolicy',
       'POST /sell/account/v1/custom_policy',
       async () => {
-        const result = await this.api.account.createCustomPolicy(testCustomPolicy as any);
+        const result = await this.api.account.createCustomPolicy(testCustomPolicy);
         createdCustomPolicyId = result.customPolicyId;
         return result;
       },
@@ -599,7 +599,7 @@ class EndpointTester {
         () =>
           this.api.account.updateCustomPolicy(createdCustomPolicyId!, {
             ...testCustomPolicy,
-          } as any),
+          }),
         { custom_policy_id: createdCustomPolicyId }
       );
     }
@@ -621,7 +621,7 @@ class EndpointTester {
         this.api.account.createOrReplaceSalesTax('US', 'CA', {
           salesTaxPercentage: '7.25',
           shippingAndHandlingTaxed: false,
-        } as any),
+        }),
       { country_code: 'US', jurisdiction_id: 'CA', tax: '7.25%' }
     );
 
@@ -1024,7 +1024,7 @@ class EndpointTester {
         'createOffer',
         'POST /sell/inventory/v1/offer',
         async () => {
-          const result = await this.api.inventory.createOffer(testOffer as any);
+          const result = await this.api.inventory.createOffer(testOffer);
           createdOfferId = result.offerId;
           return result;
         },
@@ -1231,7 +1231,7 @@ class EndpointTester {
         async () => {
           const result = await this.api.fulfillment.createShippingFulfillment(
             this.collectedIds.orderId!,
-            testFulfillment as any
+            testFulfillment
           );
           createdFulfillmentId = result.fulfillmentId;
           return result;
@@ -1272,7 +1272,7 @@ class EndpointTester {
           this.api.fulfillment.issueRefund(this.collectedIds.orderId!, {
             reasonForRefund: 'BUYER_CANCEL',
             refundItems: [],
-          } as any),
+          }),
         { orderId: this.collectedIds.orderId, reason: 'BUYER_CANCEL' }
       );
     }
@@ -1396,7 +1396,7 @@ class EndpointTester {
       'createCampaign',
       'POST /sell/marketing/v1/ad_campaign',
       async () => {
-        const result = await this.api.marketing.createCampaign(testCampaign as any);
+        const result = await this.api.marketing.createCampaign(testCampaign);
         createdCampaignId = result.campaignId;
         return result;
       },
@@ -1421,7 +1421,7 @@ class EndpointTester {
         () =>
           this.api.marketing.updateCampaignIdentification(createdCampaignId!, {
             campaignName: `Updated Campaign ${Date.now()}`,
-          } as any),
+          }),
         { campaign_id: createdCampaignId }
       );
 
@@ -1433,7 +1433,7 @@ class EndpointTester {
         () =>
           this.api.marketing.updateCampaignBudget(createdCampaignId!, {
             budget: { value: '100.00', currency: 'USD' },
-          } as any),
+          }),
         { campaign_id: createdCampaignId }
       );
 
@@ -1445,7 +1445,7 @@ class EndpointTester {
         () =>
           this.api.marketing.updateBiddingStrategy(createdCampaignId!, {
             bidPercentage: '7.5',
-          } as any),
+          }),
         { campaign_id: createdCampaignId }
       );
 
@@ -1493,7 +1493,7 @@ class EndpointTester {
           () =>
             this.api.marketing.updateAdGroup(createdCampaignId!, createdAdGroupId!, {
               adGroupName: `Updated Ad Group ${Date.now()}`,
-            } as any),
+            }),
           { campaign_id: createdCampaignId, ad_group_id: createdAdGroupId }
         );
 
@@ -1514,7 +1514,7 @@ class EndpointTester {
           () =>
             this.api.marketing.suggestKeywords(createdCampaignId!, createdAdGroupId!, {
               adGroupId: createdAdGroupId,
-            } as any),
+            }),
           { campaign_id: createdCampaignId, ad_group_id: createdAdGroupId }
         );
       }
@@ -1536,7 +1536,7 @@ class EndpointTester {
         () =>
           this.api.marketing.bulkCreateAdsByInventoryReference(createdCampaignId!, {
             requests: [],
-          } as any),
+          }),
         { campaign_id: createdCampaignId }
       );
 
@@ -1547,7 +1547,7 @@ class EndpointTester {
         () =>
           this.api.marketing.bulkUpdateAdsBidByInventoryReference(createdCampaignId!, {
             requests: [],
-          } as any),
+          }),
         { campaign_id: createdCampaignId }
       );
 
@@ -1555,7 +1555,7 @@ class EndpointTester {
         'Marketing',
         'bulkUpdateAdsStatus',
         'POST /sell/marketing/v1/ad_campaign/{campaign_id}/bulk_update_ads_status',
-        () => this.api.marketing.bulkUpdateAdsStatus(createdCampaignId!, { requests: [] } as any),
+        () => this.api.marketing.bulkUpdateAdsStatus(createdCampaignId!, { requests: [] }),
         { campaign_id: createdCampaignId }
       );
 
@@ -1566,7 +1566,7 @@ class EndpointTester {
         () =>
           this.api.marketing.bulkDeleteAdsByInventoryReference(createdCampaignId!, {
             requests: [],
-          } as any),
+          }),
         { campaign_id: createdCampaignId }
       );
 
@@ -1583,7 +1583,7 @@ class EndpointTester {
         'Marketing',
         'bulkCreateKeyword',
         'POST /sell/marketing/v1/ad_campaign/{campaign_id}/bulk_create_keyword',
-        () => this.api.marketing.bulkCreateKeyword(createdCampaignId!, { keywords: [] } as any),
+        () => this.api.marketing.bulkCreateKeyword(createdCampaignId!, { keywords: [] }),
         { campaign_id: createdCampaignId }
       );
 
@@ -1591,7 +1591,7 @@ class EndpointTester {
         'Marketing',
         'bulkUpdateKeyword',
         'POST /sell/marketing/v1/ad_campaign/{campaign_id}/bulk_update_keyword',
-        () => this.api.marketing.bulkUpdateKeyword(createdCampaignId!, { keywords: [] } as any),
+        () => this.api.marketing.bulkUpdateKeyword(createdCampaignId!, { keywords: [] }),
         { campaign_id: createdCampaignId }
       );
 
@@ -1766,7 +1766,7 @@ class EndpointTester {
           this.api.marketing.updateItemPromotion(createdPromotionId!, {
             ...testPromotion,
             name: `Updated Promotion ${Date.now()}`,
-          } as any),
+          }),
         { promotion_id: createdPromotionId }
       );
 

@@ -413,7 +413,7 @@ export function getAuthUrl(
     arguments.length === 1 &&
     (clientIdOrEnvironment === 'production' || clientIdOrEnvironment === 'sandbox')
   ) {
-    return `${getBaseUrl(clientIdOrEnvironment as EbayEnvironment)}/identity/v1/oauth2/token`;
+    return `${getBaseUrl(clientIdOrEnvironment)}/identity/v1/oauth2/token`;
   }
 
   const clientId = clientIdOrEnvironment;

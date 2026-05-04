@@ -53,7 +53,7 @@ export const developerTools: ToolDefinition[] = [
         },
         error: { type: 'string' },
       },
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_get_rate_limits',
@@ -85,7 +85,7 @@ export const developerTools: ToolDefinition[] = [
           },
         },
       },
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_get_user_rate_limits',
@@ -106,7 +106,7 @@ export const developerTools: ToolDefinition[] = [
       properties: {
         rateLimits: { type: 'array' },
       },
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_register_client',
@@ -135,7 +135,7 @@ export const developerTools: ToolDefinition[] = [
         client_id_issued_at: { type: 'number' },
         client_secret_expires_at: { type: 'number' },
       },
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_get_signing_keys',
@@ -160,7 +160,7 @@ export const developerTools: ToolDefinition[] = [
           },
         },
       },
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_create_signing_key',
@@ -185,7 +185,7 @@ export const developerTools: ToolDefinition[] = [
         creationTime: { type: 'number' },
         expirationTime: { type: 'number' },
       },
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_get_signing_key',
@@ -204,6 +204,6 @@ export const developerTools: ToolDefinition[] = [
         creationTime: { type: 'number' },
         expirationTime: { type: 'number' },
       },
-    } as OutputArgs,
+    },
   },
 ];

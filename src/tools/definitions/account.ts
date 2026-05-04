@@ -145,7 +145,7 @@ export const accountTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   // Payment Policy CRUD
   {
@@ -203,7 +203,7 @@ export const accountTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   // Return Policy CRUD
   {
@@ -261,7 +261,7 @@ export const accountTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   // Custom Policy CRUD
   {
@@ -307,7 +307,7 @@ export const accountTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   // KYC, Payments, Programs, Sales Tax, Subscription
   {

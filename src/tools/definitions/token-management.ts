@@ -169,7 +169,7 @@ export const tokenManagementTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_exchange_authorization_code',
@@ -198,6 +198,6 @@ export const tokenManagementTools: ToolDefinition[] = [
       properties: {},
       description:
         'Token exchange response including access token, refresh token, and expiry times',
-    } as OutputArgs,
+    },
   },
 ];

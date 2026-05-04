@@ -73,13 +73,30 @@ export const inventoryTools: ToolDefinition[] = [
       'Create or replace an inventory item.\\n\\nRequired OAuth Scope: sell.inventory\\nMinimum Scope: https://api.ebay.com/oauth/api_scope/sell.inventory',
     inputSchema: {
       sku: z.string().describe('The seller-defined SKU'),
-      inventoryItem: inventoryItemSchema.describe('Inventory item details (availability, condition, etc.)'),
+      inventoryItem: inventoryItemSchema.describe(
+        'Inventory item details (availability, condition, etc.)'
+      ),
       // Accept individual inventory fields as top-level fallback for LLMs that don't wrap in inventoryItem
-      availability: z.any().optional().describe('[Fallback] Availability details if inventoryItem not provided'),
-      condition: z.nativeEnum(Condition).optional().describe('[Fallback] Item condition if inventoryItem not provided'),
-      conditionDescription: z.string().optional().describe('[Fallback] Condition description if inventoryItem not provided'),
-      product: z.any().optional().describe('[Fallback] Product details if inventoryItem not provided'),
-      packageWeightAndSize: z.any().optional().describe('[Fallback] Package weight/size if inventoryItem not provided'),
+      availability: z
+        .any()
+        .optional()
+        .describe('[Fallback] Availability details if inventoryItem not provided'),
+      condition: z
+        .nativeEnum(Condition)
+        .optional()
+        .describe('[Fallback] Item condition if inventoryItem not provided'),
+      conditionDescription: z
+        .string()
+        .optional()
+        .describe('[Fallback] Condition description if inventoryItem not provided'),
+      product: z
+        .any()
+        .optional()
+        .describe('[Fallback] Product details if inventoryItem not provided'),
+      packageWeightAndSize: z
+        .any()
+        .optional()
+        .describe('[Fallback] Package weight/size if inventoryItem not provided'),
     },
     outputSchema: zodToJsonSchema(createInventoryItemOutputSchema, {
       name: 'CreateInventoryItemResponse',
@@ -96,7 +113,7 @@ export const inventoryTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_get_offers',
@@ -213,7 +230,7 @@ export const inventoryTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   // Inventory Item Groups
   {
@@ -248,7 +265,7 @@ export const inventoryTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   // Location Management
   {
@@ -295,7 +312,7 @@ export const inventoryTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_disable_inventory_location',
@@ -306,7 +323,7 @@ export const inventoryTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_enable_inventory_location',
@@ -317,7 +334,7 @@ export const inventoryTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_update_location_details',
@@ -364,7 +381,7 @@ export const inventoryTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_withdraw_offer',
@@ -459,7 +476,7 @@ export const inventoryTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_delete_sku_location_mapping',
@@ -472,7 +489,7 @@ export const inventoryTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_publish_offer_by_inventory_item_group',
@@ -508,6 +525,6 @@ export const inventoryTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
 ];

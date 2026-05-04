@@ -328,7 +328,7 @@ export const otherApiTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
 ];
 
@@ -343,6 +343,6 @@ export const claudeTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
 ];

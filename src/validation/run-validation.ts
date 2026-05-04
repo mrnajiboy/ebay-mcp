@@ -405,7 +405,7 @@ export async function runValidation(
   let request: ValidationRunRequest;
 
   try {
-    request = validationRunRequestSchema.parse(input) as ValidationRunRequest;
+    request = validationRunRequestSchema.parse(input);
   } catch (error) {
     return {
       status: 'error',

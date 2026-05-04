@@ -41,7 +41,7 @@ export const analyticsTools: ToolDefinition[] = [
         records: { type: 'array' },
         warnings: { type: 'array' },
       },
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_find_seller_standards_profiles',
@@ -52,7 +52,7 @@ export const analyticsTools: ToolDefinition[] = [
       properties: {
         standards: { type: 'array' },
       },
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_get_seller_standards_profile',
@@ -68,7 +68,7 @@ export const analyticsTools: ToolDefinition[] = [
         cycle: { type: 'object' },
         metrics: { type: 'array' },
       },
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_get_customer_service_metric',
@@ -83,6 +83,6 @@ export const analyticsTools: ToolDefinition[] = [
       properties: {
         metrics: { type: 'array' },
       },
-    } as OutputArgs,
+    },
   },
 ];

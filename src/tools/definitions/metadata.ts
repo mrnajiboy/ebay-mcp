@@ -202,6 +202,6 @@ export const metadataTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
 ];

@@ -388,7 +388,7 @@ export const communicationTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_get_awaiting_feedback',

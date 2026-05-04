@@ -1612,9 +1612,7 @@ async function main(): Promise<void> {
         throw err;
       }
       const httpsServer = createHttpsServer({ cert, key }, app);
-      server = httpsServer.listen(CONFIG.port, CONFIG.host, onListening) as ReturnType<
-        typeof app.listen
-      >;
+      server = httpsServer.listen(CONFIG.port, CONFIG.host, onListening);
     } else {
       server = app.listen(CONFIG.port, CONFIG.host, onListening);
     }

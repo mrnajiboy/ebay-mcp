@@ -38,7 +38,7 @@ export const taxonomyTools: ToolDefinition[] = [
         categoryTreeId: { type: 'string' },
         categoryTreeVersion: { type: 'string' },
       },
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_get_category_tree',
@@ -53,7 +53,7 @@ export const taxonomyTools: ToolDefinition[] = [
         categoryTreeVersion: { type: 'string' },
         rootCategoryNode: { type: 'object' },
       },
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_get_category_suggestions',
@@ -67,7 +67,7 @@ export const taxonomyTools: ToolDefinition[] = [
       properties: {
         categorySuggestions: { type: 'array' },
       },
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_get_item_aspects_for_category',
@@ -81,6 +81,6 @@ export const taxonomyTools: ToolDefinition[] = [
       properties: {
         aspects: { type: 'array' },
       },
-    } as OutputArgs,
+    },
   },
 ];

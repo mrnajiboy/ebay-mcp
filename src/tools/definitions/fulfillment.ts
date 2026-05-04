@@ -198,7 +198,7 @@ export const fulfillmentTools: ToolDefinition[] = [
         reason: { type: 'string' },
         amount: { type: 'object' },
       },
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_get_payment_dispute_activities',
@@ -212,7 +212,7 @@ export const fulfillmentTools: ToolDefinition[] = [
       properties: {
         activity: { type: 'array' },
       },
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_accept_payment_dispute',
@@ -241,7 +241,7 @@ export const fulfillmentTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_contest_payment_dispute',
@@ -265,7 +265,7 @@ export const fulfillmentTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_add_payment_dispute_evidence',
@@ -302,7 +302,7 @@ export const fulfillmentTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_update_payment_dispute_evidence',
@@ -333,7 +333,7 @@ export const fulfillmentTools: ToolDefinition[] = [
     outputSchema: {
       type: 'object',
       properties: {},
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_upload_payment_dispute_evidence_file',
@@ -353,7 +353,7 @@ export const fulfillmentTools: ToolDefinition[] = [
       properties: {
         fileId: { type: 'string' },
       },
-    } as OutputArgs,
+    },
   },
   {
     name: 'ebay_fetch_payment_dispute_evidence_content',
@@ -370,6 +370,6 @@ export const fulfillmentTools: ToolDefinition[] = [
         content: { type: 'string' },
         contentType: { type: 'string' },
       },
-    } as OutputArgs,
+    },
   },
 ];

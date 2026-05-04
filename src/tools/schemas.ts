@@ -20,6 +20,7 @@ import {
   MessageReferenceType,
   FeedbackRating,
   ReportedItemType,
+  TimeDurationUnit,
 } from '@/types/ebay-enums.js';
 
 /**
@@ -35,7 +36,9 @@ import {
 
 export const timeDurationSchema = z
   .object({
-    unit: z.string().describe('Time unit: DAY, BUSINESS_DAY, CALENDAR_DAY, HOUR, MINUTE, SECOND, MONTH, YEAR'),
+    unit: z
+      .nativeEnum(TimeDurationUnit)
+      .describe('Time unit: DAY, BUSINESS_DAY, CALENDAR_DAY, HOUR, MINUTE, SECOND, MONTH, YEAR'),
     value: z.number(),
   })
   .passthrough();

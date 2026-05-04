@@ -25,7 +25,7 @@ describe('TradingApiClient', () => {
     nock.cleanAll();
     nock.disableNetConnect();
     mockRestClient = createMockRestClient('production');
-    client = new TradingApiClient(mockRestClient as unknown as EbayApiClient);
+    client = new TradingApiClient(mockRestClient);
   });
 
   afterEach(() => {
@@ -94,7 +94,7 @@ describe('TradingApiClient', () => {
 
   it('should use sandbox URL for sandbox environment', () => {
     const sandboxClient = new TradingApiClient(
-      createMockRestClient('sandbox') as unknown as EbayApiClient
+      createMockRestClient('sandbox')
     );
     expect(sandboxClient.getBaseUrl()).toBe('https://api.sandbox.ebay.com');
   });
