@@ -878,13 +878,13 @@ export async function executeTool(
           const items = await api.inventory.getInventoryItem(sku);
           const itemData = Array.isArray(items) ? (items as Record<string, unknown>[])?.[0] : items;
           if (itemData) {
-            const transformed = api.trading.transformItemForXML(itemData as Record<string, unknown>);
-            await api.inventory.createOrReplaceInventoryItem(sku, transformed as any);
+            const transformed = api.trading.transformItemForXML(itemData);
+            await api.inventory.createOrReplaceInventoryItem(sku, transformed);
           }
         }
       } catch (e) {
         // Non-fatal: log and proceed with publish anyway
-        // eslint-disable-next-line no-console
+
         console.warn(`publish_offer pre-transform warning for ${offerId}: ${e}`);
       }
       return await api.inventory.publishOffer(offerId);
