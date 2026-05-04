@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.3.0](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v4.2.1...ebay-mcp-remote-edition-v4.3.0) (2026-05-04)
+
+
+### Features
+
+* add ebay_upload_images tool via Commerce Media API ([8d69af5](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/8d69af53a8dac3d63be3ac87279aa1aa611ec2da))
+
+
+### Bug Fixes
+
+* call transformItemForXML in createListing (TASK-MCP.1) ([5640d0b](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/5640d0b2e118386b110515be66fe5f9566f02197))
+* format ebay_upload_images code (eslint + prettier) ([adb3d5c](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/adb3d5ce83358b654e8d5bcdff2f912f025c4d73))
+* Zod schema validation fixes for LLM input normalization ([8ad9a0e](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/8ad9a0e4f6f8cd83616a4fc8d8e1fd4eb744ebc0))
+
 ## [4.2.1](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v4.2.0...ebay-mcp-remote-edition-v4.2.1) (2026-05-04)
 
 
