@@ -20,6 +20,15 @@ interface ActiveListingsResult {
 export class TradingApi {
   constructor(private client: TradingApiClient) {}
 
+  /**
+   * Transform an item for Trading API XML serialization.
+   * Ensures required fields like Currency and Country are always present.
+   * Used by publish_offer flow to pre-transform inventory items before publishing.
+   */
+  public transformItemForXML(item: Record<string, unknown>): Record<string, unknown> {
+    return this.client.transformItemForXML(item);
+  }
+
   async getActiveListings(page = 1, entriesPerPage = 50): Promise<ActiveListingsResult> {
     const result = await this.client.execute('GetMyeBaySelling', {
       ActiveList: {

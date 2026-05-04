@@ -133,6 +133,11 @@ export class TradingApiClient {
       }
     }
 
+    // Ensure Country is always present - required for Trading API XML (publish_offer fix)
+    if (!transformed.Country) {
+      transformed.Country = 'USA';
+    }
+
     return transformed;
   }
 

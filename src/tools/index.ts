@@ -866,8 +866,29 @@ export async function executeTool(
     }
     case 'ebay_delete_offer':
       return await api.inventory.deleteOffer(args.offerId as string);
-    case 'ebay_publish_offer':
-      return await api.inventory.publishOffer(args.offerId as string);
+    case 'ebay_publish_offer': {
+      const offerId = args.offerId as string;
+      // Pre-transform: fetch offer → fetch inventory item → apply transformItemForXML → update
+      // This ensures all Trading API required fields (Country, Currency) are present before publish.
+      try {
+        const offer = await api.inventory.getOffer(offerId);
+        const offerData = offer as Record<string, unknown>;
+        const sku = offerData?.sku as string | undefined;
+        if (sku) {
+          const items = await api.inventory.getInventoryItem(sku);
+          const itemData = Array.isArray(items) ? (items as Record<string, unknown>[])?.[0] : items;
+          if (itemData) {
+            const transformed = api.trading.transformItemForXML(itemData as Record<string, unknown>);
+            await api.inventory.createOrReplaceInventoryItem(sku, transformed as any);
+          }
+        }
+      } catch (e) {
+        // Non-fatal: log and proceed with publish anyway
+        // eslint-disable-next-line no-console
+        console.warn(`publish_offer pre-transform warning for ${offerId}: ${e}`);
+      }
+      return await api.inventory.publishOffer(offerId);
+    }
     case 'ebay_withdraw_offer':
       return await api.inventory.withdrawOffer(args.offerId as string);
     case 'ebay_bulk_create_offer':
