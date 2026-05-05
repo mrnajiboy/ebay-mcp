@@ -1,4 +1,5 @@
 import type { EbayApiClient } from '../client.js';
+import { processImageForUpload, validateImageForEbay } from '@/utils/image-processor.js';
 import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -24,9 +25,13 @@ export class MediaApi {
   /**
    * Upload an image from a public URL to eBay Picture Services.
    *
-   * Steps:
-   * 1. POST /commerce/media/v1/image/from_url to create the image
-   * 2. GET /commerce/media/v1/image/{imageId} to retrieve the hosted URL
+   * Flow:
+   * 1. Download image from URL
+   * 2. Validate dimensions (min 500px, max 4800px)
+   * 3. Resize if needed (maintain aspect ratio)
+   * 4. Optimize and convert to JPEG
+   * 5. Upload to eBay via multipart/form-data
+   * 6. Return hosted URL
    *
    * Supported formats: JPG, GIF, PNG, BMP, TIFF, AVIF, HEIC, WEBP
    * Max file size: 10MB per image
@@ -47,38 +52,32 @@ export class MediaApi {
     const baseUrl = this.getMediaBaseUrl();
 
     try {
-      // Step 1: Create image from URL
-      const body: Record<string, unknown> = { imageUrl };
-      if (description) {
-        body.description = description;
-      }
+      // Step 1: Download image from URL
+      const downloadResponse = await axios.get(imageUrl, {
+        responseType: 'arraybuffer',
+        timeout: 30000,
+      });
 
-      const createResponse = await axios.post(
-        `${baseUrl}${this.basePath}/image/create_image_from_url`,
-        body,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            Prefer: 'return=representation',
-          },
-          timeout: 30000,
-        }
+      const imageBuffer = Buffer.from(downloadResponse.data);
+
+      // Step 2: Process image (validate, resize if needed, optimize)
+      const processed = await processImageForUpload(imageBuffer, {
+        minWidth: 500,
+        minHeight: 500,
+        maxWidth: 4800,
+        maxHeight: 4800,
+        format: 'jpeg',
+        quality: 90,
+      });
+
+      // Step 3: Upload processed image via multipart/form-data
+      return await this.uploadProcessedImage(
+        processed.buffer,
+        processed.metadata,
+        token,
+        baseUrl,
+        description
       );
-
-      // Extract image ID from response body or Location header
-      const responseData = createResponse.data as Record<string, unknown>;
-      const imageId =
-        typeof responseData.id === 'string'
-          ? responseData.id
-          : createResponse.headers.location?.split('/').pop();
-
-      if (!imageId) {
-        throw new Error('No image ID returned from create endpoint');
-      }
-
-      // Step 2: Fetch image details to get the eBay-hosted URL
-      return await this.getImage(imageId);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const status = error.response?.status;
@@ -199,6 +198,67 @@ export class MediaApi {
         { cause: error }
       );
     }
+  }
+
+  /**
+   * Upload a processed image buffer to eBay Picture Services.
+   *
+   * @param buffer - Processed image buffer
+   * @param metadata - Image metadata
+   * @param token - OAuth access token
+   * @param baseUrl - Media API base URL
+   * @param description - Optional description
+   * @returns Object with image ID and eBay-hosted image URL
+   */
+  private async uploadProcessedImage(
+    buffer: Buffer,
+    metadata: { width: number; height: number; format: string; size: number },
+    token: string,
+    baseUrl: string,
+    description?: string
+  ): Promise<{ id: string; imageUrl: string; description?: string }> {
+    // Build multipart/form-data body
+    const boundary = `----FormBoundary${Date.now()}`;
+    const fileName = `image_${Date.now()}.jpg`;
+
+    let body = `--${boundary}\r\n`;
+    body += `Content-Disposition: form-data; name="imageFile"; filename="${fileName}"\r\n`;
+    body += `Content-Type: image/jpeg\r\n\r\n`;
+
+    if (description) {
+      body += `--${boundary}\r\n`;
+      body += `Content-Disposition: form-data; name="description"\r\n\r\n`;
+      body += `${description}\r\n`;
+    }
+
+    body += `--${boundary}--\r\n`;
+
+    const multipartBody = Buffer.concat([Buffer.from(body, 'utf-8'), buffer]);
+
+    const createResponse = await axios.post(
+      `${baseUrl}${this.basePath}/image/create_image_from_file`,
+      multipartBody,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          Prefer: 'return=representation',
+        },
+        timeout: 30000,
+      }
+    );
+
+    const responseData = createResponse.data as Record<string, unknown>;
+    const imageId =
+      typeof responseData.id === 'string'
+        ? responseData.id
+        : createResponse.headers.location?.split('/').pop();
+
+    if (!imageId) {
+      throw new Error('No image ID returned from create endpoint');
+    }
+
+    return await this.getImage(imageId);
   }
 
   /**
