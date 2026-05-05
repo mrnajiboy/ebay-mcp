@@ -67,6 +67,29 @@ import {
   updateDestinationSchema,
   updateSubscriptionSchema,
 } from '@/utils/communication/notification.js';
+
+/** Deep merge source into target, returning new object */
+function deepMerge(
+  target: Record<string, unknown>,
+  source: Record<string, unknown>
+): Record<string, unknown> {
+  const result = { ...target };
+  for (const key of Object.keys(source)) {
+    const sVal = (source)[key];
+    if (sVal && typeof sVal === 'object' && !Array.isArray(sVal)) {
+      const tVal = (result as Record<string, unknown>)[key];
+      (result as Record<string, unknown>)[key] = deepMerge(
+        tVal && typeof tVal === 'object' && !Array.isArray(tVal)
+          ? (tVal as Record<string, unknown>)
+          : {},
+        sVal as Record<string, unknown>
+      );
+    } else if (sVal !== undefined) {
+      (result as Record<string, unknown>)[key] = sVal;
+    }
+  }
+  return result;
+}
 export type { ToolDefinition };
 
 /**
@@ -955,6 +978,33 @@ export async function executeTool(
     }
     case 'ebay_delete_inventory_item':
       return await api.inventory.deleteInventoryItem(args.sku as string);
+
+    case 'ebay_update_inventory_item': {
+      const sku = args.sku as string;
+      // Fetch existing item
+      let existing: Record<string, unknown>;
+      try {
+        existing = await api.inventory.getInventoryItem(sku);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes('not found') || msg.includes('404') || msg.includes('not exist')) {
+          throw new Error(
+            `Inventory item not found: ${sku}. Create it first with ebay_create_inventory_item.`
+          );
+        }
+        throw new Error(`Failed to fetch inventory item ${sku}: ${msg}`);
+      }
+      // Deep merge updates into existing
+      const updateObj: Record<string, unknown> = {};
+      if (args['availability']) updateObj.availability = args['availability'] as Record<string, unknown>;
+      if (args['product']) updateObj.product = args['product'] as Record<string, unknown>;
+      if (args['condition']) updateObj.condition = args['condition'] as string;
+      if (args['conditionDescription']) updateObj.conditionDescription = args['conditionDescription'] as string;
+      const merged = deepMerge(existing, updateObj);
+      // Save back via createOrReplace
+      await api.inventory.createOrReplaceInventoryItem(sku, merged);
+      return { sku, status: 'updated' };
+    }
 
     // Bulk Operations
     case 'ebay_bulk_create_or_replace_inventory_item':

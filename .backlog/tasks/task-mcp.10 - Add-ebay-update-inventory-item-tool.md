@@ -1,7 +1,7 @@
 ---
 id: TASK-MCP.10
 title: Add ebay_update_inventory_item tool
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-05'
 updated_date: '2026-05-05'

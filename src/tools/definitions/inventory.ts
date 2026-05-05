@@ -116,6 +116,64 @@ export const inventoryTools: ToolDefinition[] = [
     },
   },
   {
+    name: 'ebay_update_inventory_item',
+    description:
+      'Update an existing inventory item by SKU. Supports partial updates — only provide the fields you want to change. Fetches existing data, merges your updates, then saves back. Use this for price changes, quantity updates, title edits, etc.\n\nIf the SKU does not exist, returns an error. Create it first with ebay_create_inventory_item.',
+    inputSchema: {
+      sku: z.string().describe('The seller-defined SKU to update (must already exist)'),
+      availability: z
+        .object({
+          shipToLocationAvailability: z
+            .object({
+              quantity: z.number().describe('New quantity'),
+            })
+            .optional(),
+        })
+        .optional()
+        .describe('Availability updates'),
+      product: z
+        .object({
+          title: z.string().optional().describe('New title (max 80 characters)'),
+          brand: z.string().optional().describe('Brand name'),
+          description: z.string().optional().describe('HTML description'),
+          imageUrls: z.array(z.string()).optional().describe('Array of image URLs'),
+          mpn: z.string().optional().describe('Manufacturer Part Number'),
+          aspects: z
+            .record(z.string(), z.array(z.string()))
+            .optional()
+            .describe('Item aspects/attributes (e.g., Color, Size)'),
+        })
+        .optional()
+        .describe('Product data updates'),
+      condition: z
+        .enum([
+          'NEW',
+          'LIKE_NEW',
+          'NEW_OTHER',
+          'NEW_WITH_DEFECTS',
+          'USED_EXCELLENT',
+          'USED_VERY_GOOD',
+          'USED_GOOD',
+          'USED_ACCEPTABLE',
+          'FOR_PARTS_OR_NOT_WORKING',
+        ])
+        .optional()
+        .describe('Item condition'),
+      conditionDescription: z.string().optional().describe('Condition description (for used items)'),
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        sku: { type: 'string' },
+        status: { type: 'string' },
+      },
+    },
+    annotations: {
+      title: 'Update Inventory Item',
+      readOnlyHint: false,
+    },
+  },
+  {
     name: 'ebay_get_offers',
     description:
       'Get offers for a specific SKU. Requires a valid SKU — eBay API returns error 25707 without one.',
