@@ -4,7 +4,7 @@ title: Add eBay Business Policy setup guidance
 status: Done
 assignee: []
 created_date: '2026-05-03'
-updated_date: '2026-05-03'
+updated_date: '2026-05-06'
 labels: [medium]
 dependencies: []
 parent_task_id: null

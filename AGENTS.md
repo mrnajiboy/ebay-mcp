@@ -157,22 +157,20 @@ Decisions are narrative markdown files explaining *why* a change was made or pro
 ---
 
 ### TASK-MCP.2 — Add eBay Business Policy Setup Guidance
-- **Status:** To Do
+- **Status:** ✅ Done (May 3, 2026)
 - **Priority:** Medium
 - **Labels:** medium
 
-**Problem:** `ebay_create_offer` fails when the eBay account lacks Business Policies (fulfillment, payment, return).
-
-**Goal:** Provide documentation or a tool to guide users through Business Policy creation so `ebay_create_offer` succeeds.
+**Resolution:** Setup guidance documented. `ebay_create_offer` succeeds once fulfillment/payment/return policies are configured.
 
 ---
 
 ### TASK-MCP.3 — Fix create_fulfillment_policy Schema Enum Mismatch
-- **Status:** To Do
+- **Status:** ✅ Done (May 5, 2026)
 - **Priority:** High
 - **Labels:** bug, high
 
-**Problem:** `ebay_create_fulfillment_policy` fails with "Invalid handlingTime.unit enum". Schema issue — API works, schema needs correction.
+**Resolution:** Changed `timeDurationSchema.unit` from `z.nativeEnum()` to `z.string()`. Handler's `normalizeTimeUnit()` converts "day"/"days" → "DAY" before API call. Zod validates before handler runs, so nativeEnum rejected LLM input formats.
 
 ---
 
@@ -213,29 +211,56 @@ Decisions are narrative markdown files explaining *why* a change was made or pro
 ---
 
 ### TASK-MCP.8 — Add Missing Taxonomy API Tools (Feature)
-- **Status:** To Do
+- **Status:** ✅ Done (May 5, 2026)
 - **Priority:** Feature
 - **Labels:** feature
 
-**Tools:** ebay_browse_categories, ebay_get_category, ebay_search_categories, ebay_lookup_categories
+**Resolution:** Added `ebay_get_default_category_tree_id`, `ebay_get_category_tree`, `ebay_get_category_suggestions`, `ebay_get_item_aspects_for_category`, `ebay_get_category`.
 
 ---
 
 ### TASK-MCP.9 — Add Missing Browse API Tools (Feature)
-- **Status:** To Do
+- **Status:** ✅ Done (May 5, 2026)
 - **Priority:** Feature
 - **Labels:** feature
 
-**Tools:** ebay_get_suggestions, ebay_search_products, ebay_get_item_specifics
+**Resolution:** Added `ebay_get_suggestions`, `ebay_search_products`, `ebay_get_item_specifics`.
 
 ---
 
 ### TASK-MCP.10 — Add ebay_update_inventory_item Tool (Feature)
-- **Status:** To Do
+- **Status:** ✅ Done (May 5, 2026)
 - **Priority:** Feature
 - **Labels:** feature
 
-**Problem:** Only create/delete exist. Need update variant for inventory adjustments.
+**Resolution:** Deep-merge pattern: fetch existing item → merge user-provided updates → createOrReplace. Supports partial updates (price, quantity, title, etc.).
+
+---
+
+### TASK-MCP.11 — Fix ebay_get_offers Schema (Bug)
+- **Status:** ✅ Done (May 5, 2026)
+- **Priority:** Medium
+- **Labels:** bug, medium, inventory-api
+
+**Resolution:** Schema now requires `sku` parameter. Tool description clearly states it lists offers for a specific SKU. Without SKU, eBay returns error 25707.
+
+---
+
+### TASK-MCP.12 — Inventory API Fallback for ebay_revise_listing (Feature)
+- **Status:** ✅ Done (May 5, 2026)
+- **Priority:** High
+- **Labels:** feature, bug, high, inventory-api
+
+**Resolution:** `ebay_revise_listing` tries Trading API first. On inventory-backed listing failure, auto-routes to Inventory API: `update_offer()` for price/quantity/description, `createOrReplaceInventoryItem()` for title. Returns detailed result with `updatedFields` list.
+
+---
+
+### TASK-MCP.13 — Investigate Hosted MCP Tool Timeouts (Bug)
+- **Status:** To Do
+- **Priority:** High
+- **Labels:** bug, high, hosted-mcp, transport
+
+**Problem:** Multiple hosted MCP tool calls timed out from JiJi runtime (`ebay_get_token_status`, `ebay_get_user`, `ebay_get_inventory_items`). Direct eBay API calls using Redis OAuth token succeeded — issue appears to be in hosted MCP wrapper/transport path.
 
 ---
 
@@ -355,4 +380,4 @@ pnpm run research:inspect-session
 
 ---
 
-*Last updated: 2026-05-03*
+*Last updated: 2026-05-06 (backlog status reconciled)*
