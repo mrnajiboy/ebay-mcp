@@ -57,7 +57,10 @@ export class TradingApiClient {
    * Handles nested objects like PrimaryCategory, ShippingDetails, ReturnPolicy,
    * PicturesDetails, and ItemSpecifics that require special XML structure.
    */
-  public transformItemForXML(item: Record<string, unknown>): Record<string, unknown> {
+  public transformItemForXML(
+    item: Record<string, unknown>,
+    options: { ensureCountry?: boolean } = { ensureCountry: true }
+  ): Record<string, unknown> {
     const transformed: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(item)) {
@@ -133,8 +136,11 @@ export class TradingApiClient {
       }
     }
 
-    // Ensure Country is always present - required for Trading API XML (publish_offer fix)
-    if (!transformed.Country) {
+    // Ensure Country is present for full listing creation/publish transforms.
+    // ReviseFixedPriceItem may update only a subset of fields; injecting a default Country
+    // can accidentally attempt to change an active listing's country and eBay rejects it as
+    // "Input data is invalid." Skip this default for partial revise payloads.
+    if (options.ensureCountry !== false && !transformed.Country) {
       transformed.Country = 'USA';
     }
 
@@ -307,7 +313,8 @@ export class TradingApiClient {
     const transformedParams: Record<string, unknown> = { ...params };
     if (transformedParams.Item && typeof transformedParams.Item === 'object') {
       transformedParams.Item = this.transformItemForXML(
-        transformedParams.Item as Record<string, unknown>
+        transformedParams.Item as Record<string, unknown>,
+        { ensureCountry: callName !== 'ReviseFixedPriceItem' }
       );
     }
 

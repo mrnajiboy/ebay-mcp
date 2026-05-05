@@ -92,10 +92,32 @@ describe('TradingApiClient', () => {
     await expect(client.execute('GetItem', { ItemID: '99999' })).rejects.toThrow('Invalid item ID');
   });
 
+  it('should not inject Country into partial revise listing payloads', async () => {
+    const scope = nock('https://api.ebay.com')
+      .post('/ws/api.dll', (body: string) => {
+        expect(body).toContain('<ReviseFixedPriceItemRequest');
+        expect(body).toContain('<ItemID>12345</ItemID>');
+        expect(body).toContain('<Title>Updated title</Title>');
+        expect(body).not.toContain('<Country>');
+        return true;
+      })
+      .reply(
+        200,
+        `<?xml version="1.0" encoding="utf-8"?>
+        <ReviseFixedPriceItemResponse xmlns="urn:ebay:apis:eBLBaseComponents">
+          <Ack>Success</Ack>
+        </ReviseFixedPriceItemResponse>`
+      );
+
+    const result = await client.execute('ReviseFixedPriceItem', {
+      Item: { ItemID: '12345', Title: 'Updated title' },
+    });
+    expect(result.Ack).toBe('Success');
+    scope.done();
+  });
+
   it('should use sandbox URL for sandbox environment', () => {
-    const sandboxClient = new TradingApiClient(
-      createMockRestClient('sandbox')
-    );
+    const sandboxClient = new TradingApiClient(createMockRestClient('sandbox'));
     expect(sandboxClient.getBaseUrl()).toBe('https://api.sandbox.ebay.com');
   });
 
