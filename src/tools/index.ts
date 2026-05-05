@@ -1866,6 +1866,11 @@ export async function executeTool(
         args.categoryTreeId as string,
         args.categoryId as string
       );
+    case 'ebay_get_category':
+      return await api.taxonomy.getCategorySubtree(
+        args.categoryTreeId as string,
+        args.categoryId as string
+      );
 
     // Browse API Tools
     case 'ebay_get_suggestions': {

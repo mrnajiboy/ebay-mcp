@@ -83,4 +83,21 @@ export const taxonomyTools: ToolDefinition[] = [
       },
     },
   },
+  {
+    name: 'ebay_get_category',
+    description: 'Get single category details by ID. Returns category subtree with children.',
+    inputSchema: {
+      categoryTreeId: z.string().describe('Category tree ID'),
+      categoryId: z.string().describe('Category ID'),
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        categoryTreeId: { type: 'string' },
+        categoryId: { type: 'string' },
+        categoryName: { type: 'string' },
+        children: { type: 'array' },
+      },
+    },
+  },
 ];
