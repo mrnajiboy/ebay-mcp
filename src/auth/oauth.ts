@@ -71,6 +71,7 @@ export class EbayOAuthClient {
           clientId: this.config.clientId,
           clientSecret: this.config.clientSecret,
           redirectUri: this.config.redirectUri,
+          ruName: this.config.ruName,
           userAccessToken: tokenData.access_token,
           userRefreshToken: tokenData.refresh_token || envRefreshToken,
           tokenType: tokenData.token_type,
@@ -182,8 +183,11 @@ export class EbayOAuthClient {
   }
 
   async exchangeCodeForToken(code: string): Promise<EbayUserToken> {
-    if (!this.config.redirectUri) {
-      throw new Error('Redirect URI is required for authorization code exchange');
+    const redirectUriForExchange = this.config.ruName || this.config.redirectUri;
+    if (!redirectUriForExchange) {
+      throw new Error(
+        'RuName (EBAY_RUNAME) or redirectUri is required for authorization code exchange'
+      );
     }
 
     const tokenUrl = this.getTokenEndpoint();
@@ -197,7 +201,7 @@ export class EbayOAuthClient {
         new URLSearchParams({
           grant_type: 'authorization_code',
           code,
-          redirect_uri: this.config.redirectUri,
+          redirect_uri: redirectUriForExchange,
         }).toString(),
         {
           headers: {

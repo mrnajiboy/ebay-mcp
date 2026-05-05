@@ -20,7 +20,7 @@ export default tseslint.config(
       '*.config.js',
       '*.config.mjs',
       '.airtable/**',
-      '*.mjs',
+      '**/*.mjs',
       'scripts/**',
       // Generated OpenAPI types — do not lint auto-generated files
       'src/types/*.d.ts',

@@ -7,7 +7,10 @@ import { type LocaleEnum } from './ebay-enums.js';
 export interface EbayConfig {
   clientId: string;
   clientSecret: string;
+  /** Full HTTPS callback URL for browser OAuth flow (redirect_uri in authorize URL) */
   redirectUri?: string;
+  /** RuName string for token exchange API calls (e.g., MyCompany-MyApp-PRD-abc) */
+  ruName?: string;
   locale?: LocaleEnum;
   marketplaceId?: string;
   contentLanguage?: string;
@@ -62,7 +65,10 @@ export interface StoredTokenData {
   tokenType: string;
   clientId: string;
   clientSecret: string;
+  /** Full HTTPS callback URL for browser OAuth flow */
   redirectUri?: string;
+  /** RuName string for token exchange API calls */
+  ruName?: string;
   locale?: LocaleEnum;
   marketplaceId?: string;
   contentLanguage?: string;

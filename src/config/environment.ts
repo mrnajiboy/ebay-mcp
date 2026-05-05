@@ -17,8 +17,10 @@ interface ScopeDefinition {
 interface EbaySecretConfigEntry {
   clientId: string;
   clientSecret: string;
-  /** The eBay RuName string (used as redirect_uri in token exchange calls) */
+  /** Full HTTPS callback URL for browser OAuth flow */
   redirectUri: string;
+  /** RuName string for token exchange API calls */
+  ruName: string;
 }
 
 interface EbaySecretConfigFile {
@@ -332,21 +334,22 @@ export function getEbayConfig(environmentOverride?: EbayEnvironment): EbayConfig
 
   // Preferred var is EBAY_RUNAME (clearer naming — it IS the RuName, not a URL).
   // EBAY_REDIRECT_URI is kept for backward compatibility.
+  // RuName is for token exchange; redirectUri is for browser OAuth flow. Separate purposes.
+  const fallbackRuName =
+    environment === 'production'
+      ? process.env.EBAY_PRODUCTION_RUNAME || process.env.EBAY_RUNAME || ''
+      : process.env.EBAY_SANDBOX_RUNAME || process.env.EBAY_RUNAME || '';
+
   const fallbackRedirectUri =
     environment === 'production'
-      ? process.env.EBAY_PRODUCTION_RUNAME ||
-        process.env.EBAY_PRODUCTION_REDIRECT_URI ||
-        process.env.EBAY_RUNAME ||
-        process.env.EBAY_REDIRECT_URI
-      : process.env.EBAY_SANDBOX_RUNAME ||
-        process.env.EBAY_SANDBOX_REDIRECT_URI ||
-        process.env.EBAY_RUNAME ||
-        process.env.EBAY_REDIRECT_URI;
+      ? process.env.EBAY_PRODUCTION_REDIRECT_URI || process.env.EBAY_REDIRECT_URI || ''
+      : process.env.EBAY_SANDBOX_REDIRECT_URI || process.env.EBAY_REDIRECT_URI || '';
 
   return {
     clientId: secretConfig?.clientId || fallbackClientId,
     clientSecret: secretConfig?.clientSecret || fallbackClientSecret,
-    redirectUri: secretConfig?.redirectUri || fallbackRedirectUri,
+    redirectUri: secretConfig?.redirectUri || fallbackRedirectUri || undefined,
+    ruName: secretConfig?.ruName || fallbackRuName || undefined,
     marketplaceId: (process.env.EBAY_MARKETPLACE_ID ?? '').trim() || 'EBAY_US',
     contentLanguage: (process.env.EBAY_CONTENT_LANGUAGE ?? '').trim() || 'en-US',
     environment,
