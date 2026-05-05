@@ -8,6 +8,7 @@ import {
 import {
   accountTools,
   analyticsTools,
+  browseTools,
   communicationTools,
   developerTools,
   fulfillmentTools,
@@ -76,6 +77,160 @@ function normalizeEnumValue(value: string): string {
   return value.toUpperCase().replace(/-/g, '_').replace(/S$/, ''); // Remove trailing S (e.g., "DAYS" -> "DAY")
 }
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isInventoryBackedReviseFailure(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes('inventory-based listing management') ||
+    normalized.includes('please refer to the tool used to create this listing')
+  );
+}
+
+function extractListingSku(listing: Record<string, unknown>): string | undefined {
+  const directSku = listing.SKU ?? listing.Sku ?? listing.sku;
+  if (typeof directSku === 'string' && directSku.trim()) return directSku;
+
+  const item = listing.Item as Record<string, unknown> | undefined;
+  const nestedSku = item?.SKU ?? item?.Sku ?? item?.sku;
+  return typeof nestedSku === 'string' && nestedSku.trim() ? nestedSku : undefined;
+}
+
+function extractOfferList(response: unknown): Record<string, unknown>[] {
+  if (Array.isArray(response)) return response as Record<string, unknown>[];
+  if (!response || typeof response !== 'object') return [];
+
+  const record = response as Record<string, unknown>;
+  const offers = record.offers ?? record.Offers;
+  return Array.isArray(offers) ? (offers as Record<string, unknown>[]) : [];
+}
+
+function extractOfferId(offer: Record<string, unknown>): string | undefined {
+  const id = offer.offerId ?? offer.OfferID ?? offer.id;
+  return typeof id === 'string' && id.trim() ? id : undefined;
+}
+
+function findOfferForListing(
+  offers: Record<string, unknown>[],
+  itemId: string
+): Record<string, unknown> | undefined {
+  return (
+    offers.find((offer) => {
+      const listing = offer.listing as Record<string, unknown> | undefined;
+      const listingId = offer.listingId ?? offer.ListingID ?? listing?.listingId ?? listing?.ListingID;
+      return String(listingId ?? '') === itemId;
+    }) ?? offers[0]
+  );
+}
+
+function normalizePriceForInventory(price: unknown): { value: string; currency: string } {
+  if (typeof price === 'number' || typeof price === 'string') {
+    return { value: String(price), currency: 'USD' };
+  }
+
+  if (price && typeof price === 'object') {
+    const record = price as Record<string, unknown>;
+    const value = record.value ?? record['#text'];
+    const currency = record.currency ?? record.currencyID ?? record['@_currencyID'] ?? 'USD';
+    if (value !== undefined) {
+      return { value: String(value), currency: String(currency) };
+    }
+  }
+
+  throw new Error('StartPrice must be a string, number, or { value, currency } object');
+}
+
+async function reviseInventoryBackedListing(
+  api: EbaySellerApi,
+  itemId: string,
+  fields: Record<string, unknown>,
+  tradingErrorMessage: string
+): Promise<Record<string, unknown>> {
+  const listing = (await api.trading.getListing(itemId));
+  const sku = extractListingSku(listing);
+  if (!sku) {
+    throw new Error(
+      `Trading revise failed (${tradingErrorMessage}) and Inventory API fallback could not find SKU for listing ${itemId}`
+    );
+  }
+
+  const offersResponse = await api.inventory.getOffers(sku, undefined, 50);
+  const offerSummary = findOfferForListing(extractOfferList(offersResponse), itemId);
+  const offerId = offerSummary ? extractOfferId(offerSummary) : undefined;
+  if (!offerId) {
+    throw new Error(
+      `Trading revise failed (${tradingErrorMessage}) and Inventory API fallback could not find offer for SKU ${sku}`
+    );
+  }
+
+  const updated: string[] = [];
+  const unsupported: string[] = [];
+  let offerNeedsUpdate = false;
+  let inventoryNeedsUpdate = false;
+
+  const offer = (await api.inventory.getOffer(offerId)) as Record<string, unknown>;
+  const inventoryItem = (await api.inventory.getInventoryItem(sku)) as Record<string, unknown>;
+
+  for (const [key, value] of Object.entries(fields)) {
+    switch (key) {
+      case 'StartPrice':
+        offer.pricingSummary = {
+          ...((offer.pricingSummary) ?? {}),
+          price: normalizePriceForInventory(value),
+        };
+        offerNeedsUpdate = true;
+        updated.push(key);
+        break;
+      case 'Quantity':
+        offer.availableQuantity = Number(value);
+        offerNeedsUpdate = true;
+        updated.push(key);
+        break;
+      case 'Description':
+        offer.listingDescription = value;
+        offerNeedsUpdate = true;
+        updated.push(key);
+        break;
+      case 'Title':
+        inventoryItem.product = {
+          ...((inventoryItem.product) ?? {}),
+          title: value,
+        };
+        inventoryNeedsUpdate = true;
+        updated.push(key);
+        break;
+      default:
+        unsupported.push(key);
+        break;
+    }
+  }
+
+  if (unsupported.length > 0) {
+    throw new Error(
+      `Inventory API revise fallback does not support field(s): ${unsupported.join(', ')}. Supported fields: Title, Description, Quantity, StartPrice.`
+    );
+  }
+
+  if (inventoryNeedsUpdate) {
+    await api.inventory.createOrReplaceInventoryItem(sku, inventoryItem);
+  }
+  if (offerNeedsUpdate) {
+    await api.inventory.updateOffer(offerId, offer);
+  }
+
+  return {
+    Ack: 'Success',
+    mode: 'inventory-api-fallback',
+    ItemID: itemId,
+    sku,
+    offerId,
+    updatedFields: updated,
+    tradingFallbackReason: tradingErrorMessage,
+  };
+}
+
 /**
  * Normalize time duration unit values
  */
@@ -118,6 +273,7 @@ export function getToolDefinitions(): ToolDefinition[] {
     ...analyticsTools,
     ...metadataTools,
     ...taxonomyTools,
+    ...browseTools,
     ...communicationTools,
     ...otherApiTools,
     ...developerTools,
@@ -1661,6 +1817,34 @@ export async function executeTool(
         args.categoryId as string
       );
 
+    // Browse API Tools
+    case 'ebay_get_suggestions': {
+      const query = args.query as string;
+      const marketplaceId = (args.marketplaceId as string) || 'EBAY_US';
+      const limit = args.limit as number | undefined;
+      return await api.browse.getSuggestions(query, { marketplaceId, limit });
+    }
+    case 'ebay_search_products': {
+      const query = args.query as string;
+      const marketplaceId = args.marketplaceId as string;
+      const categoryId = args.categoryId as string | undefined;
+      const limit = args.limit as number | undefined;
+      const sort = args.sort as string | undefined;
+      const filter = args.filter as string | undefined;
+      return await api.browse.searchProducts(query, {
+        marketplaceId,
+        categoryId,
+        limit,
+        sort,
+        filter,
+      });
+    }
+    case 'ebay_get_item_specifics': {
+      const categoryTreeId = args.categoryTreeId as string;
+      const categoryId = args.categoryId as string;
+      return await api.taxonomy.getItemAspectsForCategory(categoryTreeId, categoryId);
+    }
+
     // Communication - Negotiation
     case 'ebay_get_offers_to_buyers': {
       const validated = getOffersToBuyersSchema.parse(args);
@@ -2092,11 +2276,19 @@ export async function executeTool(
       return await api.trading.getListing(args.itemId as string);
     case 'ebay_create_listing':
       return await api.trading.createListing(args.item as Record<string, unknown>);
-    case 'ebay_revise_listing':
-      return await api.trading.reviseListing(
-        args.itemId as string,
-        args.fields as Record<string, unknown>
-      );
+    case 'ebay_revise_listing': {
+      const itemId = args.itemId as string;
+      const fields = args.fields as Record<string, unknown>;
+      try {
+        return await api.trading.reviseListing(itemId, fields);
+      } catch (error) {
+        const message = getErrorMessage(error);
+        if (isInventoryBackedReviseFailure(message)) {
+          return await reviseInventoryBackedListing(api, itemId, fields, message);
+        }
+        throw error;
+      }
+    }
     case 'ebay_end_listing':
       return await api.trading.endListing(args.itemId as string, args.reason as string | undefined);
     case 'ebay_relist_item':

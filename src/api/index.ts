@@ -19,6 +19,7 @@ import { EDeliveryApi } from '@/api/other/edelivery.js';
 import { IdentityApi } from '@/api/other/identity.js';
 import { TranslationApi } from '@/api/other/translation.js';
 import { VeroApi } from '@/api/other/vero.js';
+import { BrowseApi } from '@/api/browse/browse.js';
 import { TradingApiClient } from '@/api/client-trading.js';
 import { TradingApi } from '@/api/trading/trading.js';
 import type { EbayConfig } from '@/types/ebay.js';
@@ -46,6 +47,7 @@ export class EbaySellerApi {
   public developer: DeveloperApi;
   public media: MediaApi;
   public trading: TradingApi;
+  public browse: BrowseApi;
 
   constructor(
     config: EbayConfig,
@@ -77,6 +79,7 @@ export class EbaySellerApi {
     this.media = new MediaApi(this.client);
     const tradingClient = new TradingApiClient(this.client);
     this.trading = new TradingApi(tradingClient);
+    this.browse = new BrowseApi(this.client);
   }
 
   async initialize(): Promise<void> {
@@ -136,3 +139,4 @@ export * from '@/api/other/vero.js';
 export * from '@/api/developer/developer.js';
 export * from '@/api/trading/trading.js';
 export * from '@/api/client-trading.js';
+export * from '@/api/browse/browse.js';

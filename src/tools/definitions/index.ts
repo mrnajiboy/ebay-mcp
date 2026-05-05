@@ -19,6 +19,7 @@ import { marketingTools } from './marketing.js';
 import { analyticsTools } from './analytics.js';
 import { metadataTools } from './metadata.js';
 import { taxonomyTools } from './taxonomy.js';
+import { browseTools } from './browse.js';
 import { communicationTools } from './communication.js';
 import { otherApiTools } from './other.js';
 import { developerTools } from './developer.js';
@@ -34,6 +35,7 @@ export {
   analyticsTools,
   metadataTools,
   taxonomyTools,
+  browseTools,
   communicationTools,
   otherApiTools,
   developerTools,
@@ -50,6 +52,7 @@ export const allTools = [
   ...analyticsTools,
   ...metadataTools,
   ...taxonomyTools,
+  ...browseTools,
   ...communicationTools,
   ...otherApiTools,
   ...developerTools,
