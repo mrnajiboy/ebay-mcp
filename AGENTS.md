@@ -142,7 +142,7 @@ Decisions are narrative markdown files explaining *why* a change was made or pro
 ## 4. Current Active Backlog
 
 ### TASK-MCP.1 — Fix ebay_create_listing XML Generation
-- **Status:** To Do
+- **Status:** ✅ Done (May 4, 2026)
 - **Priority:** Critical
 - **Labels:** bug, critical
 - **Dependencies:** TASK-MCP.1.1, TASK-MCP.1.2
@@ -151,13 +151,8 @@ Decisions are narrative markdown files explaining *why* a change was made or pro
 **Problem:** `ebay_create_listing` fails because `z.record(z.string(), z.unknown())` accepts any input without validating structure. When passed to `fast-xml-parser`'s XMLBuilder, nested objects produce malformed XML.
 
 **Subtasks:**
-- **TASK-MCP.1.1** — Add input validation schema for Trading API item fields (Title, PrimaryCategory, StartPrice, ConditionID, Country, Currency, DispatchTimeMax, ListingDuration, ListingType, Quantity, SKU).
-- **TASK-MCP.1.2** — Fix XML generation for nested fields (PrimaryCategory, ShippingDetails, ReturnPolicy, PicturesDetails, ItemSpecifics).
-
-**Files to change:**
-- [`src/tools/definitions/trading.ts`](src/tools/definitions/trading.ts)
-- [`src/api/client-trading.ts`](src/api/client-trading.ts)
-- [`src/api/trading/trading.ts`](src/api/trading/trading.ts)
+- **TASK-MCP.1.1** — Add input validation schema for Trading API item fields. ✅ Done
+- **TASK-MCP.1.2** — Fix XML generation for nested fields. ✅ Done
 
 ---
 
@@ -169,6 +164,78 @@ Decisions are narrative markdown files explaining *why* a change was made or pro
 **Problem:** `ebay_create_offer` fails when the eBay account lacks Business Policies (fulfillment, payment, return).
 
 **Goal:** Provide documentation or a tool to guide users through Business Policy creation so `ebay_create_offer` succeeds.
+
+---
+
+### TASK-MCP.3 — Fix create_fulfillment_policy Schema Enum Mismatch
+- **Status:** To Do
+- **Priority:** High
+- **Labels:** bug, high
+
+**Problem:** `ebay_create_fulfillment_policy` fails with "Invalid handlingTime.unit enum". Schema issue — API works, schema needs correction.
+
+---
+
+### TASK-MCP.4 — Add Dual Endpoint Support to ebay_upload_images
+- **Status:** To Do
+- **Priority:** High
+- **Labels:** bug, high
+
+**Problem:** Tool only supports `create_image_from_url`. Needs dual support: `create_image_from_file` + `create_image_from_url` per Media API reference.
+
+---
+
+### TASK-MCP.5 — OAuth Multi-Environment Support
+- **Status:** To Do
+- **Priority:** Medium
+- **Labels:** bug, medium
+
+**Problem:** `ebay_get_oauth_url` needs to read PRODUCTION/SANDBOX env var variants. Credentials exist, just need multi-env support.
+
+---
+
+### TASK-MCP.6 — Disable Unsupported Tools for All Agents
+- **Status:** To Do
+- **Priority:** Medium
+- **Labels:** config, medium
+
+**Problem:** Commerce Shipping, VERO, and signing key tools are unsupported by our account. Disable for all agents.
+
+---
+
+### TASK-MCP.7 — Fix publish_offer XML Transform
+- **Status:** To Do
+- **Priority:** Medium
+- **Labels:** bug, medium
+
+**Problem:** `ebay_publish_offer` missing `transformItemForXML()` call. Apply same fix as `create_listing`.
+
+---
+
+### TASK-MCP.8 — Add Missing Taxonomy API Tools (Feature)
+- **Status:** To Do
+- **Priority:** Feature
+- **Labels:** feature
+
+**Tools:** ebay_browse_categories, ebay_get_category, ebay_search_categories, ebay_lookup_categories
+
+---
+
+### TASK-MCP.9 — Add Missing Browse API Tools (Feature)
+- **Status:** To Do
+- **Priority:** Feature
+- **Labels:** feature
+
+**Tools:** ebay_get_suggestions, ebay_search_products, ebay_get_item_specifics
+
+---
+
+### TASK-MCP.10 — Add ebay_update_inventory_item Tool (Feature)
+- **Status:** To Do
+- **Priority:** Feature
+- **Labels:** feature
+
+**Problem:** Only create/delete exist. Need update variant for inventory adjustments.
 
 ---
 

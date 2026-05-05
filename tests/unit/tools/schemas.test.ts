@@ -25,14 +25,15 @@ describe('Schema Validation', () => {
         expect(result.success).toBe(true);
       });
 
-      it('should reject invalid unit', () => {
-        const invalidDuration = {
-          unit: 'INVALID_UNIT',
+      it('should accept any string unit (normalized in handler)', () => {
+        // Schema accepts any string; handler normalizes to valid enum values.
+        const flexibleDuration = {
+          unit: 'day', // lowercase — valid per schema
           value: 30,
         };
 
-        const result = timeDurationSchema.safeParse(invalidDuration);
-        expect(result.success).toBe(false);
+        const result = timeDurationSchema.safeParse(flexibleDuration);
+        expect(result.success).toBe(true);
       });
 
       it('should require unit and value', () => {

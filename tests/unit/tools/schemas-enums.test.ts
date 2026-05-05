@@ -73,12 +73,15 @@ describe('Zod Schema Enum Validation', () => {
       });
     });
 
-    it('should reject invalid unit values', () => {
-      const invalidData = {
-        unit: 'INVALID_UNIT',
+    it('should accept any string unit (normalized in handler)', () => {
+      // Schema accepts any string; handler normalizes to valid enum values.
+      // This prevents Zod from rejecting input like "day" or "days" before
+      // the handler can normalize it to "DAY".
+      const flexibleUnitData = {
+        unit: 'day', // lowercase — valid per schema, normalized in handler
         value: 30,
       };
-      expect(() => timeDurationSchema.parse(invalidData)).toThrow();
+      expect(() => timeDurationSchema.parse(flexibleUnitData)).not.toThrow();
     });
   });
 
@@ -572,14 +575,16 @@ describe('Zod Schema Enum Validation', () => {
 
   describe('Enum Validation Error Messages', () => {
     it('should provide clear error for invalid enum value', () => {
+      // Use regionSchema — still validates enum strictly (RegionType).
+      // timeDurationSchema was changed to accept any string (normalized in handler).
       const invalidData = {
-        unit: 'INVALID_UNIT',
-        value: 30,
+        regionType: 'INVALID_TYPE',
+        regionName: 'US',
       };
 
       let caughtError: unknown;
       try {
-        timeDurationSchema.parse(invalidData);
+        regionSchema.parse(invalidData);
         expect.fail('Should have thrown validation error');
       } catch (error: unknown) {
         caughtError = error;
@@ -588,7 +593,7 @@ describe('Zod Schema Enum Validation', () => {
       const zodError = caughtError as { issues?: { path: (string | number)[] }[]; errors?: { path: (string | number)[] }[] };
       const issues = zodError.issues ?? zodError.errors;
       expect(issues).toBeDefined();
-      expect(issues![0].path).toContain('unit');
+      expect(issues![0].path).toContain('regionType');
     });
 
     it('should validate nested enum values', () => {

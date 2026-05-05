@@ -4,7 +4,7 @@ title: Fix ebay_create_listing XML generation
 status: Done
 assignee: []
 created_date: '2026-05-03'
-updated_date: '2026-05-03'
+updated_date: '2026-05-05'
 labels: [bug, critical]
 dependencies: [TASK-MCP.1.1, TASK-MCP.1.2]
 parent_task_id: null
