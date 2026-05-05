@@ -20,11 +20,9 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 /**
  * Get image metadata from buffer or URL
  */
-export async function getImageMetadata(
-  input: Buffer | string
-): Promise<ImageMetadata> {
+export async function getImageMetadata(input: Buffer | string): Promise<ImageMetadata> {
   const metadata = await sharp(input).metadata();
-  
+
   if (!metadata.width || !metadata.height) {
     throw new Error('Unable to determine image dimensions');
   }
@@ -60,20 +58,17 @@ export async function processImageForUpload(
 
   // Get metadata
   const metadata = await getImageMetadata(input);
-  
+
   let image = sharp(input);
   let resized = false;
 
   // Check if resize needed (too small)
   if (metadata.width < minWidth || metadata.height < minHeight) {
-    const scale = Math.max(
-      minWidth / metadata.width,
-      minHeight / metadata.height
-    );
-    
+    const scale = Math.max(minWidth / metadata.width, minHeight / metadata.height);
+
     const newWidth = Math.round(metadata.width * scale);
     const newHeight = Math.round(metadata.height * scale);
-    
+
     image = image.resize(newWidth, newHeight, {
       fit: 'contain',
       withoutEnlargement: false,
@@ -83,14 +78,11 @@ export async function processImageForUpload(
 
   // Check if resize needed (too large)
   if (metadata.width > maxWidth || metadata.height > maxHeight) {
-    const scale = Math.min(
-      maxWidth / metadata.width,
-      maxHeight / metadata.height
-    );
-    
+    const scale = Math.min(maxWidth / metadata.width, maxHeight / metadata.height);
+
     const newWidth = Math.round(metadata.width * scale);
     const newHeight = Math.round(metadata.height * scale);
-    
+
     image = image.resize(newWidth, newHeight, {
       fit: 'contain',
       withoutEnlargement: true,
@@ -110,7 +102,9 @@ export async function processImageForUpload(
 
   // Check file size
   if (processedBuffer.length > MAX_FILE_SIZE) {
-    throw new Error(`Image too large: ${(processedBuffer.length / 1024 / 1024).toFixed(2)}MB (max 10MB)`);
+    throw new Error(
+      `Image too large: ${(processedBuffer.length / 1024 / 1024).toFixed(2)}MB (max 10MB)`
+    );
   }
 
   // Get final metadata
@@ -126,15 +120,13 @@ export async function processImageForUpload(
 /**
  * Validate image meets eBay requirements
  */
-export async function validateImageForEbay(
-  input: Buffer | string
-): Promise<{
+export async function validateImageForEbay(input: Buffer | string): Promise<{
   valid: boolean;
   errors: string[];
   metadata: ImageMetadata;
 }> {
   const errors: string[] = [];
-  
+
   try {
     const metadata = await getImageMetadata(input);
 
@@ -161,7 +153,9 @@ export async function validateImageForEbay(
   } catch (error) {
     return {
       valid: false,
-      errors: [`Failed to process image: ${error instanceof Error ? error.message : 'Unknown error'}`],
+      errors: [
+        `Failed to process image: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      ],
       metadata: { width: 0, height: 0, format: 'unknown', size: 0 },
     };
   }
