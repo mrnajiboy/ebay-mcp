@@ -73,13 +73,22 @@ export class MediaApi {
       );
 
       const data = response.data as Record<string, unknown>;
-      const imageId = data.id as string;
+      // Image ID is in Location header: https://apim.ebay.com/commerce/media/v1_beta/image/{image_id}
+      const locationHeader = response.headers.location as string | undefined;
+      const imageId = locationHeader?.split('/').pop();
       if (imageId) {
         return await this.getImage(imageId);
       }
-
-      // Fallback: if no image ID returned, try download+upload method
-      throw new Error('No image ID returned from createImageFromUrl endpoint');
+      // Fallback: use imageUrl directly from response body
+      const resultUrl = data.imageUrl as string | undefined;
+      if (resultUrl) {
+        return {
+          id: 'direct',
+          imageUrl: resultUrl,
+          description: data.description as string | undefined,
+        };
+      }
+      throw new Error('No image ID in Location header and no imageUrl in response body');
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const status = error.response?.status;

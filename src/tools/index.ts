@@ -1101,13 +1101,19 @@ export async function executeTool(
       return await api.inventory.deleteOffer(args.offerId as string);
     case 'ebay_publish_offer': {
       const offerId = args.offerId as string;
-      // Pre-publish: ensure offer has categoryId + merchantLocationKey,
+      // Pre-publish: ensure offer has categoryId + merchantLocationKey + listingPolicies,
       // and inventory item has brand/mpn pair + location mapping.
       try {
         const offer = await api.inventory.getOffer(offerId);
         const offerData = offer as Record<string, unknown>;
         const sku = offerData?.sku as string | undefined;
         if (sku) {
+          // Default policy IDs (Hankuk Expo)
+          const defaultPolicies = {
+            paymentPolicyId: '259198675013',
+            returnPolicyId: '259198703013',
+            fulfillmentPolicyId: '259198453013',
+          };
           // Fix offer-level fields first
           let needsOfferUpdate = false;
           const offerUpdate: Record<string, unknown> = {
@@ -1125,6 +1131,19 @@ export async function executeTool(
           }
           if (!offerData.merchantLocationKey) {
             offerUpdate.merchantLocationKey = 'seoul-warehouse';
+            needsOfferUpdate = true;
+          }
+          // Inject listingPolicies if missing
+          const existingPolicies = offerData.listingPolicies as Record<string, unknown> | undefined;
+          if (
+            !existingPolicies?.paymentPolicyId ||
+            !existingPolicies.returnPolicyId ||
+            !existingPolicies.fulfillmentPolicyId
+          ) {
+            offerUpdate.listingPolicies = {
+              ...defaultPolicies,
+              ...(existingPolicies || {}),
+            };
             needsOfferUpdate = true;
           }
           if (needsOfferUpdate) {
