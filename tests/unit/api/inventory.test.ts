@@ -116,13 +116,19 @@ describe('InventoryApi', () => {
   });
 
   describe('getOffers', () => {
-    it('should get all offers without parameters', async () => {
+    it('should throw error when sku is not provided', async () => {
+      await expect(api.getOffers('')).rejects.toThrow('sku is required for getOffers');
+    });
+
+    it('should get offers with sku', async () => {
       const mockResponse = { offers: [] };
       vi.mocked(client.get).mockResolvedValue(mockResponse);
 
-      await api.getOffers();
+      await api.getOffers('TEST-SKU');
 
-      expect(client.get).toHaveBeenCalledWith('/sell/inventory/v1/offer', {});
+      expect(client.get).toHaveBeenCalledWith('/sell/inventory/v1/offer', {
+        sku: 'TEST-SKU',
+      });
     });
 
     it('should get offers with parameters', async () => {

@@ -116,6 +116,51 @@ describe('TradingApiClient', () => {
     scope.done();
   });
 
+  it('should serialize numeric revise listing StartPrice as text instead of undefined', async () => {
+    const scope = nock('https://api.ebay.com')
+      .post('/ws/api.dll', (body: string) => {
+        expect(body).toContain('<ReviseFixedPriceItemRequest');
+        expect(body).toContain('<ItemID>12345</ItemID>');
+        expect(body).toContain('<StartPrice>14.99</StartPrice>');
+        expect(body).not.toContain('<StartPrice>undefined</StartPrice>');
+        return true;
+      })
+      .reply(
+        200,
+        `<?xml version="1.0" encoding="utf-8"?>
+        <ReviseFixedPriceItemResponse xmlns="urn:ebay:apis:eBLBaseComponents">
+          <Ack>Success</Ack>
+        </ReviseFixedPriceItemResponse>`
+      );
+
+    const result = await client.execute('ReviseFixedPriceItem', {
+      Item: { ItemID: '12345', StartPrice: 14.99 },
+    });
+    expect(result.Ack).toBe('Success');
+    scope.done();
+  });
+
+  it('should accept currency alias when serializing revise listing StartPrice', async () => {
+    const scope = nock('https://api.ebay.com')
+      .post('/ws/api.dll', (body: string) => {
+        expect(body).toContain('<StartPrice currencyID="USD">14.99</StartPrice>');
+        return true;
+      })
+      .reply(
+        200,
+        `<?xml version="1.0" encoding="utf-8"?>
+        <ReviseFixedPriceItemResponse xmlns="urn:ebay:apis:eBLBaseComponents">
+          <Ack>Success</Ack>
+        </ReviseFixedPriceItemResponse>`
+      );
+
+    const result = await client.execute('ReviseFixedPriceItem', {
+      Item: { ItemID: '12345', StartPrice: { value: '14.99', currency: 'USD' } },
+    });
+    expect(result.Ack).toBe('Success');
+    scope.done();
+  });
+
   it('should use sandbox URL for sandbox environment', () => {
     const sandboxClient = new TradingApiClient(createMockRestClient('sandbox'));
     expect(sandboxClient.getBaseUrl()).toBe('https://api.sandbox.ebay.com');

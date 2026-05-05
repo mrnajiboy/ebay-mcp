@@ -117,9 +117,12 @@ export const inventoryTools: ToolDefinition[] = [
   },
   {
     name: 'ebay_get_offers',
-    description: 'Get all offers for the seller',
+    description:
+      'Get offers for a specific SKU. Requires a valid SKU — eBay API returns error 25707 without one.',
     inputSchema: {
-      sku: z.string().optional().describe('Filter by SKU'),
+      sku: z
+        .string()
+        .describe('The seller-defined SKU (required — eBay API returns error 25707 without it)'),
       marketplaceId: z.nativeEnum(MarketplaceId).optional().describe('Filter by marketplace ID'),
       limit: z.number().optional().describe('Number of offers to return'),
     },

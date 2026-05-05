@@ -487,22 +487,16 @@ export class InventoryApi {
   }
 
   /**
-   * Get all offers
+   * Get offers for a specific SKU (sku is required)
    * @throws Error if parameters are invalid
    */
-  async getOffers(
-    sku?: string,
-    marketplaceId?: string,
-    limit?: number
-  ): Promise<GetOffersResponse> {
+  async getOffers(sku: string, marketplaceId?: string, limit?: number): Promise<GetOffersResponse> {
     const params: Record<string, string | number> = {};
 
-    if (sku !== undefined) {
-      if (typeof sku !== 'string') {
-        throw new Error('sku must be a string when provided');
-      }
-      params.sku = sku;
+    if (!sku || typeof sku !== 'string') {
+      throw new Error('sku is required for getOffers');
     }
+    params.sku = sku;
     if (marketplaceId !== undefined) {
       if (typeof marketplaceId !== 'string') {
         throw new Error('marketplaceId must be a string when provided');

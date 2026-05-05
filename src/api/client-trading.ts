@@ -151,14 +151,19 @@ export class TradingApiClient {
    * Transform price fields that may have currency attributes.
    * eBay Trading API expects: <StartPrice currencyID="USD">34.99</StartPrice>
    */
-  private transformPrice(price: string | { value: string | number; currencyID?: string }): any {
-    if (typeof price === 'string') {
-      return price;
+  private transformPrice(
+    price: string | number | { value: string | number; currencyID?: string; currency?: string }
+  ): any {
+    if (typeof price === 'string' || typeof price === 'number') {
+      return String(price);
     }
+
+    const currencyID = price.currencyID ?? price.currency;
+
     // Use fast-xml-parser attribute convention: @_<attrName> for attributes, #text for content
     return {
       '#text': String(price.value),
-      ...(price.currencyID && { '@_currencyID': price.currencyID }),
+      ...(currencyID && { '@_currencyID': currencyID }),
     };
   }
 
