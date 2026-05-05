@@ -84,8 +84,8 @@ function normalizeTimeUnit(value: string): string {
   const timeUnitMap: Record<string, string> = {
     DAY: 'DAY',
     DAYS: 'DAY',
-    BUSINESS_DAY: 'BUSINESS_DAY',
-    BUSINESS_DAYS: 'BUSINESS_DAY',
+    BUSINESS_DAY: 'DAY',
+    BUSINESS_DAYS: 'DAY',
     CALENDAR_DAY: 'CALENDAR_DAY',
     HOUR: 'HOUR',
     HOURS: 'HOUR',
