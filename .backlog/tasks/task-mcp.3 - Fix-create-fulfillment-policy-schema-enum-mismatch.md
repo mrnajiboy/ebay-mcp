@@ -2,9 +2,10 @@
 id: TASK-MCP.3
 title: Fix create_fulfillment_policy schema enum mismatch
 status: Done
-assignee: [Bruno]
+assignee:
+  - '@Bruno'
 created_date: '2026-05-05'
-updated_date: '2026-05-05'
+updated_date: '2026-05-05 14:35'
 labels: [bug, high]
 dependencies: []
 parent_task_id: null
