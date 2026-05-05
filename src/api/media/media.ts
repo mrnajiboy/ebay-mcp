@@ -296,9 +296,15 @@ export class MediaApi {
       });
 
       const data = response.data as Record<string, unknown>;
+      let imageUrl = data.imageUrl as string | undefined;
+      // eBay Media API returns $_1.JPG thumbnail URL. Convert to full-size (s-l1600.jpg)
+      // which is required for listing images (500px minimum).
+      if (imageUrl?.includes('$_1.JPG')) {
+        imageUrl = imageUrl.replace('$_1.JPG', 's-l1600.jpg');
+      }
       return {
         id: data.id as string,
-        imageUrl: data.imageUrl as string,
+        imageUrl: imageUrl || '',
         description: typeof data.description === 'string' ? data.description : undefined,
       };
     } catch (error) {
