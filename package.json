@@ -28,7 +28,6 @@
     "typecheck": "tsc --noEmit",
     "check": "tsc --noEmit && eslint . && prettier --check \"src/**/*.{ts,js,json,md}\"",
     "fix": "eslint . --fix && prettier --write \"src/**/*.{ts,js,json,md}\"",
-    "prepare": "tsc && tsc-alias",
     "env:encrypt": "npx -y @dotenvx/dotenvx encrypt",
     "env:decrypt": "npx -y @dotenvx/dotenvx decrypt"
   },
