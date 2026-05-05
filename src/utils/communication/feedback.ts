@@ -91,12 +91,16 @@ export const getFeedbackSchema = z.object({
  * Params: GetFeedbackRatingSummaryParams - user_id (required), filter (required)
  */
 export const getFeedbackRatingSummarySchema = z.object({
-  user_id: z.string({
-    error: 'user_id is required',
-  }),
-  filter: z.string({
-    error: 'filter is required',
-  }),
+  user_id: z
+    .string({
+      error: 'user_id must be a string',
+    })
+    .optional(),
+  filter: z
+    .string({
+      error: 'filter must be a string',
+    })
+    .optional(),
 });
 
 /**

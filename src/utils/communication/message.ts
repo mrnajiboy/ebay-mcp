@@ -67,9 +67,11 @@ export const bulkUpdateConversationSchema = z.object({
  * Params: GetConversationsParams - conversation_type (required), conversation_status, end_time, limit, offset, other_party_username, reference_id, reference_type, start_time
  */
 export const getConversationsSchema = z.object({
-  conversation_type: z.string({
-    error: 'conversation_type is required',
-  }),
+  conversation_type: z
+    .string({
+      error: 'conversation_type must be a string',
+    })
+    .optional(),
   conversation_status: z
     .string({
       error: 'conversation_status must be a string',
