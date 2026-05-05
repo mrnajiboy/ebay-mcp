@@ -421,6 +421,79 @@ describe('Inventory Tools Integration Tests', () => {
     });
   });
 
+  describe('ebay_update_inventory_item', () => {
+    it('should update existing inventory item with partial data', async () => {
+      const existingItem = {
+        sku: 'TEST-SKU-001',
+        availability: {
+          shipToLocationAvailability: { quantity: 10 },
+        },
+        condition: 'NEW',
+        product: {
+          title: 'Original Title',
+          description: 'Original description',
+          aspects: { Brand: ['Original Brand'] },
+        },
+      };
+
+      const updatedItem = {
+        sku: 'TEST-SKU-001',
+        availability: {
+          shipToLocationAvailability: { quantity: 25 },
+        },
+        condition: 'NEW',
+        product: {
+          title: 'Updated Title',
+          description: 'Original description',
+          aspects: { Brand: ['Original Brand'] },
+        },
+      };
+
+      // Mock GET request to fetch existing item
+      mockEbayApiEndpoint(
+        '/sell/inventory/v1/inventory_item/TEST-SKU-001',
+        'get',
+        'sandbox',
+        existingItem
+      );
+
+      // Mock PUT request to update item
+      mockEbayApiEndpoint(
+        '/sell/inventory/v1/inventory_item/TEST-SKU-001',
+        'put',
+        'sandbox',
+        undefined,
+        204
+      );
+
+      const result = await executeTool(api, 'ebay_update_inventory_item', {
+        sku: 'TEST-SKU-001',
+        availability: { shipToLocationAvailability: { quantity: 25 } },
+        product: { title: 'Updated Title' },
+      });
+
+      expect(result.sku).toBe('TEST-SKU-001');
+      expect(result.status).toBe('updated');
+    });
+
+    it('should throw error for non-existent SKU', async () => {
+      mockEbayApiError(
+        '/sell/inventory/v1/inventory_item/INVALID-SKU',
+        'get',
+        'sandbox',
+        'Inventory item not found',
+        404
+      );
+
+      await expect(
+        executeTool(api, 'ebay_update_inventory_item', {
+          sku: 'INVALID-SKU',
+          availability: { shipToLocationAvailability: { quantity: 5 } },
+        })
+      ).rejects.toThrow('Inventory item not found');
+    });
+  });
+
   describe('Tool Parameter Validation', () => {
     it('should throw error when SKU is missing for ebay_get_inventory_item', async () => {
       await expect(executeTool(api, 'ebay_get_inventory_item', {})).rejects.toThrow();
