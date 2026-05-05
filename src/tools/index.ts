@@ -108,7 +108,9 @@ function isInventoryBackedReviseFailure(message: string): boolean {
   const normalized = message.toLowerCase();
   return (
     normalized.includes('inventory-based listing management') ||
-    normalized.includes('please refer to the tool used to create this listing')
+    normalized.includes('please refer to the tool used to create this listing') ||
+    normalized.includes('not allowed for inventory items') ||
+    normalized.includes('not allowed for inventory')
   );
 }
 
