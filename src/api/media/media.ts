@@ -1,5 +1,4 @@
 import type { EbayApiClient } from '../client.js';
-import { getBaseUrl } from '@/config/environment.js';
 import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -9,7 +8,7 @@ import * as path from 'path';
  * Based on: https://developer.ebay.com/api-docs/commerce/media/resources/image/from_url/methods
  */
 export class MediaApi {
-  private readonly basePath = '/commerce/media/v1';
+  private readonly basePath = '/commerce/media/v1_beta';
 
   constructor(private client: EbayApiClient) {}
 
@@ -19,7 +18,7 @@ export class MediaApi {
 
   private getMediaBaseUrl(): string {
     const env = this.client.getConfig().environment;
-    return getBaseUrl(env);
+    return env === 'production' ? 'https://apim.ebay.com' : 'https://apim.sandbox.ebay.com';
   }
 
   /**
