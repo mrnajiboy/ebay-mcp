@@ -177,11 +177,11 @@ Decisions are narrative markdown files explaining *why* a change was made or pro
 ---
 
 ### TASK-MCP.4 — Add Dual Endpoint Support to ebay_upload_images
-- **Status:** To Do
+- **Status:** ✅ Done (May 5, 2026 — commit 8662369)
 - **Priority:** High
 - **Labels:** bug, high
 
-**Problem:** Tool only supports `create_image_from_url`. Needs dual support: `create_image_from_file` + `create_image_from_url` per Media API reference.
+**Resolution:** Added `createImageFromFile()` to MediaApi — uploads local files via multipart/form-data. Tool definition accepts both `imageUrls` and `imageFiles`. Handler dispatches based on input.
 
 ---
 

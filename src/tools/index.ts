@@ -228,23 +228,36 @@ export async function executeTool(
     }
 
     case 'ebay_get_oauth_url': {
-      // Get config from environment
-      const clientId = process.env.EBAY_CLIENT_ID ?? '';
-      const environment = (process.env.EBAY_ENVIRONMENT ?? 'sandbox') as 'production' | 'sandbox';
-      const envRedirectUri = process.env.EBAY_REDIRECT_URI;
+      // Support environment override (PRODUCTION or SANDBOX)
+      const requestedEnv = (args.environment as string | undefined)?.toUpperCase();
+      const environment = (requestedEnv === 'SANDBOX' ? 'sandbox' : 'production') as
+        | 'production'
+        | 'sandbox';
 
-      // Use redirectUri from args if provided, otherwise use from .env
-      const redirectUri = (args.redirectUri as string | undefined) ?? envRedirectUri;
+      // Use getEbayConfig which supports multi-env vars:
+      // EBAY_PRODUCTION_CLIENT_ID / EBAY_SANDBOX_CLIENT_ID
+      // EBAY_PRODUCTION_CLIENT_SECRET / EBAY_SANDBOX_CLIENT_SECRET
+      // EBAY_PRODUCTION_RUNAME / EBAY_SANDBOX_RUNAME
+      // Falls back to EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, EBAY_RUNAME
+      const config = getEbayConfig(environment);
+      const clientId = config.clientId;
+
+      // Use redirectUri from args if provided, otherwise use from config
+      const redirectUri = (args.redirectUri as string | undefined) ?? config.redirectUri;
       const scopes = args.scopes as string[] | undefined;
       const state = args.state as string | undefined;
 
       if (!clientId) {
-        throw new Error('EBAY_CLIENT_ID environment variable is required to generate OAuth URL');
+        const envHint = environment === 'production' ? 'EBAY_PRODUCTION_CLIENT_ID' : 'EBAY_SANDBOX_CLIENT_ID';
+        throw new Error(
+          `Client ID is required to generate OAuth URL. Set ${envHint} or EBAY_CLIENT_ID.`
+        );
       }
 
       if (!redirectUri) {
+        const envHint = environment === 'production' ? 'EBAY_PRODUCTION_RUNAME' : 'EBAY_SANDBOX_RUNAME';
         throw new Error(
-          'Redirect URI is required. Either provide it as a parameter or set EBAY_REDIRECT_URI in your .env file.'
+          `Redirect URI (RuName) is required. Either provide it as a parameter or set ${envHint} or EBAY_RUNAME.`
         );
       }
 

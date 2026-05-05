@@ -62,11 +62,17 @@ export const tokenManagementTools: ToolDefinition[] = [
       '- OAuth URL format: Use + to separate scopes (e.g., scope=scope1+scope2), not %2B\n' +
       '- Refresh tokens last 18 months and are saved to .env file for persistence',
     inputSchema: {
+      environment: z
+        .string()
+        .optional()
+        .describe(
+          'Optional: PRODUCTION or SANDBOX. Determines which credentials to use (EBAY_PRODUCTION_* vs EBAY_SANDBOX_*). Defaults to PRODUCTION.'
+        ),
       redirectUri: z
         .string()
         .optional()
         .describe(
-          'Optional redirect URI registered with your eBay application (RuName). If not provided, will use EBAY_REDIRECT_URI from .env file.'
+          'Optional redirect URI registered with your eBay application (RuName). If not provided, will use environment-specific env var (EBAY_PRODUCTION_RUNAME / EBAY_SANDBOX_RUNAME) or EBAY_RUNAME.'
         ),
       scopes: z
         .array(z.string())

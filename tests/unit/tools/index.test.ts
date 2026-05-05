@@ -327,17 +327,20 @@ describe('Tools Layer', () => {
 
     it('should throw error when client ID missing', async () => {
       delete process.env.EBAY_CLIENT_ID;
+      delete process.env.EBAY_PRODUCTION_CLIENT_ID;
 
       await expect(executeTool(mockApi, 'ebay_get_oauth_url', {})).rejects.toThrow(
-        'EBAY_CLIENT_ID environment variable is required'
+        /Client ID is required/
       );
     });
 
     it('should throw error when redirect URI missing', async () => {
       delete process.env.EBAY_REDIRECT_URI;
+      delete process.env.EBAY_RUNAME;
+      delete process.env.EBAY_PRODUCTION_RUNAME;
 
       await expect(executeTool(mockApi, 'ebay_get_oauth_url', {})).rejects.toThrow(
-        'Redirect URI is required'
+        /Redirect URI.*required/
       );
     });
 
