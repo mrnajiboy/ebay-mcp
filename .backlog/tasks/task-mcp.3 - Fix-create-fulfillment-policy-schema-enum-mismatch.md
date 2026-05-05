@@ -1,8 +1,8 @@
 ---
 id: TASK-MCP.3
 title: Fix create_fulfillment_policy schema enum mismatch
-status: To Do
-assignee: []
+status: Done
+assignee: [Bruno]
 created_date: '2026-05-05'
 updated_date: '2026-05-05'
 labels: [bug, high]
@@ -13,9 +13,11 @@ parent_task_id: null
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-`ebay_create_fulfillment_policy` fails with "Invalid handlingTime.unit enum". This is a schema issue — the Zod schema uses incorrect enum values for `handlingTime.unit`. The API works (shipping policy creation was tested successfully), the schema just needs correction.
+`ebay_create_fulfillment_policy` fails with "Invalid handlingTime.unit enum". This is a schema issue — the Zod schema uses `z.nativeEnum(TimeDurationUnit)` which rejects inputs like "day" or "days" before the handler can normalize them. The handler already has `normalizeTimeUnit()` but Zod validates first.
 
-Per Naji review: This is NOT a "Business Policy not available" issue. Our account is enrolled, the API endpoint works, it's purely a schema mismatch.
+Fix: Changed `timeDurationSchema.unit` from `z.nativeEnum(TimeDurationUnit)` to `z.string()`. Handler normalizes to valid enum before API call.
+
+Commit: `ad1cd87`
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
