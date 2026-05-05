@@ -1099,56 +1099,66 @@ export async function executeTool(
       return await api.inventory.deleteOffer(args.offerId as string);
     case 'ebay_publish_offer': {
       const offerId = args.offerId as string;
-      // Pre-transform: fetch offer → fetch inventory item → ensure required fields → update → publish
-      // Required fields for Trading API: Country (via merchantLocationKey), Category, BrandMPN
+      // Pre-publish: ensure offer has categoryId + merchantLocationKey,
+      // and inventory item has brand/mpn pair + location mapping.
       try {
         const offer = await api.inventory.getOffer(offerId);
         const offerData = offer as Record<string, unknown>;
         const sku = offerData?.sku as string | undefined;
         if (sku) {
-          const items = await api.inventory.getInventoryItem(sku);
-          const itemData = Array.isArray(items) ? (items as Record<string, unknown>[])?.[0] : items;
-          const item = itemData as Record<string, unknown>;
-          if (item) {
-            // Ensure merchantLocationKey is set (provides Country for Trading API)
-            if (!item.merchantLocationKey) {
-              item.merchantLocationKey = 'seoul-warehouse';
-            }
-            // Ensure brand/mpn pair exists (required together)
-            const product = (item.product as Record<string, unknown>) || {};
-            if (product.brand && !product.mpn) {
-              product.mpn = sku; // Use SKU as fallback MPN
-            }
-            if (!product.brand && product.mpn) {
-              product.brand = 'Unbranded';
-            }
-            item.product = product;
-            // Apply Trading API transform (adds Country, Currency defaults)
-            const transformed = api.trading.transformItemForXML(item);
-            await api.inventory.createOrReplaceInventoryItem(sku, transformed);
-            // Ensure offer has categoryId and merchantLocationKey
-            if (!offerData.categoryId || !offerData.merchantLocationKey) {
-              const offerUpdate: Record<string, unknown> = {
-                sku,
-                marketplaceId: offerData.marketplaceId,
-                format: offerData.format,
-                availableQuantity: offerData.availableQuantity,
-                pricingSummary: offerData.pricingSummary,
-                listingPolicies: offerData.listingPolicies,
-                tax: offerData.tax,
-              };
-              if (item.categoryId) {
-                offerUpdate.categoryId = item.categoryId;
+          // Fix offer-level fields first
+          let needsOfferUpdate = false;
+          const offerUpdate: Record<string, unknown> = {
+            sku,
+            marketplaceId: offerData.marketplaceId,
+            format: offerData.format,
+            availableQuantity: offerData.availableQuantity,
+            pricingSummary: offerData.pricingSummary,
+            listingPolicies: offerData.listingPolicies,
+            tax: offerData.tax,
+          };
+          if (!offerData.categoryId) {
+            offerUpdate.categoryId = '176984'; // Default: Music > CDs
+            needsOfferUpdate = true;
+          }
+          if (!offerData.merchantLocationKey) {
+            offerUpdate.merchantLocationKey = 'seoul-warehouse';
+            needsOfferUpdate = true;
+          }
+          if (needsOfferUpdate) {
+            await api.inventory.updateOffer(offerId, offerUpdate);
+          }
+
+          // Fix inventory item fields (brand/mpn pair)
+          try {
+            const items = await api.inventory.getInventoryItem(sku);
+            const itemData = Array.isArray(items) ? (items as Record<string, unknown>[])?.[0] : items;
+            const item = itemData as Record<string, unknown>;
+            if (item) {
+              const product = (item.product as Record<string, unknown>) || {};
+              let needsInventoryUpdate = false;
+              if (product.brand && !product.mpn) {
+                product.mpn = sku;
+                needsInventoryUpdate = true;
               }
-              if (item.merchantLocationKey) {
-                offerUpdate.merchantLocationKey = item.merchantLocationKey;
+              if (!product.brand && product.mpn) {
+                product.brand = 'Unbranded';
+                needsInventoryUpdate = true;
               }
-              await api.inventory.updateOffer(offerId, offerUpdate);
+              if (!item.merchantLocationKey) {
+                item.merchantLocationKey = 'seoul-warehouse';
+                needsInventoryUpdate = true;
+              }
+              if (needsInventoryUpdate) {
+                item.product = product;
+                await api.inventory.createOrReplaceInventoryItem(sku, item);
+              }
             }
+          } catch (e) {
+            console.warn(`publish_offer inventory check warning for ${sku}: ${e}`);
           }
         }
       } catch (e) {
-        // Non-fatal: log and proceed with publish anyway
         console.warn(`publish_offer pre-transform warning for ${offerId}: ${e}`);
       }
       return await api.inventory.publishOffer(offerId);

@@ -1,6 +1,5 @@
 import type { EbayApiClient } from '../client.js';
 import {
-  processImageForUpload,
   validateImageForEbay as _validateImageForEbay,
 } from '@/utils/image-processor.js';
 import axios from 'axios';
@@ -55,32 +54,34 @@ export class MediaApi {
     const baseUrl = this.getMediaBaseUrl();
 
     try {
-      // Step 1: Download image from URL
-      const downloadResponse = await axios.get(imageUrl, {
-        responseType: 'arraybuffer',
-        timeout: 30000,
-      });
+      // Try direct createImageFromUrl endpoint first (eBay downloads server-side)
+      // This avoids the need to download+process+upload ourselves
+      const requestBody: Record<string, unknown> = { imageUrl };
+      if (description) {
+        requestBody.description = description;
+      }
 
-      const imageBuffer = Buffer.from(downloadResponse.data);
-
-      // Step 2: Process image (validate, resize if needed, optimize)
-      const processed = await processImageForUpload(imageBuffer, {
-        minWidth: 500,
-        minHeight: 500,
-        maxWidth: 4800,
-        maxHeight: 4800,
-        format: 'jpeg',
-        quality: 90,
-      });
-
-      // Step 3: Upload processed image via multipart/form-data
-      return await this.uploadProcessedImage(
-        processed.buffer,
-        processed.metadata,
-        token,
-        baseUrl,
-        description
+      const response = await axios.post(
+        `${baseUrl}${this.basePath}/image/create_image_from_url`,
+        requestBody,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          timeout: 30000,
+        }
       );
+
+      const data = response.data as Record<string, unknown>;
+      const imageId = data.id as string;
+      if (imageId) {
+        return await this.getImage(imageId);
+      }
+
+      // Fallback: if no image ID returned, try download+upload method
+      throw new Error('No image ID returned from createImageFromUrl endpoint');
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const status = error.response?.status;
