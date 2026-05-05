@@ -1,7 +1,7 @@
 ---
 id: TASK-MCP.12
 title: Add Inventory API compatible revise listing flow
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-05'
 updated_date: '2026-05-05'
