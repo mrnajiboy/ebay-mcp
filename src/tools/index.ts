@@ -893,18 +893,18 @@ export async function executeTool(
           const item = itemData as Record<string, unknown>;
           if (item) {
             // Ensure merchantLocationKey is set (provides Country for Trading API)
-            if (!item['merchantLocationKey']) {
-              item['merchantLocationKey'] = 'seoul-warehouse';
+            if (!item.merchantLocationKey) {
+              item.merchantLocationKey = 'seoul-warehouse';
             }
             // Ensure brand/mpn pair exists (required together)
-            const product = (item['product'] as Record<string, unknown>) || {};
-            if (product['brand'] && !product['mpn']) {
-              product['mpn'] = sku; // Use SKU as fallback MPN
+            const product = (item.product as Record<string, unknown>) || {};
+            if (product.brand && !product.mpn) {
+              product.mpn = sku; // Use SKU as fallback MPN
             }
-            if (!product['brand'] && product['mpn']) {
-              product['brand'] = 'Unbranded';
+            if (!product.brand && product.mpn) {
+              product.brand = 'Unbranded';
             }
-            item['product'] = product;
+            item.product = product;
             // Apply Trading API transform (adds Country, Currency defaults)
             const transformed = api.trading.transformItemForXML(item);
             await api.inventory.createOrReplaceInventoryItem(sku, transformed);
@@ -919,11 +919,11 @@ export async function executeTool(
                 listingPolicies: offerData.listingPolicies,
                 tax: offerData.tax,
               };
-              if (item['categoryId']) {
-                offerUpdate.categoryId = item['categoryId'];
+              if (item.categoryId) {
+                offerUpdate.categoryId = item.categoryId;
               }
-              if (item['merchantLocationKey']) {
-                offerUpdate.merchantLocationKey = item['merchantLocationKey'];
+              if (item.merchantLocationKey) {
+                offerUpdate.merchantLocationKey = item.merchantLocationKey;
               }
               await api.inventory.updateOffer(offerId, offerUpdate);
             }
