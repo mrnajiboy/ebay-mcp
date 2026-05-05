@@ -1132,7 +1132,9 @@ export async function executeTool(
           // Fix inventory item fields (brand/mpn pair)
           try {
             const items = await api.inventory.getInventoryItem(sku);
-            const itemData = Array.isArray(items) ? (items as Record<string, unknown>[])?.[0] : items;
+            const itemData = Array.isArray(items)
+              ? (items as Record<string, unknown>[])?.[0]
+              : items;
             const item = itemData as Record<string, unknown>;
             if (item) {
               const product = (item.product as Record<string, unknown>) || {};

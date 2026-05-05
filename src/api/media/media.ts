@@ -1,7 +1,5 @@
 import type { EbayApiClient } from '../client.js';
-import {
-  validateImageForEbay as _validateImageForEbay,
-} from '@/utils/image-processor.js';
+import { validateImageForEbay as _validateImageForEbay } from '@/utils/image-processor.js';
 import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
