@@ -230,9 +230,7 @@ export async function executeTool(
     case 'ebay_get_oauth_url': {
       // Support environment override (PRODUCTION or SANDBOX)
       const requestedEnv = (args.environment as string | undefined)?.toUpperCase();
-      const environment = (requestedEnv === 'SANDBOX' ? 'sandbox' : 'production') as
-        | 'production'
-        | 'sandbox';
+      const environment = requestedEnv === 'SANDBOX' ? 'sandbox' : 'production';
 
       // Use getEbayConfig which supports multi-env vars:
       // EBAY_PRODUCTION_CLIENT_ID / EBAY_SANDBOX_CLIENT_ID
@@ -248,14 +246,16 @@ export async function executeTool(
       const state = args.state as string | undefined;
 
       if (!clientId) {
-        const envHint = environment === 'production' ? 'EBAY_PRODUCTION_CLIENT_ID' : 'EBAY_SANDBOX_CLIENT_ID';
+        const envHint =
+          environment === 'production' ? 'EBAY_PRODUCTION_CLIENT_ID' : 'EBAY_SANDBOX_CLIENT_ID';
         throw new Error(
           `Client ID is required to generate OAuth URL. Set ${envHint} or EBAY_CLIENT_ID.`
         );
       }
 
       if (!redirectUri) {
-        const envHint = environment === 'production' ? 'EBAY_PRODUCTION_RUNAME' : 'EBAY_SANDBOX_RUNAME';
+        const envHint =
+          environment === 'production' ? 'EBAY_PRODUCTION_RUNAME' : 'EBAY_SANDBOX_RUNAME';
         throw new Error(
           `Redirect URI (RuName) is required. Either provide it as a parameter or set ${envHint} or EBAY_RUNAME.`
         );

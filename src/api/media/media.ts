@@ -149,10 +149,7 @@ export class MediaApi {
 
       body += `--${boundary}--\r\n`;
 
-      const multipartBody = Buffer.concat([
-        Buffer.from(body, 'utf-8'),
-        Buffer.from(fileBuffer),
-      ]);
+      const multipartBody = Buffer.concat([Buffer.from(body, 'utf-8'), Buffer.from(fileBuffer)]);
 
       const createResponse = await axios.post(
         `${baseUrl}${this.basePath}/image/create_image_from_file`,

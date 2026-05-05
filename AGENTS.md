@@ -186,11 +186,11 @@ Decisions are narrative markdown files explaining *why* a change was made or pro
 ---
 
 ### TASK-MCP.5 — OAuth Multi-Environment Support
-- **Status:** To Do
+- **Status:** ✅ Done (May 5, 2026 — commit 6884f3c)
 - **Priority:** Medium
 - **Labels:** bug, medium
 
-**Problem:** `ebay_get_oauth_url` needs to read PRODUCTION/SANDBOX env var variants. Credentials exist, just need multi-env support.
+**Resolution:** Handler uses `getEbayConfig()` which supports multi-env vars (EBAY_PRODUCTION_*/EBAY_SANDBOX_*). Added optional `environment` parameter. Defaults to PRODUCTION.
 
 ---
 
