@@ -54,14 +54,18 @@ export class MediaApi {
         body.description = description;
       }
 
-      const createResponse = await axios.post(`${baseUrl}${this.basePath}/image/from_url`, body, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          Prefer: 'return=representation',
-        },
-        timeout: 30000,
-      });
+      const createResponse = await axios.post(
+        `${baseUrl}${this.basePath}/image/create_image_from_url`,
+        body,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=representation',
+          },
+          timeout: 30000,
+        }
+      );
 
       // Extract image ID from response body or Location header
       const responseData = createResponse.data as Record<string, unknown>;
