@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.4.0](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v4.3.1...ebay-mcp-remote-edition-v4.4.0) (2026-05-05)
+
+
+### Features
+
+* add Browse API tools - get_suggestions, search_products, get_item_specifics (TASK-MCP.9) ([0550e98](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/0550e98434cac0527e2611349ad3c24eb82f5907))
+* add dual endpoint support to ebay_upload_images ([8662369](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/8662369189274a51021a683dd42d6bde23730081))
+* add ebay_get_category tool (TASK-MCP.8) ([491c667](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/491c66782d1c3caf6286b06efaa69c2e11216516))
+* add image processing for eBay Media API uploads ([161a86d](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/161a86d75683e94c04f577c3cb0912537c92db7c))
+* OAuth multi-environment support for ebay_get_oauth_url ([6884f3c](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/6884f3c4489bf1cd82fe73b04dbc962feb130b85))
+
+
+### Bug Fixes
+
+* accept flexible handlingTime.unit values in schema ([ad1cd87](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/ad1cd874a4111a8ed322d97d2766665c99c06bdb))
+* add curl to runner stage for Coolify health check ([2e54c2d](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/2e54c2d3adc8403145ecdb7d82067539a95e2822))
+* avoid country default on listing revisions ([2995467](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/29954677bd9f909cb52eb7e37203c1353a0c0817))
+* correct Media API endpoint path for createImageFromUrl ([6758b45](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/6758b45a4bf11efbb5edc03c2b212367bf9909a7))
+* display_credentials now uses getEbayConfig() for proper credential resolution ([281e0c4](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/281e0c4532bb937c7d08d3cfb7e258b544d86890))
+* lint ([1d69102](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/1d6910215036ead2aa9573fc2425b3f261223de9))
+* major smoke tests and bug patches for core API tooling ([18fac00](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/18fac00306b7f06618cd13693cc16b9ae3f1c02a))
+* Media API base URL (apim.ebay.com) and version (v1_beta) ([ecb6bf3](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/ecb6bf3970469ddcc4b70d4b3141530753d616e8))
+* media had invalidated stuff ([9c84edd](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/9c84edd065890275cf8048d58600642633dc7784))
+* normalize BUSINESS_DAY to DAY for Account API fulfillment policies ([e7d35fc](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/e7d35fcdcdb49410b1831319260f8b5bcc9baf8f))
+* normalize CALENDAR_DAY to DAY for Account API fulfillment policies ([58af6d6](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/58af6d6e5143fab54537bbc46277b84c5656bc5d))
+* package-lock file causing CI/CD issues ([cdd1e51](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/cdd1e51c573c8809fcbd3c1b4930a79a9653826f))
+* preserve BUSINESS_DAY and CALENDAR_DAY enum distinctions ([dfb890b](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/dfb890b45d50bc633ab3596a447621d51d4737e9))
+* publish_offer pre-transform — ensure merchantLocationKey, brand/mpn, categoryId ([7aa56a5](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/7aa56a52b7b05558cb298fe4de3efc03665c3bc7))
+* publish_offer routing + Media API direct upload ([36498e6](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/36498e6edcd12cdbd034034b5d31313959c8bb9e))
+* remove prepare script to eliminate redundant TypeScript compilation ([ed1cd10](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/ed1cd10e4f0fa114a3675f6cb45d6809270753c2))
+* require sku for ebay_get_offers (TASK-MCP.11) ([4c57914](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/4c57914ac11d619b328354637cfd9c747312f0a1))
+* revise_listing fallback detection for inventory-backed listings ([8c8555b](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/8c8555b780386bb3d45077e9cfde3e8adb270d26))
+* runame redirect fallback errors ([1a7c785](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/1a7c78539626d69798a67bb406b1e03cb768ab31))
+* TASK-MCP.7 - publish_offer XML transform bug ([d56ba42](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/d56ba421c14b6a9139191022b7ee9eb209c7705f))
+* update pnpm lockfile for sharp dependency ([85881fd](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/85881fd8b9c574df325ee7cbf63fd9206ddf0f4e))
+* use bracket notation for environment arg access ([0e42a92](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/0e42a928b3a4d4970e4c3a2dbf17d67a4f434238))
+
+
+### Documentation
+
+* complete task-mcp3 ([3cb2c79](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/3cb2c792e3c0c797090e4ea908e204a2f6e735e7))
+* mark TASK-MCP.7 as done (publish_offer XML transform fix) ([3281740](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/328174074171073d37a6bb7b216b4947f7e2c512))
+* mark TASK-MCP.9 as Done ([a6e8d6e](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/a6e8d6eaccc34c8c9e5708ce3c162eb649dc07e7))
+
 ## [4.3.1](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v4.3.0...ebay-mcp-remote-edition-v4.3.1) (2026-05-04)
 
 
