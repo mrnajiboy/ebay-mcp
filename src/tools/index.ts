@@ -75,7 +75,7 @@ function deepMerge(
 ): Record<string, unknown> {
   const result = { ...target };
   for (const key of Object.keys(source)) {
-    const sVal = (source)[key];
+    const sVal = source[key];
     if (sVal && typeof sVal === 'object' && !Array.isArray(sVal)) {
       const tVal = (result as Record<string, unknown>)[key];
       (result as Record<string, unknown>)[key] = deepMerge(
@@ -142,8 +142,11 @@ function findOfferForListing(
   return (
     offers.find((offer) => {
       const listing = offer.listing as Record<string, unknown> | undefined;
-      const listingId = offer.listingId ?? offer.ListingID ?? listing?.listingId ?? listing?.ListingID;
-      return String(listingId ?? '') === itemId;
+      const listingId =
+        offer.listingId ?? offer.ListingID ?? listing?.listingId ?? listing?.ListingID;
+      const safeId =
+        typeof listingId === 'string' || typeof listingId === 'number' ? String(listingId) : '';
+      return safeId === itemId;
     }) ?? offers[0]
   );
 }
@@ -158,7 +161,15 @@ function normalizePriceForInventory(price: unknown): { value: string; currency: 
     const value = record.value ?? record['#text'];
     const currency = record.currency ?? record.currencyID ?? record['@_currencyID'] ?? 'USD';
     if (value !== undefined) {
-      return { value: String(value), currency: String(currency) };
+      const valueStr =
+        typeof value === 'string' || typeof value === 'number'
+          ? String(value)
+          : JSON.stringify(value);
+      const currencyStr =
+        typeof currency === 'string' || typeof currency === 'number'
+          ? String(currency)
+          : JSON.stringify(currency);
+      return { value: valueStr, currency: currencyStr };
     }
   }
 
@@ -171,7 +182,7 @@ async function reviseInventoryBackedListing(
   fields: Record<string, unknown>,
   tradingErrorMessage: string
 ): Promise<Record<string, unknown>> {
-  const listing = (await api.trading.getListing(itemId));
+  const listing = await api.trading.getListing(itemId);
   const sku = extractListingSku(listing);
   if (!sku) {
     throw new Error(
@@ -200,7 +211,7 @@ async function reviseInventoryBackedListing(
     switch (key) {
       case 'StartPrice':
         offer.pricingSummary = {
-          ...((offer.pricingSummary) ?? {}),
+          ...(offer.pricingSummary ?? {}),
           price: normalizePriceForInventory(value),
         };
         offerNeedsUpdate = true;
@@ -218,7 +229,7 @@ async function reviseInventoryBackedListing(
         break;
       case 'Title':
         inventoryItem.product = {
-          ...((inventoryItem.product) ?? {}),
+          ...(inventoryItem.product ?? {}),
           title: value,
         };
         inventoryNeedsUpdate = true;
@@ -989,17 +1000,18 @@ export async function executeTool(
         const msg = e instanceof Error ? e.message : String(e);
         if (msg.includes('not found') || msg.includes('404') || msg.includes('not exist')) {
           throw new Error(
-            `Inventory item not found: ${sku}. Create it first with ebay_create_inventory_item.`
+            `Inventory item not found: ${sku}. Create it first with ebay_create_inventory_item.`,
+            { cause: e }
           );
         }
-        throw new Error(`Failed to fetch inventory item ${sku}: ${msg}`);
+        throw new Error(`Failed to fetch inventory item ${sku}: ${msg}`, { cause: e });
       }
       // Deep merge updates into existing
       const updateObj: Record<string, unknown> = {};
-      if (args['availability']) updateObj.availability = args['availability'] as Record<string, unknown>;
-      if (args['product']) updateObj.product = args['product'] as Record<string, unknown>;
-      if (args['condition']) updateObj.condition = args['condition'] as string;
-      if (args['conditionDescription']) updateObj.conditionDescription = args['conditionDescription'] as string;
+      if (args.availability) updateObj.availability = args.availability;
+      if (args.product) updateObj.product = args.product;
+      if (args.condition) updateObj.condition = args.condition;
+      if (args.conditionDescription) updateObj.conditionDescription = args.conditionDescription;
       const merged = deepMerge(existing, updateObj);
       // Save back via createOrReplace
       await api.inventory.createOrReplaceInventoryItem(sku, merged);

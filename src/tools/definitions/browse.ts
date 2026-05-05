@@ -8,10 +8,7 @@ export const browseTools: ToolDefinition[] = [
       'Get listing/product suggestions based on search query. Returns relevant item summaries with pricing and shipping info from the eBay Browse API.',
     inputSchema: {
       query: z.string().describe('Search query for product suggestions'),
-      marketplaceId: z
-        .string()
-        .default('EBAY_US')
-        .describe('Marketplace ID (default: EBAY_US)'),
+      marketplaceId: z.string().default('EBAY_US').describe('Marketplace ID (default: EBAY_US)'),
       limit: z.number().default(20).describe('Number of suggestions to return (default: 20)'),
     },
     outputSchema: {

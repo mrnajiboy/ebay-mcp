@@ -36,7 +36,10 @@ export class BrowseApi {
     }
   ): Promise<BrowseSearchResponse> {
     const environment = this.client.getConfig().environment;
-    const browseUrl = new URL('/buy/browse/v1/item_summary/search', getBaseUrl(environment)).toString();
+    const browseUrl = new URL(
+      '/buy/browse/v1/item_summary/search',
+      getBaseUrl(environment)
+    ).toString();
 
     const params: Record<string, string | number> = { q: query };
     if (options?.categoryId) params.category_ids = options.categoryId;

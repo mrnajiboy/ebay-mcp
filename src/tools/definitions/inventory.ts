@@ -159,7 +159,10 @@ export const inventoryTools: ToolDefinition[] = [
         ])
         .optional()
         .describe('Item condition'),
-      conditionDescription: z.string().optional().describe('Condition description (for used items)'),
+      conditionDescription: z
+        .string()
+        .optional()
+        .describe('Condition description (for used items)'),
     },
     outputSchema: {
       type: 'object',
