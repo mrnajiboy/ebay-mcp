@@ -251,7 +251,7 @@ describe('EbayOAuthClient', () => {
       const clientWithoutRedirect = new EbayOAuthClient(configWithoutRedirect);
 
       await expect(clientWithoutRedirect.exchangeCodeForToken('code_12345')).rejects.toThrow(
-        'Redirect URI is required'
+        'RuName'
       );
     });
 

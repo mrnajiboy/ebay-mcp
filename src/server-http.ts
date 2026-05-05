@@ -909,7 +909,7 @@ function mountEnvRouter(
       serverLogger.info(`[${prefix || 'root'}/authorize] Credential check`, {
         environment,
         envSource,
-        ruName: ebayConfig.redirectUri,
+        ruName: ebayConfig.ruName || ebayConfig.redirectUri,
         ruNameDetectedEnv: credCheck.detectedEnv,
         credentialValid: credCheck.valid,
       });
@@ -943,7 +943,7 @@ function mountEnvRouter(
       serverLogger.info(`[${prefix || 'root'}/authorize] Redirecting to eBay OAuth`, {
         state: stateRecord.state,
         environment,
-        ruName: ebayConfig.redirectUri,
+        ruName: ebayConfig.ruName || ebayConfig.redirectUri,
         expectedCallbackUrl: getExpectedOAuthCallbackUrl(serverUrl),
       });
       res.redirect(oauthUrl);
@@ -1069,7 +1069,7 @@ function mountEnvRouter(
       serverLogger.info(`[${prefix || 'root'}/oauth/start] Redirecting to eBay OAuth`, {
         state: stateRecord.state,
         environment,
-        ruName: ebayConfig.redirectUri,
+        ruName: ebayConfig.ruName || ebayConfig.redirectUri,
         expectedCallbackUrl: getExpectedOAuthCallbackUrl(serverUrl),
         returnTo,
       });
@@ -1383,7 +1383,7 @@ async function handleOAuthCallback(
       environment,
       tokenBaseUrl: getBaseUrl(environment),
       clientIdPrefix: ebayConfig.clientId ? `${ebayConfig.clientId.slice(0, 12)}...` : '(missing)',
-      ruName: ebayConfig.redirectUri ?? '(missing)',
+      ruName: (ebayConfig.ruName || ebayConfig.redirectUri) ?? '(missing)',
     });
 
     const userId = randomUUID();

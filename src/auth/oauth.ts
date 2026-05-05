@@ -143,6 +143,7 @@ export class EbayOAuthClient {
       clientId: this.config.clientId,
       clientSecret: this.config.clientSecret,
       redirectUri: this.config.redirectUri,
+      ruName: this.config.ruName,
       userAccessToken: accessToken,
       userRefreshToken: refreshToken,
       tokenType: 'Bearer',
@@ -217,6 +218,7 @@ export class EbayOAuthClient {
         clientId: this.config.clientId,
         clientSecret: this.config.clientSecret,
         redirectUri: this.config.redirectUri,
+        ruName: this.config.ruName,
         userAccessToken: tokenData.access_token,
         userRefreshToken: tokenData.refresh_token,
         tokenType: tokenData.token_type,
@@ -271,6 +273,7 @@ export class EbayOAuthClient {
       clientId: this.config.clientId,
       clientSecret: this.config.clientSecret,
       redirectUri: this.config.redirectUri,
+      ruName: this.config.ruName,
       userAccessToken: tokenData.access_token,
       userRefreshToken: tokenData.refresh_token || this.userTokens.userRefreshToken,
       tokenType: tokenData.token_type,
@@ -291,6 +294,7 @@ export class EbayOAuthClient {
     hasRefreshToken: boolean;
     hasAccessToken: boolean;
     hasRedirectUri: boolean;
+    hasRuName: boolean;
     refreshTokenExpiry?: number;
     accessTokenExpiry?: number;
     source?:
@@ -307,6 +311,7 @@ export class EbayOAuthClient {
       hasRefreshToken: !!this.userTokens?.userRefreshToken,
       hasAccessToken: !!this.userTokens?.userAccessToken,
       hasRedirectUri: !!this.config.redirectUri,
+      hasRuName: !!this.config.ruName,
       ...(this.userTokens?.userRefreshTokenExpiry
         ? { refreshTokenExpiry: this.userTokens.userRefreshTokenExpiry }
         : {}),
