@@ -264,6 +264,19 @@ Decisions are narrative markdown files explaining *why* a change was made or pro
 
 ---
 
+### TASK-MCP.14 — Fix publish_offer listingPolicies and upload_images (Bug)
+- **Status:** ✅ Done (May 6, 2026 — commit 71090b9)
+- **Priority:** High
+- **Labels:** bug, high
+
+**Resolution:** Two bugs fixed during live smoke testing:
+1. `publish_offer` pre-publish handler now auto-injects `listingPolicies` (payment/return/fulfillment policy IDs) when missing. ⚠️ Policy IDs hardcoded for Hankuk Expo account only.
+2. `upload_images` response parsing fixed — `createImageFromUrl` now correctly extracts image ID from Location header. `getImage()` converts `$_1.JPG` thumbnail to `s-l1600.jpg` full-size URL automatically.
+
+**Smoke test results (May 6):** All core tools verified working — `create_inventory_item`, `create_offer`, `publish_offer`, `upload_images`, `revise_listing`, `withdraw_offer`, `delete_offer`, `get_active_listings`.
+
+---
+
 ## 5. Development Workflow
 
 ### Build & Test
