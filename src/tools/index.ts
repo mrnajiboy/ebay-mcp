@@ -86,7 +86,7 @@ function normalizeTimeUnit(value: string): string {
     DAYS: 'DAY',
     BUSINESS_DAY: 'DAY',
     BUSINESS_DAYS: 'DAY',
-    CALENDAR_DAY: 'CALENDAR_DAY',
+    CALENDAR_DAY: 'DAY',
     HOUR: 'HOUR',
     HOURS: 'HOUR',
     MINUTE: 'MINUTE',
