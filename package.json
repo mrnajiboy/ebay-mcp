@@ -73,7 +73,7 @@
     "cors": "^2.8.6",
     "dotenv-stringify": "^3.0.1",
     "express": "^5.2.1",
-    "fast-xml-parser": "^5.7.2",
+    "fast-xml-parser": "^5.7.3",
     "flatted": "^3.4.2",
     "helmet": "^8.1.0",
     "jose": "^6.2.3",
@@ -107,7 +107,7 @@
     "tsc-alias": "^1.8.17",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.59.1",
+    "typescript-eslint": "^8.59.2",
     "vitest": "^4.1.5"
   },
   "packageManager": "pnpm@10.33.2",
