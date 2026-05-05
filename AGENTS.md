@@ -204,11 +204,11 @@ Decisions are narrative markdown files explaining *why* a change was made or pro
 ---
 
 ### TASK-MCP.7 — Fix publish_offer XML Transform
-- **Status:** To Do
+- **Status:** ✅ Done (May 5, 2026 — commit d56ba42)
 - **Priority:** Medium
 - **Labels:** bug, medium
 
-**Problem:** `ebay_publish_offer` missing `transformItemForXML()` call. Apply same fix as `create_listing`.
+**Resolution:** Pre-transform logic added to handler: fetches offer → gets inventory item → applies `transformItemForXML` → updates inventory → publishes. Non-fatal error handling.
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 id: TASK-MCP.7
 title: Fix publish_offer XML transform
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-05-05'
 updated_date: '2026-05-05'
@@ -20,6 +20,13 @@ A user error has occurred. No <Item.Country> exists or <Item.Country> is specifi
 ```
 
 Apply the same `transformItemForXML()` fix that was deployed for `create_listing` (TASK-MCP.1) to `publish_offer`.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Resolution
+
+Pre-transform logic added to `src/tools/index.ts` handler (lines 882-903): fetches the offer → gets the inventory item by SKU → applies `transformItemForXML` → updates inventory item → proceeds with publish. Non-fatal error handling ensures publish continues even if pre-transform fails.
+
+Commit: `d56ba42 fix: TASK-MCP.7 - publish_offer XML transform bug`
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
