@@ -1,6 +1,8 @@
 import type { EbayApiClient } from '../client.js';
 import { getBaseUrl } from '@/config/environment.js';
 import axios from 'axios';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * Commerce Media API (v1_beta) - Upload and manage images via eBay Picture Services
@@ -47,9 +49,9 @@ export class MediaApi {
 
     try {
       // Step 1: Create image from URL
-      const body = { imageUrl };
+      const body: Record<string, unknown> = { imageUrl };
       if (description) {
-        Object.assign(body, { description });
+        body.description = description;
       }
 
       const createResponse = await axios.post(`${baseUrl}${this.basePath}/image/from_url`, body, {
@@ -90,6 +92,110 @@ export class MediaApi {
       }
       throw new Error(
         `Failed to upload image from URL: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
+      );
+    }
+  }
+
+  /**
+   * Upload an image from a local file to eBay Picture Services.
+   *
+   * Endpoint: POST /commerce/media/v1/image/create_image_from_file
+   * Content-Type: multipart/form-data
+   *
+   * Supported formats: JPG, GIF, PNG, BMP, TIFF, AVIF, HEIC, WEBP
+   * Max file size: 10MB per image
+   *
+   * @param filePath - Local file path of the image to upload
+   * @param description - Optional description for the image
+   * @returns Object with image ID and eBay-hosted image URL
+   */
+  async createImageFromFile(
+    filePath: string,
+    description?: string
+  ): Promise<{ id: string; imageUrl: string; description?: string }> {
+    if (!filePath || typeof filePath !== 'string') {
+      throw new Error('filePath is required and must be a string');
+    }
+
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`);
+    }
+
+    const token = await this.getAccessToken();
+    const baseUrl = this.getMediaBaseUrl();
+
+    try {
+      const fileBuffer = fs.readFileSync(filePath);
+
+      // Build multipart/form-data body manually
+      const boundary = `----FormBoundary${Date.now()}`;
+      const fileName = path.basename(filePath);
+
+      // Build the multipart body
+      let body = '';
+
+      // File part
+      body += `--${boundary}\r\n`;
+      body += `Content-Disposition: form-data; name="imageFile"; filename="${fileName}"\r\n`;
+      body += `Content-Type: application/octet-stream\r\n\r\n`;
+
+      // Description part (optional)
+      if (description) {
+        body += `--${boundary}\r\n`;
+        body += `Content-Disposition: form-data; name="description"\r\n\r\n`;
+        body += `${description}\r\n`;
+      }
+
+      body += `--${boundary}--\r\n`;
+
+      const multipartBody = Buffer.concat([
+        Buffer.from(body, 'utf-8'),
+        Buffer.from(fileBuffer),
+      ]);
+
+      const createResponse = await axios.post(
+        `${baseUrl}${this.basePath}/image/create_image_from_file`,
+        multipartBody,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': `multipart/form-data; boundary=${boundary}`,
+            Prefer: 'return=representation',
+          },
+          timeout: 30000,
+        }
+      );
+
+      // Extract image ID from response body or Location header
+      const responseData = createResponse.data as Record<string, unknown>;
+      const imageId =
+        typeof responseData.id === 'string'
+          ? responseData.id
+          : createResponse.headers.location?.split('/').pop();
+
+      if (!imageId) {
+        throw new Error('No image ID returned from create endpoint');
+      }
+
+      // Fetch image details to get the eBay-hosted URL
+      return await this.getImage(imageId);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        const data = error.response?.data;
+        const message =
+          typeof data === 'object' && data !== null && 'errors' in data
+            ? (data.errors as any[])?.[0]?.longMessage ||
+              (data.errors as any[])?.[0]?.message ||
+              error.message
+            : error.message;
+        throw new Error(`Failed to upload image from file (status ${status}): ${message}`, {
+          cause: error,
+        });
+      }
+      throw new Error(
+        `Failed to upload image from file: ${error instanceof Error ? error.message : 'Unknown error'}`,
         { cause: error }
       );
     }

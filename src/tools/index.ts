@@ -2059,7 +2059,8 @@ export async function executeTool(
         args.modifications as Record<string, unknown> | undefined
       );
     case 'ebay_upload_images': {
-      const imageUrls = args.imageUrls as string[];
+      const imageUrls = args.imageUrls as string[] | undefined;
+      const imageFiles = args.imageFiles as string[] | undefined;
       const description = args.description as string | undefined;
       const results: {
         success: boolean;
@@ -2067,19 +2068,40 @@ export async function executeTool(
         imageUrl?: string;
         error?: string;
         sourceUrl?: string;
+        sourceFile?: string;
       }[] = [];
 
-      for (const imageUrl of imageUrls) {
-        try {
-          const result = await api.media.createImageFromUrl(imageUrl, description);
-          results.push({ success: true, id: result.id, imageUrl: result.imageUrl });
-        } catch (e) {
-          results.push({
-            success: false,
-            error: e instanceof Error ? e.message : String(e),
-            sourceUrl: imageUrl,
-          });
+      // Mode 1: Upload from file paths (multipart/form-data)
+      if (imageFiles && imageFiles.length > 0) {
+        for (const filePath of imageFiles) {
+          try {
+            const result = await api.media.createImageFromFile(filePath, description);
+            results.push({ success: true, id: result.id, imageUrl: result.imageUrl });
+          } catch (e) {
+            results.push({
+              success: false,
+              error: e instanceof Error ? e.message : String(e),
+              sourceFile: filePath,
+            });
+          }
         }
+      }
+      // Mode 2: Upload from URLs (default)
+      else if (imageUrls && imageUrls.length > 0) {
+        for (const imageUrl of imageUrls) {
+          try {
+            const result = await api.media.createImageFromUrl(imageUrl, description);
+            results.push({ success: true, id: result.id, imageUrl: result.imageUrl });
+          } catch (e) {
+            results.push({
+              success: false,
+              error: e instanceof Error ? e.message : String(e),
+              sourceUrl: imageUrl,
+            });
+          }
+        }
+      } else {
+        throw new Error('Provide either imageUrls or imageFiles (at least one)');
       }
 
       return {

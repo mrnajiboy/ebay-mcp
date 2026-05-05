@@ -173,11 +173,16 @@ export const tradingTools: ToolDefinition[] = [
   {
     name: 'ebay_upload_images',
     description:
-      'Upload images to eBay Picture Services using the Commerce Media API and get eBay-hosted image URLs for use in listings.\n\nUploads images from public URLs — eBay fetches and hosts them on their servers. The returned image URLs can be used in ebay_create_listing PicturesDetails.PictureURL array.\n\nSupports: JPG, GIF, PNG, BMP, TIFF, AVIF, HEIC, WEBP. Max 10MB per image.\n\nReturns a result for each uploaded image including the eBay-hosted URL and image ID.',
+      'Upload images to eBay Picture Services using the Commerce Media API and get eBay-hosted image URLs for use in listings.\n\nTwo modes:\n1. **From URL** — Provide imageUrls (public URLs). eBay fetches and hosts them.\n2. **From file** — Provide imageFiles (local file paths). Files are uploaded via multipart/form-data.\n\nSupports: JPG, GIF, PNG, BMP, TIFF, AVIF, HEIC, WEBP. Max 10MB per image.\n\nReturns a result for each uploaded image including the eBay-hosted URL and image ID.',
     inputSchema: {
       imageUrls: z
         .array(z.string().describe('Public URL of the image to upload'))
-        .describe('Array of image URLs to upload (1 or more)'),
+        .optional()
+        .describe('Array of image URLs to upload (use imageFiles OR imageUrls, not both)'),
+      imageFiles: z
+        .array(z.string().describe('Local file path of the image to upload'))
+        .optional()
+        .describe('Array of local file paths to upload (use imageFiles OR imageUrls, not both)'),
       description: z.string().optional().describe('Optional description for the uploaded images'),
     },
     annotations: { readOnlyHint: false },
