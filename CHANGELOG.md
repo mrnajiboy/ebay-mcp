@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.4.1](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v4.4.0...ebay-mcp-remote-edition-v4.4.1) (2026-05-05)
+
+
+### Bug Fixes
+
+* convert Media API thumbnail URLs to full-size for listing images ([71090b9](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/71090b99f4dcbec9c24011b81449b16fbdbde9c0))
+* publish_offer listingPolicies injection + upload_images response parsing (TASK-MCP.14) ([9b008c8](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/9b008c81ce300dcb815ed4dedabc8891d0729b0e))
+* TASK-MCP.14 - upload_images Location header parsing + publish_offer listingPolicies injection ([b5f9927](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/b5f9927612cfbc401f0586fa108f34de613c8994))
+
+
+### Documentation
+
+* detail media api fixes ([9a4a923](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/9a4a9233697c249dbd1db55b2245f5b3fffe7b87))
+* reconcile backlog status in AGENTS.md ([e500170](https://github.com/mrnajiboy/ebay-mcp-remote-edition/commit/e500170f7a38bcda5df1f9bc5f2798f7a7726ec1))
+
 ## [4.4.0](https://github.com/mrnajiboy/ebay-mcp-remote-edition/compare/ebay-mcp-remote-edition-v4.3.1...ebay-mcp-remote-edition-v4.4.0) (2026-05-05)
 
 
